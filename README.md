@@ -1,27 +1,12 @@
 # Omar Mohammed
 
-I build things that work. This is my corner of the internet.
+My portfolio wesbite. Thought this would be a cool way to showcase what I've worked on so far. Will try to keep this updated.
 
-**Live:** [omarmohammed.co](https://www.omarmohammed.co)
-
----
-
-## What's Here
-
-Portfolio site showcasing hardware projects, embedded systems work, and the occasional FPGA adventure. Built it myself because templates are boring and I wanted to learn Astro.
+**Check it out:** [omarmohammed.co](https://www.omarmohammed.co)
 
 ---
 
-## Stack
-
-- **Astro** — Fast, simple, gets out of the way
-- **Plain CSS** — No Tailwind, no frameworks, just vibes
-- **Playfair Display + Geist** — Serif headers, clean body text
-- **Vercel** — Push to deploy, done
-
----
-
-## Run It Locally
+## Run Locally
 
 ```bash
 git clone https://github.com/ofmohamm/portfolio.git
@@ -30,60 +15,20 @@ npm install
 npm run dev
 ```
 
-Opens at [localhost:4321](http://localhost:4321)
+---
+
+## What's On The Site
+
+**UFONet Sensor Node** — PCB I designed for flood monitoring. LoRaWAN, thermal cameras, GPS. Currently sitting outside in the rain doing its job.
+
+**4-Bit CPU** — Built a CPU from scratch in VHDL. Custom instruction set. Watching it execute instructions I wrote hits different.
+
+**Elevator Controller** — 10-floor system on an ATSAMD21. No Arduino hand-holding. Just me, the datasheet, and registers.
+
+**Bluetooth Messenger** — Text your phone from a keypad. Nokia energy.
 
 ---
 
-## Project Structure
+## Contact
 
-```
-src/
-├── components/    # Navbar, footer, etc.
-├── layouts/       # Page wrappers
-├── pages/         # The actual pages
-│   └── projects/  # Individual project writeups
-└── styles/        # Global CSS
-
-public/images/     # Logos, project screenshots
-```
-
----
-
-## Colors & Fonts
-
-| What | Value |
-|------|-------|
-| Green | `#2E5339` |
-| Background | `#FAF9F6` |
-| Text | `#1a1a1a` |
-| Headers | Playfair Display |
-| Body | Geist Sans |
-| Code | Geist Mono |
-
----
-
-## Projects on the Site
-
-**UFONet Sensor Node (CHaRTS)**  
-PCB I designed for an IoT flood monitoring system. 2-layer board with Raspberry Pi compute module, LoRaWAN, thermal cameras, GPS. Currently deployed in the field.
-
-**Elevator Control System**  
-10-floor controller. ATSAMD21. No Arduino libraries. Just registers and pain (the good kind).
-
-**4-Bit CPU**  
-Designed a CPU from scratch in VHDL. Custom instruction set. Runs on an FPGA. Still can't believe it works.
-
-**Bluetooth Messaging**  
-Arduino + HC-05. Text your phone from a keypad. Old school Nokia vibes.
-
----
-
-## Say Hi
-
-- **Email:** mail.omarmohammed@gmail.com
-- **LinkedIn:** [/in/ofmohammed](https://linkedin.com/in/ofmohammed)
-- **GitHub:** [/ofmohamm](https://github.com/ofmohamm)
-
----
-
-EE @ Syracuse · Class of '27
+[LinkedIn](https://linkedin.com/in/ofmohammed) · [GitHub](https://github.com/ofmohamm) · mail.omarmohammed@gmail.com
