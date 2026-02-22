@@ -5,10 +5,10 @@ import react from '@astrojs/react';
 import tailwindcss from '@tailwindcss/vite';
 import mdx from '@astrojs/mdx';
 
-// https://astro.build/config
-export default defineConfig({
-  integrations: [react(), mdx()],
 
+export default defineConfig({
+  site: 'https://omarmohammed.co',
+  integrations: [react(), mdx()],
   vite: {
     plugins: [tailwindcss()]
   }
