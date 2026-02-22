@@ -1,0 +1,416 @@
+---
+import { getCollection, render } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import OscilloscopeDivider from '../../components/OscilloscopeDivider.astro';
+import PCBViewer from '../../components/PCBViewer.astro';
+import { ArrowLeft, ArrowRight } from 'lucide-react';
+
+export async function getStaticPaths() {
+  const projects = await getCollection('projects');
+  return projects.map((project) => ({
+    params: { slug: project.id },
+    props: { project },
+  }));
+}
+
+const { project } = Astro.props;
+const { Content } = await render(project);
+
+// Get prev/next projects
+const allProjects = (await getCollection('projects')).sort((a, b) => a.data.order - b.data.order);
+const currentIndex = allProjects.findIndex((p) => p.id === project.id);
+const prevProject = currentIndex > 0 ? allProjects[currentIndex - 1] : null;
+const nextProject = currentIndex < allProjects.length - 1 ? allProjects[currentIndex + 1] : null;
+---
+
+<BaseLayout
+  title={`${project.data.title} | Omar Mohammed`}
+  description={project.data.description}
+>
+  <article class="pt-32 pb-16 lg:pb-24">
+    <div class="max-w-[var(--max-width-narrow)] mx-auto px-[var(--gutter)] lg:px-[var(--gutter-lg)]">
+      <!-- Back link -->
+      <a
+        href="/projects"
+        class="inline-flex items-center gap-2 text-text-secondary hover:text-green-primary transition-colors mb-8"
+      >
+        <ArrowLeft className="w-4 h-4" />
+        Back to Projects
+      </a>
+
+      <!-- Header -->
+      <header class="mb-8">
+        <h1 class="project-title">
+          {project.data.title}
+        </h1>
+        <p class="project-subtitle">
+          {project.data.subtitle}
+        </p>
+        <div class="project-tags">
+          {project.data.tags.map((tag: string) => (
+            <span class="project-tag">{tag}</span>
+          ))}
+        </div>
+      </header>
+
+      <!-- Hero: 3D Model or Image -->
+      {project.data.model3d ? (
+        <div class="mb-10">
+          <PCBViewer
+            src={project.data.model3d}
+            alt={project.data.title}
+            fallback={project.data.image}
+          />
+        </div>
+      ) : project.data.image && project.data.imageStyle === 'contain' ? (
+        <div class="project-hero-container project-hero-contain">
+          <img
+            src={project.data.image}
+            alt={project.data.title}
+            class="project-hero project-hero-img-contain"
+          />
+        </div>
+      ) : project.data.image ? (
+        <div class="project-hero-container">
+          <img
+            src={project.data.image}
+            alt={project.data.title}
+            class="project-hero project-hero-img-cover"
+          />
+        </div>
+      ) : (
+        <div class="project-hero-placeholder">
+          <span>Project Image</span>
+        </div>
+      )}
+
+      <!-- Overview -->
+      <section class="project-overview-section">
+        <h2 class="project-section-heading">Overview</h2>
+        <div class="project-overview">
+          <Content />
+        </div>
+      </section>
+
+      <!-- Tools -->
+      {project.data.tools && project.data.tools.length > 0 && (
+        <section class="project-tools">
+          <h2 class="project-section-heading">Tools</h2>
+          <div class="tools-list">
+            {project.data.tools.map((tool: string) => (
+              <span class="tool-pill">{tool}</span>
+            ))}
+          </div>
+        </section>
+      )}
+
+      <!-- Tech Specs -->
+      {project.data.techSpecs && Object.keys(project.data.techSpecs).length > 0 && (
+        <section class="project-specs">
+          <h2 class="project-section-heading">Tech Specs</h2>
+          <table class="specs-table">
+            {Object.entries(project.data.techSpecs).map(([key, value]) => (
+              <tr>
+                <td class="specs-key">{key}</td>
+                <td class="specs-value">{value}</td>
+              </tr>
+            ))}
+          </table>
+        </section>
+      )}
+
+      <!-- External Link -->
+      {project.data.github && (
+        <a
+          href={project.data.github}
+          target="_blank"
+          rel="noopener noreferrer"
+          class="project-link"
+        >
+          View on GitHub
+          <span class="arrow">→</span>
+        </a>
+      )}
+    </div>
+  </article>
+
+  <OscilloscopeDivider />
+
+  <!-- Prev/Next navigation -->
+  <nav class="bg-bg-secondary py-12">
+    <div class="max-w-[var(--max-width)] mx-auto px-[var(--gutter)] lg:px-[var(--gutter-lg)]">
+      <div class="grid md:grid-cols-2 gap-6">
+        {prevProject ? (
+          <a
+            href={`/projects/${prevProject.id}`}
+            class="group p-6 bg-bg-card rounded-xl border-2 border-border hover:border-green-primary transition-all hover:translate-x-1"
+          >
+            <span class="text-text-muted text-sm flex items-center gap-2 mb-2">
+              <ArrowLeft className="w-4 h-4" />
+              Previous Project
+            </span>
+            <span class="font-heading text-lg font-medium text-text-primary group-hover:text-green-primary transition-colors">
+              {prevProject.data.title}
+            </span>
+          </a>
+        ) : (
+          <div></div>
+        )}
+
+        {nextProject && (
+          <a
+            href={`/projects/${nextProject.id}`}
+            class="group p-6 bg-bg-card rounded-xl border-2 border-border hover:border-green-primary transition-all hover:-translate-x-1 text-right"
+          >
+            <span class="text-text-muted text-sm flex items-center gap-2 justify-end mb-2">
+              Next Project
+              <ArrowRight className="w-4 h-4" />
+            </span>
+            <span class="font-heading text-lg font-medium text-text-primary group-hover:text-green-primary transition-colors">
+              {nextProject.data.title}
+            </span>
+          </a>
+        )}
+      </div>
+    </div>
+  </nav>
+</BaseLayout>
+
+<style>
+  /* Header */
+  .project-title {
+    font-family: var(--font-heading);
+    font-size: clamp(2rem, 5vw, 3rem);
+    font-weight: 700;
+    color: var(--color-text-primary);
+    margin-bottom: 0.5rem;
+  }
+
+  .project-subtitle {
+    font-family: var(--font-body);
+    font-size: 1rem;
+    color: var(--color-text-secondary);
+    margin-bottom: 1rem;
+  }
+
+  .project-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 2rem;
+  }
+
+  .project-tag {
+    font-family: var(--font-body);
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--color-green-primary);
+    background: var(--color-green-bg);
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+  }
+
+  /* Hero Image */
+  .project-hero-container {
+    max-height: 60vh;
+    border-radius: var(--radius-lg);
+    margin-bottom: 2.5rem;
+    overflow: hidden;
+  }
+
+  /* Transparent PNG style (chip, bluetooth) */
+  .project-hero-contain {
+    aspect-ratio: 16 / 9;
+    background: #E0E0E0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+  }
+
+  .project-hero-img-contain {
+    max-height: 100%;
+    max-width: 100%;
+    object-fit: contain;
+  }
+
+  /* Regular photo style (elevator, etc.) */
+  .project-hero-img-cover {
+    width: 100%;
+    max-height: 60vh;
+    object-fit: cover;
+    object-position: center;
+  }
+
+  .project-hero-placeholder {
+    width: 100%;
+    max-height: 60vh;
+    aspect-ratio: 16 / 10;
+    background: linear-gradient(135deg, var(--color-green-bg), var(--color-bg-secondary));
+    border-radius: var(--radius-lg);
+    margin-bottom: 2.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 3px solid var(--color-border);
+  }
+
+  @media (max-width: 640px) {
+    .project-hero-container {
+      max-height: 50vh;
+    }
+
+    .project-hero-contain {
+      padding: 2rem;
+    }
+
+    .project-hero-placeholder {
+      max-height: 50vh;
+    }
+  }
+
+  .project-hero-placeholder span {
+    color: var(--color-green-primary);
+    font-family: var(--font-heading);
+    font-size: 1.25rem;
+  }
+
+  /* Section Heading */
+  .project-section-heading {
+    font-family: var(--font-body);
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--color-text-primary);
+    margin-bottom: 1rem;
+  }
+
+  /* Overview */
+  .project-overview-section {
+    margin-bottom: 2.5rem;
+  }
+
+  .project-overview {
+    font-family: var(--font-body);
+    font-size: 1rem;
+    color: var(--color-text-primary);
+    line-height: 1.7;
+  }
+
+  .project-overview :global(p) {
+    margin-bottom: 1rem;
+  }
+
+  .project-overview :global(p:last-child) {
+    margin-bottom: 0;
+  }
+
+  .project-overview :global(a) {
+    color: var(--color-green-primary);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    transition: color 0.2s ease;
+  }
+
+  .project-overview :global(a:hover) {
+    color: var(--color-green-hover);
+  }
+
+  /* Tools */
+  .project-tools {
+    margin-bottom: 2.5rem;
+  }
+
+  .tools-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .tool-pill {
+    font-family: var(--font-body);
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--color-green-primary);
+    background: var(--color-green-bg);
+    padding: 0.5rem 1rem;
+    border-radius: 9999px;
+  }
+
+  /* Tech Specs */
+  .project-specs {
+    margin-bottom: 2.5rem;
+  }
+
+  .specs-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .specs-table tr {
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .specs-table tr:last-child {
+    border-bottom: none;
+  }
+
+  .specs-key {
+    font-family: var(--font-body);
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--color-text-secondary);
+    padding: 0.75rem 0;
+    width: 140px;
+    vertical-align: top;
+  }
+
+  .specs-value {
+    font-family: var(--font-body);
+    font-size: 0.875rem;
+    color: var(--color-text-primary);
+    padding: 0.75rem 0;
+  }
+
+  /* External Link */
+  .project-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-family: var(--font-body);
+    font-size: 1rem;
+    font-weight: 500;
+    color: var(--color-green-primary);
+    text-decoration: none;
+    transition: gap 0.2s ease;
+  }
+
+  .project-link:hover {
+    gap: 0.75rem;
+  }
+
+  .project-link .arrow {
+    transition: transform 0.2s ease;
+  }
+
+  .project-link:hover .arrow {
+    transform: translateX(4px);
+  }
+
+  /* Mobile responsive specs */
+  @media (max-width: 768px) {
+    .specs-table tr {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .specs-key {
+      width: 100%;
+      padding-bottom: 0.25rem;
+    }
+
+    .specs-value {
+      padding-top: 0;
+      padding-bottom: 1rem;
+    }
+  }
+</style>

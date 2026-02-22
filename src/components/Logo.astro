@@ -1,0 +1,62 @@
+---
+interface Props {
+  class?: string;
+  height?: number;
+}
+
+const { class: className = '', height = 32 } = Astro.props;
+---
+
+<svg
+  class:list={["logo", className]}
+  viewBox="0 0 100 40"
+  fill="none"
+  xmlns="http://www.w3.org/2000/svg"
+  style={`height: ${height}px; width: auto;`}
+  aria-label="Omar Mohammed - Home"
+>
+  <!-- M letter -->
+  <path
+    d="M4 36V4L17 24L30 4V36"
+    stroke="currentColor"
+    stroke-width="4"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    fill="none"
+  />
+
+  <!-- Connector line -->
+  <line
+    x1="30"
+    y1="20"
+    x2="58"
+    y2="20"
+    stroke="currentColor"
+    stroke-width="4"
+    stroke-linecap="round"
+  />
+
+  <!-- Connection node dot -->
+  <circle cx="58" cy="20" r="3" fill="currentColor" />
+
+  <!-- O circle -->
+  <circle
+    cx="78"
+    cy="20"
+    r="16"
+    stroke="currentColor"
+    stroke-width="4"
+    fill="none"
+  />
+</svg>
+
+<style>
+  .logo {
+    color: var(--color-text-primary);
+    transition: color 0.2s ease;
+  }
+
+  .logo:hover {
+    color: var(--color-green-primary);
+  }
+</style>

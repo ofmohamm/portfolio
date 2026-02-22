@@ -1,0 +1,36 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { Home, ArrowLeft } from 'lucide-react';
+---
+
+<BaseLayout title="Page Not Found | Omar Mohammed">
+  <section class="min-h-[70vh] flex items-center justify-center">
+    <div class="text-center px-[var(--gutter)]">
+      <h1 class="font-heading text-8xl md:text-9xl font-bold text-green-primary mb-4">
+        404
+      </h1>
+      <h2 class="font-heading text-2xl md:text-3xl font-semibold text-text-primary mb-4">
+        Page Not Found
+      </h2>
+      <p class="text-text-secondary text-lg mb-8 max-w-md mx-auto">
+        The page you're looking for doesn't exist or has been moved.
+      </p>
+      <div class="flex flex-wrap justify-center gap-4">
+        <a
+          href="/"
+          class="inline-flex items-center gap-2 px-6 py-3 bg-green-primary text-white font-medium rounded-lg hover:bg-green-hover transition-all"
+        >
+          <Home className="w-5 h-5" />
+          Go Home
+        </a>
+        <button
+          onclick="history.back()"
+          class="inline-flex items-center gap-2 px-6 py-3 border-2 border-green-primary text-green-primary font-medium rounded-lg hover:bg-green-primary hover:text-white transition-all"
+        >
+          <ArrowLeft className="w-5 h-5" />
+          Go Back
+        </button>
+      </div>
+    </div>
+  </section>
+</BaseLayout>

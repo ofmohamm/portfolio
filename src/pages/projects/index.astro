@@ -1,0 +1,145 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ProjectCard from '../../components/ProjectCard.astro';
+import OscilloscopeDivider from '../../components/OscilloscopeDivider.astro';
+
+const allProjects = (await getCollection('projects'))
+  .sort((a, b) => a.data.order - b.data.order);
+
+const categories = [
+  { id: 'all', label: 'All' },
+  { id: 'hardware', label: 'Hardware' },
+  { id: 'fpga', label: 'FPGA' },
+  { id: 'embedded', label: 'Embedded' },
+  { id: 'software', label: 'Software' },
+];
+---
+
+<BaseLayout
+  title="Projects | Omar Mohammed"
+  description="Explore Omar Mohammed's hardware engineering projects including PCB design, FPGA development, and embedded systems."
+>
+  <section class="pt-32 pb-16 lg:pb-24">
+    <div class="max-w-[var(--max-width)] mx-auto px-[var(--gutter)] lg:px-[var(--gutter-lg)]">
+      <div class="text-center mb-12">
+        <h1 class="font-heading text-4xl md:text-5xl font-semibold text-text-primary mb-4">
+          Projects
+        </h1>
+        <div class="w-16 h-0.5 bg-green-primary mx-auto mb-6"></div>
+        <p class="text-text-secondary text-lg max-w-2xl mx-auto">
+          A collection of hardware engineering projects spanning embedded systems, FPGA design, and PCB development.
+        </p>
+      </div>
+
+      <!-- Filter tabs -->
+      <div class="flex flex-wrap justify-center gap-2 mb-12">
+        {categories.map((cat) => (
+          <button
+            class="filter-btn px-4 py-2 text-sm font-medium rounded-full transition-all"
+            data-category={cat.id}
+          >
+            {cat.label}
+          </button>
+        ))}
+      </div>
+
+      <!-- Projects grid -->
+      <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
+        {allProjects.map((project, index) => (
+          <div
+            class="project-item"
+            data-category={project.data.category}
+            style={`--index: ${index}`}
+          >
+            <ProjectCard
+              title={project.data.title}
+              slug={project.id}
+              description={project.data.description}
+              tags={project.data.tags}
+              image={project.data.image}
+              video={project.data.video}
+              hoverEffect={project.data.hoverEffect}
+              imageStyle={project.data.imageStyle}
+            />
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <OscilloscopeDivider />
+</BaseLayout>
+
+<style>
+  .filter-btn {
+    background: transparent;
+    color: var(--color-text-secondary);
+    border: 2px solid var(--color-border);
+  }
+
+  .filter-btn:hover {
+    color: var(--color-green-primary);
+    border-color: var(--color-green-primary);
+  }
+
+  .filter-btn.active {
+    background: var(--color-green-primary);
+    color: white;
+    border-color: var(--color-green-primary);
+  }
+
+  .project-item {
+    opacity: 0;
+    transform: translateY(20px);
+    animation: fade-in 0.5s ease forwards;
+    animation-delay: calc(var(--index) * 0.1s);
+  }
+
+  .project-item.hidden {
+    display: none;
+  }
+
+  @keyframes fade-in {
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .project-item {
+      animation: none;
+      opacity: 1;
+      transform: none;
+    }
+  }
+</style>
+
+<script>
+  const filterButtons = document.querySelectorAll('.filter-btn');
+  const projectItems = document.querySelectorAll('.project-item');
+
+  // Set initial active state
+  filterButtons[0]?.classList.add('active');
+
+  filterButtons.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const category = btn.getAttribute('data-category');
+
+      // Update active button
+      filterButtons.forEach((b) => b.classList.remove('active'));
+      btn.classList.add('active');
+
+      // Filter projects
+      projectItems.forEach((item) => {
+        const itemCategory = item.getAttribute('data-category');
+        if (category === 'all' || itemCategory === category) {
+          item.classList.remove('hidden');
+        } else {
+          item.classList.add('hidden');
+        }
+      });
+    });
+  });
+</script>

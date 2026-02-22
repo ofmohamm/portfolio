@@ -1,0 +1,66 @@
+---
+interface Props {
+  src: string;
+  alt: string;
+  fallback?: string;
+}
+
+const { src, alt, fallback } = Astro.props;
+---
+
+<div class="viewer-container">
+  <model-viewer
+    src={src}
+    alt={alt}
+    camera-controls
+    auto-rotate
+    auto-rotate-delay="2000"
+    rotation-per-second="20deg"
+    shadow-intensity="1"
+    shadow-softness="0.5"
+    exposure="1"
+    camera-orbit="45deg 55deg 0.3m"
+    min-camera-orbit="auto auto 0.2m"
+    max-camera-orbit="auto auto 0.6m"
+    class="pcb-viewer"
+  >
+    {fallback && (
+      <img slot="poster" src={fallback} alt={alt} />
+    )}
+  </model-viewer>
+  <p class="viewer-hint">Drag to rotate · Scroll to zoom</p>
+</div>
+
+<script is:inline src="https://cdn.jsdelivr.net/npm/@google/model-viewer/dist/model-viewer.min.js" type="module"></script>
+
+<style>
+  .viewer-container {
+    position: relative;
+  }
+
+  .pcb-viewer {
+    width: 100%;
+    height: 450px;
+    border-radius: var(--radius-lg);
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+  }
+
+  .pcb-viewer:focus {
+    outline: none;
+  }
+
+  .viewer-hint {
+    text-align: center;
+    font-family: var(--font-body);
+    font-size: 0.75rem;
+    color: var(--color-text-muted);
+    margin-top: 0.5rem;
+  }
+
+  @media (max-width: 768px) {
+    .pcb-viewer {
+      height: 300px;
+    }
+  }
+</style>

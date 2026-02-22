@@ -1,0 +1,132 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import OscilloscopeDivider from '../components/OscilloscopeDivider.astro';
+
+const technicalTags = ['Chip Design', 'Quantum Mechanics', 'Robotics', 'Embedded Systems', 'PCB Design'];
+const personalTags = ['Gym', 'Community Building', 'Startups', 'Leadership'];
+---
+
+<BaseLayout
+  title="About Me | Omar Mohammed"
+  description="Learn about Omar Mohammed's background in electrical engineering, community building, and entrepreneurship."
+>
+  <section class="pt-32 pb-16 lg:pb-24">
+    <div class="max-w-[var(--max-width-narrow)] mx-auto px-[var(--gutter)] lg:px-[var(--gutter-lg)]">
+      <!-- Header with Photo -->
+      <div class="flex flex-col md:flex-row items-center md:items-start gap-6 mb-8">
+        <!-- Profile Photo -->
+        <div class="flex-shrink-0">
+          <img
+            src="/headshot.jpg"
+            alt="Omar Mohammed"
+            class="profile-photo"
+            onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
+          />
+          <div class="profile-fallback" style="display: none;">
+            OM
+          </div>
+        </div>
+
+        <!-- Heading -->
+        <div class="text-center md:text-left">
+          <h1 class="font-heading text-4xl md:text-5xl lg:text-6xl font-bold text-text-primary">
+            Hi, I'm Omar.
+          </h1>
+        </div>
+      </div>
+
+      <!-- Bio -->
+      <p class="text-lg lg:text-xl text-text-primary leading-relaxed mb-6">
+       Indian at heart, engineer by profession, community builder by calling. I'm an electrical engineering student at Syracuse University breaking into chip design because there's something about hardware that just clicks for me. When I'm not buried in circuit simulations or debugging embedded systems, I'm building a startup to empower underprivileged artisans. I also lead the Muslim Students Association, and yes, I will defend pineapple on pizza with my life.      </p>
+
+      <!-- Interests -->
+      <div class="my-10">
+        <h2 class="text-lg font-semibold text-text-primary mb-5">
+          Interests
+        </h2>
+
+        <!-- Technical tags -->
+        <div class="flex flex-wrap gap-3 mb-4">
+          {technicalTags.map((tag) => (
+            <span class="tag-pill">{tag}</span>
+          ))}
+        </div>
+
+        <!-- Personal tags -->
+        <div class="flex flex-wrap gap-3">
+          {personalTags.map((tag) => (
+            <span class="tag-pill">{tag}</span>
+          ))}
+        </div>
+      </div>
+
+      <!-- Oscilloscope Divider 2 -->
+      <OscilloscopeDivider />
+
+      <!-- CTA Section -->
+      <div class="text-center mt-10">
+        <p class="text-lg text-text-secondary leading-relaxed mb-6 max-w-lg mx-auto">
+          Always on the lookout for interesting conversations, collaboration ideas, and opportunities.
+        </p>
+        <a
+          href="mailto:mail.omarmohammed@gmail.com"
+          class="inline-flex items-center gap-2 text-base font-semibold text-white bg-green-primary px-6 py-3 rounded-md transition-all duration-200 hover:bg-green-hover hover:-translate-y-0.5 hover:shadow-lg"
+        >
+          Let's talk
+          <span class="arrow transition-transform duration-200">→</span>
+        </a>
+      </div>
+    </div>
+  </section>
+ß
+
+</BaseLayout>
+
+<style>
+  .profile-photo {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid var(--color-green-primary);
+    box-shadow: 0 4px 20px rgba(45, 90, 61, 0.15);
+  }
+
+  .profile-fallback {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--color-green-primary), var(--color-green-hover));
+    color: white;
+    font-family: var(--font-heading);
+    font-size: 2.5rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 20px rgba(45, 90, 61, 0.2);
+  }
+
+  .tag-pill {
+    font-family: var(--font-body);
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--color-green-primary);
+    background: var(--color-green-bg);
+    padding: 0.5rem 1rem;
+    border-radius: 9999px;
+    border: 1px solid transparent;
+    transition: all 0.2s ease;
+    cursor: default;
+  }
+
+  .tag-pill:hover {
+    background: var(--color-green-primary);
+    color: white;
+    transform: translateY(-2px);
+  }
+
+  a:hover .arrow {
+    transform: translateX(4px);
+  }
+</style>

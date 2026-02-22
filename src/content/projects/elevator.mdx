@@ -1,0 +1,23 @@
+---
+title: "Elevator Control System"
+subtitle: "Syracuse University · September 2025"
+description: "Programmed an elevator controller from scratch on an ATSAMD21 microcontroller. Users request floors via keypad, and the LCD shows real-time position as the elevator moves. 2-second transitions between floors, LEDs for status, buzzer for arrival.
+No Arduino libraries. Everything built at the register level. Timers, interrupts, GPIO, all configured by hand. Tedious but satisfying. Shoutout Sawyer Falkenbush for partnering on this one."
+category: "embedded"
+tags: ["Embedded", "ATSAMD21", "Register-Level"]
+tools: ["MPLAB X", "C"]
+techSpecs:
+  MCU: "ATSAMD21 (ARM Cortex-M0+)"
+  Programming: "Register-level C, no HAL/libraries"
+  Interface: "4x4 keypad input, 16x2 LCD output"
+  Peripherals: "LEDs (floor indicators), buzzer (arrival alert)"
+  Timing: "Interrupt-driven, 2-second floor transitions"
+featured: true
+image: "/images/projects/elevator-controller.jpg"
+hoverEffect: "pop"
+order: 4
+---
+
+Programmed an elevator controller from scratch on an ATSAMD21 microcontroller. Users request floors via keypad, and the LCD shows real-time position as the elevator moves. 2-second transitions between floors, LEDs for status, buzzer for arrival.
+
+No Arduino libraries. Everything built at the register level. Timers, interrupts, GPIO, all configured by hand. Tedious but satisfying. Shoutout [Sawyer Falkenbush](https://www.linkedin.com/in/sawyer-falkenbush/) for partnering on this one.

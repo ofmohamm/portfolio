@@ -1,0 +1,116 @@
+---
+interface Props {
+  class?: string;
+}
+
+const { class: className = '' } = Astro.props;
+---
+
+<div class:list={["divider-container", className]}>
+  <svg
+    class="divider-oscilloscope"
+    viewBox="0 0 200 24"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+    aria-hidden="true"
+  >
+    <!-- ECG/Oscilloscope waveform: baseline → P wave → QRS complex → T wave → baseline -->
+    <!-- Base line -->
+    <path
+      d="M0 12
+         L30 12
+         Q35 12 37 10 Q39 8 41 12
+         L50 12
+         L54 12 L56 14 L58 12
+         L60 12 L62 20 L66 2 L70 16 L72 12
+         L82 12
+         Q87 12 90 9 Q93 6 96 9 Q99 12 104 12
+         L140 12
+         Q145 12 147 10 Q149 8 151 12
+         L160 12
+         L164 12 L166 14 L168 12
+         L170 12 L172 20 L176 2 L180 16 L182 12
+         L192 12
+         Q197 12 200 12"
+      stroke="var(--color-border)"
+      stroke-width="1.5"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      fill="none"
+    />
+
+    <!-- Animated pulse overlay -->
+    <path
+      class="pulse-line"
+      d="M0 12
+         L30 12
+         Q35 12 37 10 Q39 8 41 12
+         L50 12
+         L54 12 L56 14 L58 12
+         L60 12 L62 20 L66 2 L70 16 L72 12
+         L82 12
+         Q87 12 90 9 Q93 6 96 9 Q99 12 104 12
+         L140 12
+         Q145 12 147 10 Q149 8 151 12
+         L160 12
+         L164 12 L166 14 L168 12
+         L170 12 L172 20 L176 2 L180 16 L182 12
+         L192 12
+         Q197 12 200 12"
+      stroke="var(--color-green-primary)"
+      stroke-width="1.5"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      fill="none"
+    />
+  </svg>
+</div>
+
+<style>
+  .divider-container {
+    display: flex;
+    justify-content: center;
+    padding: 3rem 0;
+  }
+
+  .divider-oscilloscope {
+    width: 200px;
+    height: 24px;
+  }
+
+  .pulse-line {
+    stroke-dasharray: 400;
+    stroke-dashoffset: 400;
+    animation: pulse-travel 3s ease-in-out infinite;
+  }
+
+  @keyframes pulse-travel {
+    0% {
+      stroke-dashoffset: 400;
+      opacity: 0;
+    }
+    10% {
+      opacity: 0.6;
+    }
+    50% {
+      opacity: 0.6;
+    }
+    90% {
+      opacity: 0;
+    }
+    100% {
+      stroke-dashoffset: 0;
+      opacity: 0;
+    }
+  }
+
+  /* Reduced motion: show static version */
+  @media (prefers-reduced-motion: reduce) {
+    .pulse-line {
+      animation: none;
+      stroke-dasharray: none;
+      stroke-dashoffset: 0;
+      opacity: 0.4;
+    }
+  }
+</style>

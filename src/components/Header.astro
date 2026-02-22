@@ -1,0 +1,520 @@
+---
+const navLinks = [
+  { href: '/about', label: 'About' },
+  { href: '/projects', label: 'Projects' },
+];
+
+const currentPath = Astro.url.pathname;
+---
+
+<header class="site-header">
+  <!-- DESKTOP NAV - hidden on mobile -->
+  <nav class="nav-desktop">
+    <a href="/" class="nav-logo py-1" aria-label="Home">
+      <img src="/images/logo.png" alt="Omar Mohammed" />
+    </a>
+
+    <div class="nav-links">
+      {navLinks.map((link) => (
+        <a
+          href={link.href}
+          class:list={[
+            "nav-link",
+            currentPath.startsWith(link.href) && "active"
+          ]}
+        >
+          {link.label}
+        </a>
+      ))}
+      <a
+        href="/resume.pdf"
+        class="nav-resume"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        Resume
+      </a>
+    </div>
+
+    <div class="nav-actions">
+      <a
+        href="https://github.com/ofmohamm"
+        class="nav-icon-link"
+        aria-label="GitHub"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+        </svg>
+      </a>
+      <a
+        href="https://linkedin.com/in/ofmohammed"
+        class="nav-icon-link"
+        aria-label="LinkedIn"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/>
+        </svg>
+      </a>
+      <a
+        href="mailto:mail.omarmohammed@gmail.com"
+        class="nav-cta"
+      >
+        Let's talk
+      </a>
+    </div>
+  </nav>
+
+  <!-- MOBILE NAV BAR - hidden on desktop -->
+  <nav class="nav-mobile-bar">
+    <button class="hamburger" id="hamburger" aria-label="Menu" aria-expanded="false">
+      <span></span>
+      <span></span>
+      <span></span>
+    </button>
+
+    <a href="/" class="nav-logo-mobile" aria-label="Home">
+      <img src="/images/logo.png" alt="Omar Mohammed" />
+    </a>
+
+    <!-- Empty spacer for centering -->
+    <div class="nav-spacer"></div>
+  </nav>
+
+  <!-- MOBILE FULL-SCREEN MENU -->
+  <div class="mobile-menu" id="mobileMenu" aria-hidden="true">
+    <!-- Logo at top of full-screen menu -->
+    <div class="mobile-menu-header">
+      <a href="/" aria-label="Home">
+        <img src="/images/logo.png" alt="Omar Mohammed" class="mobile-menu-logo" />
+      </a>
+    </div>
+
+    <nav class="mobile-menu-content">
+      <a href="/about">About</a>
+      <a href="/projects">Projects</a>
+      <a href="/resume.pdf" target="_blank" rel="noopener noreferrer">Resume</a>
+
+      <div class="mobile-menu-divider"></div>
+
+      <a href="https://github.com/ofmohamm" class="mobile-menu-icon-link" target="_blank" rel="noopener noreferrer">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+        </svg>
+        GitHub
+      </a>
+
+      <a href="https://linkedin.com/in/ofmohammed" class="mobile-menu-icon-link" target="_blank" rel="noopener noreferrer">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/>
+        </svg>
+        LinkedIn
+      </a>
+
+      <a href="mailto:mail.omarmohammed@gmail.com" class="mobile-menu-cta">Let's talk</a>
+    </nav>
+  </div>
+</header>
+
+<style>
+  /* ============================================
+     CSS VARIABLES & HEADER BASE
+     ============================================ */
+  .site-header {
+    --header-height: 64px;
+    --header-height-mobile: 56px;
+    --z-header: 100;
+    --z-menu: 200;
+
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: var(--z-header);
+    background: #FAF9F6;
+  }
+
+  /* ============================================
+     DESKTOP NAV (visible by default)
+     ============================================ */
+  .nav-desktop {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: var(--header-height);
+    padding: 0 1.5rem;
+    max-width: var(--max-width);
+    margin: 0 auto;
+  }
+
+  @media (min-width: 1024px) {
+    .nav-desktop {
+      padding: 0 3rem;
+    }
+  }
+
+  .nav-logo {
+    display: inline-block;
+    text-decoration: none;
+    transition: transform 0.3s ease;
+  }
+
+  .nav-logo img {
+    height: 36px;
+    width: auto;
+    transition: filter 0.3s ease, transform 0.3s ease;
+  }
+
+  .nav-logo:hover {
+    transform: translateY(-2px);
+  }
+
+  .nav-logo:hover img {
+    filter: drop-shadow(0 0 8px rgba(46, 83, 57, 0.4));
+  }
+
+  .nav-links {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+  }
+
+  .nav-link {
+    font-family: var(--font-body);
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--color-text-primary);
+    text-decoration: none;
+    padding: 0.5rem 0.75rem;
+    transition: color 0.2s ease;
+  }
+
+  .nav-link:hover,
+  .nav-link.active {
+    color: var(--color-green-primary);
+  }
+
+  .nav-resume {
+    font-family: var(--font-body);
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--color-green-primary);
+    background: transparent;
+    border: 2px solid var(--color-green-primary);
+    border-radius: var(--radius-md);
+    padding: 0.5rem 1rem;
+    text-decoration: none;
+    transition: all 0.2s ease;
+  }
+
+  .nav-resume:hover {
+    background: var(--color-green-primary);
+    color: white;
+  }
+
+  .nav-actions {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .nav-icon-link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    color: var(--color-text-secondary);
+    transition: color 0.2s ease;
+  }
+
+  .nav-icon-link:hover {
+    color: var(--color-green-primary);
+  }
+
+  .nav-icon-link svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .nav-cta {
+    font-family: var(--font-body);
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: white;
+    background: var(--color-green-primary);
+    border: none;
+    border-radius: var(--radius-md);
+    padding: 0.5rem 1rem;
+    text-decoration: none;
+    transition: background 0.2s ease, transform 0.2s ease;
+  }
+
+  .nav-cta:hover {
+    background: var(--color-green-hover);
+    transform: translateY(-2px);
+  }
+
+  /* ============================================
+     MOBILE NAV BAR (hidden by default)
+     ============================================ */
+  .nav-mobile-bar {
+    display: none;
+  }
+
+  /* ============================================
+     MOBILE MENU (hidden by default)
+     ============================================ */
+  .mobile-menu {
+    display: none;
+  }
+
+  /* ============================================
+     MOBILE BREAKPOINT
+     ============================================ */
+  @media (max-width: 768px) {
+    /* Hide desktop nav */
+    .nav-desktop {
+      display: none !important;
+    }
+
+    /* Show mobile nav bar */
+    .nav-mobile-bar {
+      display: flex !important;
+      align-items: center;
+      justify-content: space-between;
+      height: var(--header-height-mobile);
+      padding: 0 1rem;
+    }
+
+    /* Hamburger button */
+    .hamburger {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 5px;
+      width: 40px;
+      height: 40px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 8px;
+      z-index: calc(var(--z-menu) + 1);
+      position: relative;
+    }
+
+    .hamburger span {
+      display: block;
+      width: 24px;
+      height: 2px;
+      background: var(--color-text-primary);
+      border-radius: 2px;
+      transition: transform 0.3s ease, opacity 0.3s ease;
+    }
+
+    /* Hamburger → X animation */
+    .hamburger.is-open span:nth-child(1) {
+      transform: rotate(45deg) translate(5px, 5px);
+    }
+
+    .hamburger.is-open span:nth-child(2) {
+      opacity: 0;
+    }
+
+    .hamburger.is-open span:nth-child(3) {
+      transform: rotate(-45deg) translate(5px, -5px);
+    }
+
+    /* Mobile logo - centered */
+    .nav-logo-mobile {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+
+    .nav-logo-mobile img {
+      height: 28px;
+      width: auto;
+    }
+
+    /* Spacer for flex alignment */
+    .nav-spacer {
+      width: 40px;
+    }
+
+    /* ================================
+       FULL-SCREEN MOBILE MENU
+       ================================ */
+    .mobile-menu {
+      display: block;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: #FAF9F6;
+      z-index: var(--z-menu);
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.3s ease, visibility 0.3s ease;
+    }
+
+    .mobile-menu.is-open {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    /* Logo at top of menu */
+    .mobile-menu-header {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: var(--header-height-mobile);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .mobile-menu-logo {
+      height: 28px;
+      width: auto;
+    }
+
+    /* Menu content - centered */
+    .mobile-menu-content {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      gap: 24px;
+      padding: 24px;
+    }
+
+    /* Menu links */
+    .mobile-menu-content > a {
+      color: var(--color-text-primary);
+      text-decoration: none;
+      font-family: var(--font-heading);
+      font-size: 28px;
+      font-weight: 600;
+      transition: color 0.2s ease;
+    }
+
+    .mobile-menu-content > a:hover {
+      color: var(--color-green-primary);
+    }
+
+    /* Divider */
+    .mobile-menu-divider {
+      width: 60px;
+      height: 1px;
+      background: var(--color-border);
+      margin: 8px 0;
+    }
+
+    /* Icon links (GitHub, LinkedIn) */
+    .mobile-menu-icon-link {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      color: var(--color-text-primary);
+      text-decoration: none;
+      font-family: var(--font-body);
+      font-size: 20px;
+      font-weight: 500;
+      transition: color 0.2s ease;
+    }
+
+    .mobile-menu-icon-link:hover {
+      color: var(--color-green-primary);
+    }
+
+    .mobile-menu-icon-link svg {
+      width: 24px;
+      height: 24px;
+      flex-shrink: 0;
+    }
+
+    /* CTA Button - matches desktop nav-cta */
+    .mobile-menu-cta {
+      display: inline-block;
+      background: var(--color-green-primary);
+      color: white !important;
+      padding: 0.5rem 1rem;
+      border-radius: var(--radius-md);
+      font-family: var(--font-body);
+      font-size: 0.875rem;
+      font-weight: 600;
+      text-decoration: none;
+      margin-top: 16px;
+      transition: background 0.2s ease, transform 0.2s ease;
+    }
+
+    .mobile-menu-cta:hover {
+      background: var(--color-green-hover);
+      transform: translateY(-2px);
+    }
+  }
+</style>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const hamburger = document.getElementById('hamburger');
+    const menu = document.getElementById('mobileMenu');
+
+    if (!hamburger || !menu) return;
+
+    function openMenu() {
+      hamburger.classList.add('is-open');
+      hamburger.setAttribute('aria-expanded', 'true');
+      menu.classList.add('is-open');
+      menu.setAttribute('aria-hidden', 'false');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeMenu() {
+      hamburger.classList.remove('is-open');
+      hamburger.setAttribute('aria-expanded', 'false');
+      menu.classList.remove('is-open');
+      menu.setAttribute('aria-hidden', 'true');
+      document.body.style.overflow = '';
+    }
+
+    function toggleMenu() {
+      if (menu.classList.contains('is-open')) {
+        closeMenu();
+      } else {
+        openMenu();
+      }
+    }
+
+    // Toggle on hamburger click
+    hamburger.addEventListener('click', toggleMenu);
+
+    // Close menu and navigate when link clicked
+    menu.querySelectorAll('a').forEach(link => {
+      link.addEventListener('click', () => {
+        closeMenu();
+      });
+    });
+
+    // Close on Escape key
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && menu.classList.contains('is-open')) {
+        closeMenu();
+      }
+    });
+
+    // Close on resize to desktop
+    window.addEventListener('resize', () => {
+      if (window.innerWidth > 768) {
+        closeMenu();
+      }
+    });
+  });
+</script>

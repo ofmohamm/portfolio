@@ -1,0 +1,275 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import ProjectCard from '../components/ProjectCard.astro';
+import OscilloscopeDivider from '../components/OscilloscopeDivider.astro';
+import InteractiveBackground from '../components/InteractiveBackground';
+import MorphingText from '../components/MorphingText';
+
+const featuredProjects = (await getCollection('projects'))
+  .filter((project) => project.data.featured)
+  .sort((a, b) => a.data.order - b.data.order)
+  .slice(0, 4);
+---
+
+<BaseLayout title="Omar Mohammed | Electrical Engineering Student">
+  <!-- Hero Section -->
+  <section id="hero" class="snap-section min-h-screen flex items-center relative overflow-hidden">
+    <!-- Interactive particle background -->
+    <InteractiveBackground client:load />
+
+    <div class="max-w-[var(--max-width)] mx-auto px-[var(--gutter)] lg:px-[var(--gutter-lg)] py-16 lg:py-24 w-full relative z-10">
+      <div class="flex flex-col items-center text-center min-h-[60vh] justify-center">
+        <!-- Main statement -->
+        <h1 class="hero-tagline hero-animate">
+          Building what's next.
+        </h1>
+
+        <!-- Morphing role -->
+        <div class="hero-role hero-animate hero-delay-1">
+          <MorphingText
+            client:load
+            words={['ENGINEER', 'ENTREPRENEUR', 'BUILDER']}
+            interval={3000}
+          />
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <OscilloscopeDivider />
+
+  <!-- About Preview Section -->
+  <section id="about" class="about-preview-section relative">
+    <div class="max-w-[var(--max-width-narrow)] mx-auto px-[var(--gutter)] lg:px-[var(--gutter-lg)] relative z-10">
+      <div class="flex flex-col md:flex-row items-center md:items-start gap-8">
+        <!-- Profile Photo -->
+        <div class="flex-shrink-0">
+          <img
+            src="/headshot.jpg"
+            alt="Omar Mohammed"
+            class="profile-photo"
+            onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
+          />
+          <div class="profile-fallback" style="display: none;">
+            OM
+          </div>
+        </div>
+
+        <!-- Text Content -->
+        <div class="text-center md:text-left">
+          <h2 class="font-heading text-3xl md:text-4xl lg:text-5xl font-bold text-text-primary mb-4">
+            Hi, I'm Omar.
+          </h2>
+          <p class="text-lg lg:text-xl text-text-secondary leading-relaxed mb-6">
+            Indian at heart, engineer by profession, community builder by calling.
+          </p>
+          <a
+            href="/about"
+            class="inline-flex items-center gap-2 text-base font-medium text-green-primary hover:gap-3 transition-all"
+          >
+            More about me
+            <span class="transition-transform group-hover:translate-x-1">→</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <OscilloscopeDivider />
+
+  <!-- Featured Projects Section -->
+  <section id="projects" class="snap-section py-16 lg:py-24">
+    <div class="max-w-[var(--max-width)] mx-auto px-[var(--gutter)] lg:px-[var(--gutter-lg)]">
+      <div class="text-center mb-12">
+        <h2 class="font-heading text-3xl md:text-4xl font-semibold text-text-primary mb-4">
+          Projects
+        </h2>
+        <div class="w-16 h-0.5 bg-green-primary mx-auto"></div>
+      </div>
+
+      <div class="grid md:grid-cols-2 gap-6 lg:gap-8 mb-12">
+        {featuredProjects.map((project, index) => (
+          <div class="project-fade" style={`--index: ${index}`}>
+            <ProjectCard
+              title={project.data.title}
+              slug={project.id}
+              description={project.data.description}
+              tags={project.data.tags}
+              image={project.data.image}
+              video={project.data.video}
+              hoverEffect={project.data.hoverEffect}
+              imageStyle={project.data.imageStyle}
+              featured={true}
+            />
+          </div>
+        ))}
+      </div>
+
+      <div class="text-center">
+        <a
+          href="/projects"
+          class="inline-flex items-center gap-2 text-green-primary font-medium hover:text-green-hover transition-colors link-animated"
+        >
+          View all projects
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <OscilloscopeDivider />
+</BaseLayout>
+
+<style>
+  /* ============================================
+     HERO SECTION - v3.7
+     ============================================ */
+
+  /* Section snap */
+  .snap-section {
+    min-height: 100vh;
+    position: relative;
+  }
+
+  /* Tagline - Serif, largest */
+  .hero-tagline {
+    font-family: var(--font-serif);
+    font-weight: 700;
+    font-size: clamp(2.5rem, 8vw, 5rem);  /* 40px → 80px */
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    color: var(--color-text-primary);
+    margin: 0;
+  }
+
+  /* Role - Mono, green, morphing */
+  .hero-role {
+    font-family: var(--font-mono);
+    font-weight: 500;
+    font-size: clamp(1.25rem, 3vw, 1.75rem);  /* 20px → 28px */
+    color: var(--color-green-primary);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-top: 1.5rem;  /* 24px gap from tagline */
+  }
+
+  /* Mobile */
+  @media (max-width: 640px) {
+    .hero-tagline {
+      font-size: 2.5rem;  /* 40px */
+    }
+
+    .hero-role {
+      font-size: 1rem;  /* 16px */
+      letter-spacing: 0.1em;
+    }
+  }
+
+  /* About Preview Section */
+  .about-preview-section {
+    min-height: auto;
+    padding: 4rem 0;  /* 64px top and bottom */
+  }
+
+  .about-preview-section::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(
+      ellipse at center,
+      var(--color-green-bg) 0%,
+      transparent 70%
+    );
+    opacity: 0.6;
+    pointer-events: none;
+  }
+
+  .profile-photo {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid var(--color-green-primary);
+    box-shadow: 0 4px 20px rgba(45, 90, 61, 0.15);
+  }
+
+  .profile-fallback {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--color-green-primary), var(--color-green-hover));
+    color: white;
+    font-family: var(--font-heading);
+    font-size: 2.5rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto;
+    box-shadow: 0 4px 20px rgba(45, 90, 61, 0.2);
+  }
+
+  /* Hero animations */
+  .hero-animate {
+    opacity: 0;
+    transform: translateY(20px);
+    animation: hero-fade-in 0.6s ease forwards;
+  }
+
+  .hero-delay-1 { animation-delay: 0.2s; }
+  .hero-delay-2 { animation-delay: 0.4s; }
+  .hero-delay-3 { animation-delay: 0.6s; }
+  .hero-delay-4 { animation-delay: 0.8s; }
+
+  @keyframes hero-fade-in {
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* Project fade in on scroll */
+  .project-fade {
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.5s ease, transform 0.5s ease;
+    transition-delay: calc(var(--index) * 0.1s);
+  }
+
+  .project-fade.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .hero-animate {
+      animation: none;
+      opacity: 1;
+      transform: none;
+    }
+
+    .project-fade {
+      opacity: 1;
+      transform: none;
+      transition: none;
+    }
+  }
+</style>
+
+<script>
+  // Intersection Observer for scroll animations
+  const observer = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+        }
+      });
+    },
+    { threshold: 0.2 }
+  );
+
+  document.querySelectorAll('.project-fade').forEach((el) => {
+    observer.observe(el);
+  });
+</script>
