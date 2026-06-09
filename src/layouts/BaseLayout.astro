@@ -3,7 +3,7 @@ import '../styles/global.css';
 import Header from '../components/Header.astro';
 import CustomCursor from '../components/CustomCursor';
 import Footer from '../components/Footer.astro';
-import SmoothScroll from '../components/SmoothScroll.astro';
+import Sidebar from '../components/Sidebar.astro';
 
 interface Props {
   title: string;
@@ -13,7 +13,7 @@ interface Props {
 
 const {
   title,
-  description = "Electrical engineering student at Syracuse University specializing in embedded systems, FPGA design, and PCB development.",
+  description = "Hardware design focused EE student at Syracuse University. FPGA accelerators (Vivado, SystemVerilog, VHDL), embedded firmware (C/C++, LoRaWAN), and PCB design (KiCad).",
   image = "/og-image.png"
 } = Astro.props;
 
@@ -34,11 +34,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || 'https://omarmoha
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Source+Sans+3:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
-
-    <!-- Geist fonts from Vercel -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/geist@1.2.0/dist/fonts/geist-sans/style.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/geist@1.2.0/dist/fonts/geist-mono/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&family=Playfair+Display:wght@400;500;600;700&display=swap" rel="stylesheet" />
 
     <!-- Open Graph -->
     <meta property="og:title" content={title} />
@@ -59,23 +55,29 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || 'https://omarmoha
     <title>{title}</title>
 
     <!-- Structured Data -->
-    <script type="application/ld+json">
-      {
-        "@context": "https://schema.org",
-        "@type": "Person",
-        "name": "Omar Mohammed",
-        "jobTitle": "Electrical Engineering Student",
-        "affiliation": {
-          "@type": "CollegeOrUniversity",
-          "name": "Syracuse University"
-        },
-        "url": "https://omarmohammed.com",
-        "sameAs": [
-          "https://linkedin.com/in/ofmohammed",
-          "https://github.com/ofmohamm"
-        ]
-      }
-    </script>
+    <script type="application/ld+json" set:html={JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "Person",
+      "name": "Omar Mohammed",
+      "jobTitle": "Electrical Engineering Student",
+      "description": "Hardware design focused EE student. FPGA accelerators, embedded firmware, PCB design.",
+      "knowsAbout": ["FPGA", "RTL", "SystemVerilog", "VHDL", "Embedded Systems", "PCB Design", "KiCad", "LoRaWAN", "C", "C++"],
+      "affiliation": {
+        "@type": "CollegeOrUniversity",
+        "name": "Syracuse University"
+      },
+      "address": {
+        "@type": "PostalAddress",
+        "addressLocality": "Syracuse",
+        "addressRegion": "NY",
+        "addressCountry": "US"
+      },
+      "url": "https://omarmohammed.co",
+      "sameAs": [
+        "https://linkedin.com/in/ofmohammed",
+        "https://github.com/ofmohamm"
+      ]
+    })} />
   </head>
   <body class="min-h-screen flex flex-col">
     <!-- Grain texture overlay -->
@@ -87,16 +89,23 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || 'https://omarmoha
     <!-- Header with navigation -->
     <Header />
 
+    <!-- Side socials -->
+    <Sidebar />
+
     <!-- Custom cursor -->
     <CustomCursor client:load />
-
-    <!-- Smooth scroll -->
-    <SmoothScroll />
 
     <main id="main-content" class="flex-1">
       <slot />
     </main>
 
     <Footer />
+
+    <!-- Global model-viewer loader (used by PCBViewer) -->
+    <script>
+      if (!customElements.get('model-viewer')) {
+        import('@google/model-viewer');
+      }
+    </script>
   </body>
 </html>
