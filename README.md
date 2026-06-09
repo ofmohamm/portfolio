@@ -1,31 +1,20 @@
 # Omar Mohammed
 
-My portfolio wesbite. Thought this would be a cool way to showcase what I've worked on so far. Will try to keep this updated.
+My portfolio website. Simple place to show the hardware projects I'm working on and the stuff I've built so far.
 
-**Check it out:** [omarmohammed.co](https://www.omarmohammed.co)
+Vibe coded with [Conductor](https://conductor.build/) and Claude Code.
 
----
-
-## Run Locally
-
-```bash
-git clone https://github.com/ofmohamm/portfolio.git
-cd portfolio
-npm install
-npm run dev
-```
+**Check it out:** [omarmohammed.co](https://omarmohammed.co)
 
 ---
 
 ## What's On The Site
 
-**UFONet Sensor Node** — PCB I designed for flood monitoring. LoRaWAN, thermal cameras, GPS. Currently sitting outside in the rain doing its job.
+**FPGA Neural Network Accelerator** — Mapping CNN and Mamba RNN models onto AMD Versal FPGAs for power-efficient inference.
 
-**4-Bit CPU** — Built a CPU from scratch in VHDL. Custom instruction set. Watching it execute instructions I wrote hits different.
+**Flood Detection Sensor PCB** — Battery-powered flood monitor for urban areas. Thermal imaging, environmental sensing, LoRa, and a 3D PCB viewer.
 
-**Elevator Controller** — 10-floor system on an ATSAMD21. No Arduino hand-holding. Just me, the datasheet, and registers.
-
-**Bluetooth Messenger** — Text your phone from a keypad. Nokia energy.
+**SOQ v1** — Kinect-audio tracking system that estimates sound direction from the mic array.
 
 ---
 
