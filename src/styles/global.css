@@ -28,8 +28,8 @@
   /* Fonts */
   --font-serif: 'Playfair Display', Georgia, serif;
   --font-heading: 'Playfair Display', Georgia, serif;
-  --font-sans: 'Geist Sans', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-body: 'Geist Sans', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-sans: 'Geist', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-body: 'Geist', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
   --font-mono: 'Geist Mono', 'SF Mono', 'JetBrains Mono', Consolas, monospace;
 
   /* Shadows */

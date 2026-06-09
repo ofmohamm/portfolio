@@ -1,254 +1,899 @@
 ---
-import { getCollection } from 'astro:content';
 import BaseLayout from '../layouts/BaseLayout.astro';
-import ProjectCard from '../components/ProjectCard.astro';
-import OscilloscopeDivider from '../components/OscilloscopeDivider.astro';
 import InteractiveBackground from '../components/InteractiveBackground';
-import MorphingText from '../components/MorphingText';
+import PCBViewer from '../components/PCBViewer.astro';
 
-const featuredProjects = (await getCollection('projects'))
-  .filter((project) => project.data.featured)
-  .sort((a, b) => a.data.order - b.data.order)
-  .slice(0, 4);
+const projects = [
+  {
+    id: 'flood-pcb',
+    name: 'Flood Detection Sensor PCB',
+    subtitle: 'CHaRTS Research Lab · Syracuse University · Summer 2025',
+    oneLiner: 'A battery-powered flood monitor for urban areas. It does thermal imaging, environmental sensing, and pushes data over LoRa.',
+    poster: '/images/posters/flood-sensor-pcb.jpg',
+    model3d: '/models/flood-sensor-pcb.glb',
+    tech: ['KiCad', 'PCB', 'LoRaWAN'],
+    github: 'https://github.com/ofmohamm/SU-WaterCam-PCB',
+    body: [
+      'Custom 2-layer PCB for a battery-powered flood monitoring system. Integrates a FLIR Lepton thermal camera, BNO055 IMU, mDot LoRaWAN radio, and Witty Pi 4 power management for remote urban deployment.',
+      'First PCB I designed. Taught myself KiCad and went from schematic to fabrication-ready Gerbers in a few weeks. Mentored by Dr. Elizabeth Carter and Manu Shergill.',
+    ],
+    specs: {
+      Board: '2-layer, 0.25mm signal / 0.5mm power traces',
+      Power: '3.3V + 5V rails, Witty Pi 4 power management',
+      Comms: 'LoRaWAN (mDot module), I²C, UART',
+      Sensors: 'FLIR Lepton thermal camera, BNO055 IMU',
+    },
+  },
+  {
+    id: 'soq-v1',
+    name: 'SOQ v1',
+    subtitle: 'Personal project · 2025',
+    oneLiner: 'A Kinect-audio tracking system that estimates sound direction from the mic array.',
+    video: '/videos/kinect-dashboard.mp4',
+    poster: '/images/posters/kinect-dashboard.jpg',
+    tech: ['C++', 'Python', 'DSP'],
+    github: 'https://github.com/ofmohamm',
+    body: [
+      'Live dashboard that tracks the direction of an audio source in real time using the four-microphone array on the Kinect 360. Beamforming and time-of-arrival across the array feed an angle estimate, surfaced as a live indicator on screen.',
+    ],
+    specs: {
+      Input: 'Kinect 360 4-mic array',
+      Signal: 'TDOA + steered-response beam-forming',
+      Stack: 'C++ DSP core, Python visualization',
+    },
+  },
+];
+
+const featuredProject = {
+  name: 'FPGA Neural Network Accelerator',
+  status: 'In progress',
+  oneLiner: "I'm mapping CNN and Mamba RNN models onto AMD Versal FPGAs to run power-efficient inference. The work covers two fronts: RF signal detection and building energy modeling.",
+  tech: ['Vitis AI', 'Vitis HLS', 'Vivado', 'C++/HLS', 'Verilog'],
+};
+
+const skills = [
+  { label: 'FPGA / RTL', items: ['Vivado', 'Vitis AI', 'Vitis HLS', 'VHDL', 'SystemVerilog'] },
+  { label: 'Languages', items: ['Python', 'C', 'C++'] },
+  { label: 'PCB', items: ['KiCad'] },
+];
 ---
 
-<BaseLayout title="Omar Mohammed | Engineer, Entrepreneur, Builder">
-  <!-- Hero Section -->
-  <section id="hero" class="snap-section min-h-screen flex items-center relative overflow-hidden">
-    <!-- Interactive particle background -->
+<BaseLayout
+  title="Omar Mohammed — FPGA, embedded firmware, PCB design"
+  description="Hardware design focused EE student at Syracuse. FPGA accelerators (Vivado, SystemVerilog, VHDL), embedded firmware (C/C++, LoRaWAN), and PCB design (KiCad)."
+>
+  <!-- ============ HERO ============ -->
+  <section id="hero" class="snap-section hero">
     <InteractiveBackground client:load />
 
-    <div class="max-w-[var(--max-width)] mx-auto px-[var(--gutter)] lg:px-[var(--gutter-lg)] py-16 lg:py-24 w-full relative z-10">
-      <div class="flex flex-col items-center text-center min-h-[60vh] justify-center">
-        <!-- Main statement -->
-        <h1 class="hero-tagline hero-animate">
-          Building what's next.
-        </h1>
+    <div class="hero-inner">
+      <div class="hero-grid">
+        <img class="hero-avatar" src="/headshot.jpg" alt="Omar Mohammed" />
 
-        <!-- Morphing role -->
-        <div class="hero-role hero-animate hero-delay-1">
-          <MorphingText
-            client:load
-            words={['ENGINEER', 'ENTREPRENEUR', 'BUILDER']}
-            interval={3000}
-          />
-        </div>
-      </div>
-    </div>
-  </section>
+        <div class="hero-text">
+          <h1 class="hero-name">
+            <span>Omar</span>
+            <span>Mohammed</span>
+          </h1>
 
-  <OscilloscopeDivider />
-
-  <!-- About Preview Section -->
-  <section id="about" class="about-preview-section relative">
-    <div class="max-w-[var(--max-width-narrow)] mx-auto px-[var(--gutter)] lg:px-[var(--gutter-lg)] relative z-10">
-      <div class="flex flex-col md:flex-row items-center md:items-start gap-8">
-        <!-- Profile Photo -->
-        <div class="flex-shrink-0">
-          <img
-            src="/headshot.jpg"
-            alt="Omar Mohammed"
-            class="profile-photo"
-            onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
-          />
-          <div class="profile-fallback" style="display: none;">
-            OM
-          </div>
-        </div>
-
-        <!-- Text Content -->
-        <div class="text-center md:text-left">
-          <h2 class="font-heading text-3xl md:text-4xl lg:text-5xl font-bold text-text-primary mb-4">
-            Hi, I'm Omar.
-          </h2>
-          <p class="text-lg lg:text-xl text-text-secondary leading-relaxed mb-6">
-            Indian at heart, engineer by profession, community builder by calling.
+          <p class="hero-positioning">
+            <span>Hardware design focused EE student.</span>
+            <span>FPGA accelerators, embedded firmware, PCB design.</span>
           </p>
-          <a
-            href="/about"
-            class="inline-flex items-center gap-2 text-base font-medium text-green-primary hover:gap-3 transition-all"
-          >
-            More about me
-            <span class="transition-transform group-hover:translate-x-1">→</span>
-          </a>
         </div>
+      </div>
+    </div>
+
+    <a href="#projects" class="hero-scroll-cue" aria-label="Scroll to projects">
+      <span class="scroll-cue-label">scroll</span>
+      <svg class="scroll-cue-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="6 9 12 15 18 9"></polyline>
+      </svg>
+    </a>
+  </section>
+
+  <!-- ============ PROJECTS ============ -->
+  <section id="projects" class="content-section reveal">
+    <div class="content-inner">
+      <h2 class="section-label">Projects</h2>
+
+      <div class="work-stack">
+        <article class="project-card featured-work-card" data-project="fpga-accelerator">
+          <div class="project-body">
+            <div class="project-title-row">
+              <h3 class="project-title">{featuredProject.name}</h3>
+              <span class="tag-in-progress">
+                <span class="tag-dot" aria-hidden="true"></span>
+                {featuredProject.status}
+              </span>
+            </div>
+            <p class="project-one-liner">{featuredProject.oneLiner}</p>
+
+            <div class="tech-row">
+              {featuredProject.tech.map((t) => <span class="tech-pill">{t}</span>)}
+            </div>
+          </div>
+        </article>
+
+        {projects.map((p) => (
+          <article class="project-card" data-project={p.id}>
+            <div class="project-media-wrap" data-media={p.model3d ? '3d' : 'video'}>
+              {p.model3d && !p.video ? (
+                <PCBViewer
+                  src={p.model3d}
+                  alt={`${p.name} 3D model`}
+                  fallback={p.poster}
+                  disableZoom
+                  hint="Drag to rotate"
+                  cameraOrbit="45deg 55deg 0.2m"
+                  minCameraOrbit="auto auto 0.18m"
+                  maxCameraOrbit="auto auto 0.45m"
+                />
+              ) : (
+                <video
+                  class="project-video"
+                  src={p.video}
+                  poster={p.poster}
+                  muted
+                  loop
+                  playsinline
+                  preload="metadata"
+                  autoplay
+                  aria-label={`${p.name} demo video`}
+                ></video>
+              )}
+            </div>
+
+            <div class="project-body">
+              <h3 class="project-title">{p.name}</h3>
+              <p class="project-one-liner">{p.oneLiner}</p>
+
+              <div class="tech-row">
+                {p.tech.map((t) => <span class="tech-pill">{t}</span>)}
+              </div>
+
+              <div class="project-actions">
+                <button class="project-details-btn" data-open={p.id}>
+                  Details
+                </button>
+                <a class="project-gh" href={p.github} target="_blank" rel="noopener noreferrer">
+                  GitHub
+                  <span class="cta-arrow" aria-hidden="true">↗</span>
+                </a>
+              </div>
+            </div>
+          </article>
+        ))}
       </div>
     </div>
   </section>
 
-  <OscilloscopeDivider />
+  <!-- ============ SKILLS ============ -->
+  <section id="skills" class="content-section reveal">
+    <div class="content-inner">
+      <h2 class="section-label">Skills</h2>
 
-  <!-- Featured Projects Section -->
-  <section id="projects" class="snap-section py-16 lg:py-24">
-    <div class="max-w-[var(--max-width)] mx-auto px-[var(--gutter)] lg:px-[var(--gutter-lg)]">
-      <div class="text-center mb-12">
-        <h2 class="font-heading text-3xl md:text-4xl font-semibold text-text-primary mb-4">
-          Projects
-        </h2>
-        <div class="w-16 h-0.5 bg-green-primary mx-auto"></div>
-      </div>
-
-      <div class="grid md:grid-cols-2 gap-6 lg:gap-8 mb-12">
-        {featuredProjects.map((project, index) => (
-          <div class="project-fade" style={`--index: ${index}`}>
-            <ProjectCard
-              title={project.data.title}
-              slug={project.id}
-              description={project.data.description}
-              tags={project.data.tags}
-              image={project.data.image}
-              video={project.data.video}
-              hoverEffect={project.data.hoverEffect}
-              imageStyle={project.data.imageStyle}
-              featured={true}
-            />
+      <div class="skills-sheet">
+        {skills.map((s) => (
+          <div class="skill-row">
+            <div class="skill-row-label">{s.label}</div>
+            <div class="skill-row-items">
+              {s.items.map((i, idx) => (
+                <>
+                  {idx > 0 && <span class="skill-sep" aria-hidden="true">·</span>}
+                  <span class="skill-item">{i}</span>
+                </>
+              ))}
+            </div>
           </div>
         ))}
       </div>
-
-      <div class="text-center">
-        <a
-          href="/projects"
-          class="inline-flex items-center gap-2 text-green-primary font-medium hover:text-green-hover transition-colors link-animated"
-        >
-          View all projects
-        </a>
-      </div>
     </div>
   </section>
 
-  <OscilloscopeDivider />
+  <!-- ============ PROJECT MODALS ============ -->
+  {projects.map((p) => (
+    <dialog class="project-modal" id={`modal-${p.id}`} aria-labelledby={`modal-${p.id}-title`}>
+      <div class="modal-inner">
+        <div class="modal-head">
+          <div class="modal-head-text">
+            <h3 id={`modal-${p.id}-title`} class="modal-title">{p.name}</h3>
+            <p class="modal-subtitle">{p.subtitle}</p>
+          </div>
+          <button class="modal-close" data-close aria-label="Close (Esc)">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18"/>
+              <line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
+        </div>
+
+        {p.model3d ? (
+          <div class="modal-media">
+            <PCBViewer src={p.model3d} alt={`${p.name} 3D model`} fallback={p.poster} />
+          </div>
+        ) : (
+          <div class="modal-media">
+            <video
+              class="modal-video"
+              src={p.video}
+              poster={p.poster}
+              muted
+              loop
+              playsinline
+              preload="metadata"
+              autoplay
+            ></video>
+          </div>
+        )}
+
+        {p.body.map((para) => <p class="modal-body">{para}</p>)}
+
+        <div class="modal-specs">
+          {Object.entries(p.specs).map(([k, v]) => (
+            <div class="spec-row">
+              <span class="spec-key">{k}</span>
+              <span class="spec-val">{v}</span>
+            </div>
+          ))}
+        </div>
+
+        <div class="modal-foot">
+          <a class="cta-primary" href={p.github} target="_blank" rel="noopener noreferrer">
+            View on GitHub
+            <span class="cta-arrow" aria-hidden="true">↗</span>
+          </a>
+          <span class="modal-esc-hint">esc to close</span>
+        </div>
+      </div>
+    </dialog>
+  ))}
 </BaseLayout>
 
 <style>
-  /* ============================================
-     HERO SECTION - v3.7
-     ============================================ */
-
-  /* Section snap */
-  .snap-section {
-    min-height: 100vh;
-    position: relative;
+  :root {
+    --content-max: 720px;
   }
 
-  /* Tagline - Serif, largest */
-  .hero-tagline {
-    font-family: var(--font-serif);
-    font-weight: 700;
-    font-size: clamp(2.5rem, 8vw, 5rem);  /* 40px → 80px */
-    line-height: 1.1;
-    letter-spacing: -0.02em;
+  .content-section {
+    padding: 4rem var(--gutter) 0;
+  }
+
+  .content-inner {
+    max-width: var(--content-max);
+    margin: 0 auto;
+  }
+
+  .section-label {
+    font-family: var(--font-mono);
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    margin: 0 0 1.5rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  /* ============ HERO ============ */
+  .hero {
+    position: relative;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    overflow: hidden;
+    padding: 6rem var(--gutter) 4rem;
+  }
+
+  .hero-inner {
+    position: relative;
+    z-index: 2;
+    max-width: var(--content-max);
+    margin: 0 auto;
+    width: 100%;
+  }
+
+  .hero-grid {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 2rem;
+    align-items: center;
+  }
+
+  .hero-avatar {
+    width: 184px;
+    height: 184px;
+    border-radius: 50%;
+    object-fit: cover;
+    object-position: center 38%;
+    border: 1px solid var(--color-border);
+    display: block;
+    background: var(--color-bg-secondary);
+    flex-shrink: 0;
+  }
+
+  .hero-text {
+    min-width: 0;
+  }
+
+  .hero-name {
+    position: relative;
+    display: inline-grid;
+    gap: 0.04em;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: clamp(2.75rem, 7vw, 4.9rem);
+    line-height: 0.9;
+    letter-spacing: -0.045em;
     color: var(--color-text-primary);
+    margin: 0 0 1.45rem;
+    padding-bottom: 0.36rem;
+  }
+
+  .hero-name::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 2px;
+    background: var(--color-green-primary);
+  }
+
+  .hero-name span {
+    display: block;
+  }
+
+  .hero-name span:first-child {
+    color: var(--color-text-primary);
+  }
+
+  .hero-name span:last-child {
+    color: var(--color-text-primary);
+  }
+
+  .hero-positioning {
+    font-family: var(--font-sans);
+    font-size: clamp(1rem, 1.6vw, 1.15rem);
+    line-height: 1.5;
+    color: var(--color-text-secondary);
     margin: 0;
   }
 
-  /* Role - Mono, green, morphing */
-  .hero-role {
-    font-family: var(--font-mono);
-    font-weight: 500;
-    font-size: clamp(1.25rem, 3vw, 1.75rem);  /* 20px → 28px */
-    color: var(--color-green-primary);
-    letter-spacing: 0.15em;
-    text-transform: uppercase;
-    margin-top: 1.5rem;  /* 24px gap from tagline */
+  .hero-positioning span {
+    display: block;
   }
 
-  /* Mobile */
-  @media (max-width: 640px) {
-    .hero-tagline {
-      font-size: 2.5rem;  /* 40px */
-    }
-
-    .hero-role {
-      font-size: 1rem;  /* 16px */
-      letter-spacing: 0.1em;
-    }
+  .hero-positioning span + span {
+    margin-top: 0.55rem;
   }
 
-  /* About Preview Section */
-  .about-preview-section {
-    min-height: auto;
-    padding: 4rem 0;  /* 64px top and bottom */
-  }
-
-  .about-preview-section::before {
-    content: '';
+  .hero-scroll-cue {
     position: absolute;
-    inset: 0;
-    background: radial-gradient(
-      ellipse at center,
-      var(--color-green-bg) 0%,
-      transparent 70%
-    );
-    opacity: 0.6;
+    bottom: 1.75rem;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.35rem;
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: var(--color-text-muted);
+    text-decoration: none;
+    z-index: 2;
+    transition: color 0.2s ease;
+  }
+
+  .hero-scroll-cue:hover {
+    color: var(--color-green-primary);
+  }
+
+  .scroll-cue-arrow {
+    animation: scroll-bounce 1.8s ease-in-out infinite;
+  }
+
+  @keyframes scroll-bounce {
+    0%, 100% { transform: translateY(0); opacity: 0.55; }
+    50% { transform: translateY(5px); opacity: 1; }
+  }
+
+  /* ============ TECH PILLS ============ */
+  .tech-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin: 0.75rem 0;
+  }
+
+  .tech-pill {
+    display: inline-block;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--color-text-secondary);
+    background: var(--color-bg-code);
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    padding: 0.2rem 0.55rem;
+    letter-spacing: 0.01em;
+  }
+
+  .tag-in-progress {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--color-green-primary);
+    background: var(--color-green-bg);
+    padding: 0.2rem 0.6rem;
+    border-radius: 4px;
+    flex-shrink: 0;
+  }
+
+  .tag-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--color-green-primary);
+    box-shadow: 0 0 0 0 rgba(45, 90, 61, 0.5);
+    animation: pulse 2s ease-out infinite;
+  }
+
+  @keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(45, 90, 61, 0.55); }
+    70% { box-shadow: 0 0 0 8px rgba(45, 90, 61, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(45, 90, 61, 0); }
+  }
+
+  /* ============ PROJECT CARDS (vertical stack, full-width video) ============ */
+  .work-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+  }
+
+  .project-card {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg-card);
+    overflow: hidden;
+    transition: border-color 0.2s ease, transform 0.2s ease;
+  }
+
+  .featured-work-card {
+    background:
+      linear-gradient(135deg, rgba(45, 90, 61, 0.07), transparent 52%),
+      var(--color-bg-card);
+  }
+
+  .project-card:hover {
+    border-color: var(--color-text-muted);
+    transform: translateY(-2px);
+  }
+
+  .project-title-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 0.4rem;
+  }
+
+  .project-media-wrap {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    background: var(--color-bg-secondary);
+    overflow: hidden;
+    border-bottom: 1px solid var(--color-border);
+    position: relative;
+  }
+
+  .project-media-wrap[data-media='video'] {
+    /* default */
+  }
+
+  .project-media-wrap[data-media='3d'] {
+    aspect-ratio: 16 / 10;
+  }
+
+  /* In-card model-viewer overrides */
+  .project-media-wrap :global(.viewer-container) {
+    width: 100%;
+    height: 100%;
+  }
+
+  .project-media-wrap :global(.pcb-viewer) {
+    width: 100%;
+    height: 100%;
+    border-radius: 0;
+    border: none;
+    background: var(--color-bg-secondary);
+    cursor: grab;
+    touch-action: pan-y;
+  }
+
+  .project-media-wrap :global(.viewer-hint) {
+    position: absolute;
+    bottom: 0.5rem;
+    left: 50%;
+    transform: translateX(-50%);
+    margin: 0;
+    background: rgba(250, 249, 246, 0.85);
+    backdrop-filter: blur(4px);
+    padding: 0.25rem 0.6rem;
+    border-radius: 4px;
+    border: 1px solid var(--color-border);
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: var(--color-text-secondary);
     pointer-events: none;
   }
 
-  .profile-photo {
-    width: 120px;
-    height: 120px;
-    border-radius: 50%;
+  .project-video {
+    width: 100%;
+    height: 100%;
     object-fit: cover;
-    border: 3px solid var(--color-green-primary);
-    box-shadow: 0 4px 20px rgba(45, 90, 61, 0.15);
+    display: block;
   }
 
-  .profile-fallback {
-    width: 120px;
-    height: 120px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, var(--color-green-primary), var(--color-green-hover));
-    color: white;
-    font-family: var(--font-heading);
-    font-size: 2.5rem;
-    font-weight: 700;
+  .project-body {
+    padding: 1.25rem 1.5rem 1.5rem;
+  }
+
+  .project-title {
+    font-family: var(--font-sans);
+    font-weight: 500;
+    font-size: 1.125rem;
+    color: var(--color-text-primary);
+    margin: 0 0 0.4rem;
+    line-height: 1.3;
+  }
+
+  .project-one-liner {
+    font-family: var(--font-sans);
+    font-size: 0.9375rem;
+    color: var(--color-text-secondary);
+    line-height: 1.55;
+    margin: 0;
+  }
+
+  .project-actions {
     display: flex;
     align-items: center;
-    justify-content: center;
-    margin: 0 auto;
-    box-shadow: 0 4px 20px rgba(45, 90, 61, 0.2);
+    gap: 1rem;
+    margin-top: 1rem;
   }
 
-  /* Hero animations */
-  .hero-animate {
+  .project-details-btn {
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--color-green-primary);
+    background: transparent;
+    border: 1px solid var(--color-green-primary);
+    border-radius: var(--radius-sm);
+    padding: 0.4rem 0.85rem;
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+
+  .project-details-btn:hover {
+    background: var(--color-green-primary);
+    color: #FAF9F6;
+  }
+
+  .project-gh {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    color: var(--color-text-secondary);
+    text-decoration: none;
+    border-bottom: 1px solid transparent;
+    transition: color 0.15s ease, border-color 0.15s ease;
+  }
+
+  .project-gh:hover {
+    color: var(--color-green-primary);
+    border-bottom-color: var(--color-green-primary);
+  }
+
+  .cta-arrow {
+    font-size: 0.85em;
+  }
+
+  /* ============ SKILLS SHEET ============ */
+  .skills-sheet {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg-card);
+    overflow: hidden;
+  }
+
+  .skill-row {
+    display: grid;
+    grid-template-columns: 160px 1fr;
+    gap: 1.5rem;
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid var(--color-border);
+    align-items: baseline;
+  }
+
+  .skill-row:last-child {
+    border-bottom: none;
+  }
+
+  .skill-row-label {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--color-green-primary);
+  }
+
+  .skill-row-items {
+    font-family: var(--font-mono);
+    font-size: 0.9375rem;
+    color: var(--color-text-primary);
+    line-height: 1.6;
+  }
+
+  .skill-sep {
+    color: var(--color-border);
+    margin: 0 0.4rem;
+  }
+
+  /* ============ REVEAL ON SCROLL ============ */
+  .reveal {
     opacity: 0;
-    transform: translateY(20px);
-    animation: hero-fade-in 0.6s ease forwards;
+    transform: translateY(16px);
+    transition: opacity 0.6s ease, transform 0.6s ease;
   }
 
-  .hero-delay-1 { animation-delay: 0.2s; }
-  .hero-delay-2 { animation-delay: 0.4s; }
-  .hero-delay-3 { animation-delay: 0.6s; }
-  .hero-delay-4 { animation-delay: 0.8s; }
-
-  @keyframes hero-fade-in {
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-
-  /* Project fade in on scroll */
-  .project-fade {
-    opacity: 0;
-    transform: translateY(20px);
-    transition: opacity 0.5s ease, transform 0.5s ease;
-    transition-delay: calc(var(--index) * 0.1s);
-  }
-
-  .project-fade.visible {
+  .reveal.is-visible {
     opacity: 1;
     transform: translateY(0);
   }
 
-  @media (prefers-reduced-motion: reduce) {
-    .hero-animate {
-      animation: none;
-      opacity: 1;
-      transform: none;
-    }
+  /* ============ MODAL ============ */
+  .project-modal {
+    border: none;
+    background: transparent;
+    padding: 0;
+    margin: auto;
+    inset: 0;
+    max-width: 760px;
+    width: calc(100vw - 2rem);
+    max-height: calc(100vh - 2rem);
+    border-radius: var(--radius-lg);
+    color: var(--color-text-primary);
+  }
 
-    .project-fade {
+  .project-modal::backdrop {
+    background: rgba(20, 22, 20, 0.55);
+    backdrop-filter: blur(2px);
+  }
+
+  .project-modal[open] {
+    animation: modal-in 0.2s ease;
+  }
+
+  @keyframes modal-in {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .modal-inner {
+    background: var(--color-bg-primary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: 1.75rem;
+    max-height: calc(100vh - 2rem);
+    overflow-y: auto;
+  }
+
+  .modal-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .modal-head-text { flex: 1 1 auto; min-width: 0; }
+
+  .modal-title {
+    font-family: var(--font-sans);
+    font-weight: 500;
+    font-size: 1.4rem;
+    margin: 0 0 0.25rem;
+    line-height: 1.2;
+  }
+
+  .modal-subtitle {
+    font-family: var(--font-mono);
+    font-size: 0.8125rem;
+    color: var(--color-text-muted);
+    margin: 0;
+  }
+
+  .modal-close {
+    flex-shrink: 0;
+    width: 40px;
+    height: 40px;
+    border: 1px solid var(--color-border);
+    background: var(--color-bg-card);
+    border-radius: 8px;
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+  }
+
+  .modal-close:hover {
+    color: var(--color-text-primary);
+    border-color: var(--color-text-primary);
+    background: var(--color-bg-secondary);
+  }
+
+  .modal-media {
+    width: 100%;
+    background: var(--color-bg-secondary);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    margin-bottom: 1.25rem;
+  }
+
+  .modal-video {
+    width: 100%;
+    height: auto;
+    display: block;
+    aspect-ratio: 16 / 9;
+    object-fit: cover;
+  }
+
+  .modal-body {
+    font-family: var(--font-sans);
+    font-size: 0.9375rem;
+    color: var(--color-text-primary);
+    line-height: 1.6;
+    margin: 0 0 0.85rem;
+  }
+
+  .modal-specs {
+    margin-top: 1rem;
+    border-top: 1px solid var(--color-border);
+    padding-top: 1rem;
+  }
+
+  .spec-row {
+    display: grid;
+    grid-template-columns: 120px 1fr;
+    gap: 1rem;
+    padding: 0.4rem 0;
+    border-bottom: 1px solid var(--color-border);
+    font-family: var(--font-mono);
+    font-size: 0.8125rem;
+  }
+
+  .spec-row:last-child { border-bottom: none; }
+  .spec-key { color: var(--color-text-muted); }
+  .spec-val { color: var(--color-text-primary); }
+
+  .modal-foot {
+    margin-top: 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+
+  .modal-esc-hint {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+
+  .cta-primary {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-family: var(--font-sans);
+    font-size: 0.9375rem;
+    font-weight: 500;
+    color: var(--color-green-primary);
+    background: transparent;
+    border: 1px solid var(--color-green-primary);
+    border-radius: var(--radius-md);
+    padding: 0.55rem 1rem;
+    text-decoration: none;
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+
+  .cta-primary:hover {
+    background: var(--color-green-primary);
+    color: #FAF9F6;
+  }
+
+  /* ============ CURSOR RESTORE OVER MODAL ============ */
+  /* Native dialogs render on the top layer above z-index:9999, so the
+     CustomCursor (z-9999) is hidden behind. While a modal is open, restore
+     the native cursor and hide our custom one. */
+  body.modal-open,
+  body.modal-open * {
+    cursor: auto !important;
+  }
+  body.modal-open .custom-cursor {
+    display: none !important;
+  }
+  body.modal-open model-viewer,
+  body.modal-open model-viewer * {
+    cursor: grab !important;
+  }
+
+  /* ============ MOBILE ============ */
+  @media (max-width: 640px) {
+    .hero-grid {
+      grid-template-columns: 1fr;
+      gap: 1.25rem;
+      text-align: left;
+      justify-items: start;
+    }
+    .hero-avatar {
+      width: 132px;
+      height: 132px;
+    }
+    .hero-name {
+      font-size: clamp(2.85rem, 13vw, 3.55rem);
+      margin-bottom: 1.25rem;
+    }
+    .hero-positioning { font-size: 1rem; }
+    .project-title-row {
+      align-items: flex-start;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    .modal-inner { padding: 1.25rem; }
+    .spec-row { grid-template-columns: 1fr; gap: 0; }
+  }
+
+  @media (min-width: 391px) and (max-width: 640px) {
+    .hero-inner,
+    .content-inner {
+      padding-right: 2.75rem;
+      box-sizing: border-box;
+    }
+  }
+
+  @media (max-width: 540px) {
+    .skill-row {
+      grid-template-columns: 1fr;
+      gap: 0.25rem;
+      padding: 0.85rem 1rem;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .project-modal[open] { animation: none; }
+    .scroll-cue-arrow { animation: none; }
+    .tag-dot { animation: none; }
+    .reveal {
       opacity: 1;
       transform: none;
       transition: none;
@@ -257,19 +902,86 @@ const featuredProjects = (await getCollection('projects'))
 </style>
 
 <script>
-  // Intersection Observer for scroll animations
-  const observer = new IntersectionObserver(
-    (entries) => {
-      entries.forEach((entry) => {
-        if (entry.isIntersecting) {
-          entry.target.classList.add('visible');
+  function wireModals() {
+    document.querySelectorAll<HTMLButtonElement>('[data-open]').forEach((btn) => {
+      const target = btn.getAttribute('data-open');
+      if (!target) return;
+      const dlg = document.getElementById(`modal-${target}`) as HTMLDialogElement | null;
+      if (!dlg) return;
+      btn.addEventListener('click', () => {
+        if (typeof dlg.showModal === 'function') {
+          dlg.showModal();
+        } else {
+          dlg.setAttribute('open', '');
+        }
+        document.body.classList.add('modal-open');
+      });
+    });
+
+    document.querySelectorAll<HTMLDialogElement>('.project-modal').forEach((dlg) => {
+      const onClose = () => document.body.classList.remove('modal-open');
+      dlg.addEventListener('close', onClose);
+      dlg.addEventListener('cancel', onClose);
+
+      dlg.querySelectorAll<HTMLButtonElement>('[data-close]').forEach((btn) => {
+        btn.addEventListener('click', () => dlg.close());
+      });
+      // Click outside content closes
+      dlg.addEventListener('click', (e) => {
+        const inner = dlg.querySelector('.modal-inner');
+        if (inner && !inner.contains(e.target as Node)) {
+          dlg.close();
         }
       });
-    },
-    { threshold: 0.2 }
-  );
+    });
+  }
 
-  document.querySelectorAll('.project-fade').forEach((el) => {
-    observer.observe(el);
+  function wireReveal() {
+    if (!('IntersectionObserver' in window)) {
+      document.querySelectorAll('.reveal').forEach((el) => el.classList.add('is-visible'));
+      return;
+    }
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('is-visible');
+            observer.unobserve(entry.target);
+          }
+        });
+      },
+      { threshold: 0.12, rootMargin: '0px 0px -10% 0px' }
+    );
+    document.querySelectorAll('.reveal').forEach((el) => observer.observe(el));
+  }
+
+  function wireInlinePcbScroll() {
+    document.querySelectorAll<HTMLElement>(".project-media-wrap[data-media='3d']").forEach((wrap) => {
+      if (wrap.dataset.scrollThroughWired === 'true') return;
+      wrap.dataset.scrollThroughWired = 'true';
+
+      wrap.addEventListener(
+        'wheel',
+        (e) => {
+          if (wrap.closest('.project-modal')) return;
+          e.preventDefault();
+          window.scrollBy({
+            top: e.deltaY,
+            left: e.deltaX,
+            behavior: 'auto',
+          });
+        },
+        { passive: false, capture: true }
+      );
+    });
+  }
+
+  wireModals();
+  wireReveal();
+  wireInlinePcbScroll();
+  document.addEventListener('astro:page-load', () => {
+    wireModals();
+    wireReveal();
+    wireInlinePcbScroll();
   });
 </script>

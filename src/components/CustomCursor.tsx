@@ -4,7 +4,7 @@ export default function CustomCursor() {
   const cursorRef = useRef<HTMLDivElement>(null);
   const [isVisible, setIsVisible] = useState(true);
   const [isInWindow, setIsInWindow] = useState(true);
-  const [hoverState, setHoverState] = useState<'default' | 'link' | 'card' | 'logo'>('default');
+  const [hoverState, setHoverState] = useState<'default' | 'link' | 'card' | 'logo' | 'native'>('default');
 
   useEffect(() => {
     // Check for touch device or reduced motion
@@ -43,10 +43,18 @@ export default function CustomCursor() {
     // Hover detection
     const handleMouseOver = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
+      const nativeCursorElement = target.closest('model-viewer, [data-native-cursor]');
+      if (nativeCursorElement) {
+        setHoverState('native');
+        return;
+      }
+
       const interactiveElement = target.closest('a, button, [data-cursor]');
 
       if (interactiveElement) {
-        const isCard = interactiveElement.closest('.project-card') !== null;
+        const isCard =
+          interactiveElement.closest('.project-card') !== null &&
+          interactiveElement.closest('.project-actions') === null;
         const isLogo = interactiveElement.closest('.logo') !== null ||
                        interactiveElement.querySelector('.logo') !== null;
 
@@ -84,16 +92,17 @@ export default function CustomCursor() {
 
   const getCursorSize = () => {
     switch (hoverState) {
-      case 'card': return 56;
-      case 'link': return 40;
-      case 'logo': return 28;
-      default: return 20;
+      case 'card': return 32;
+      case 'link': return 28;
+      case 'logo': return 22;
+      default: return 14;
     }
   };
 
   const size = getCursorSize();
-  const isHollow = hoverState === 'link';
-  const showViewText = hoverState === 'card';
+  const isLink = hoverState === 'link';
+  const isCard = hoverState === 'card';
+  const isNative = hoverState === 'native';
 
   return (
     <>
@@ -105,13 +114,18 @@ export default function CustomCursor() {
           height: size,
           marginLeft: -size / 2,
           marginTop: -size / 2,
-          background: isHollow ? 'transparent' : (showViewText ? 'var(--color-green-primary)' : 'var(--color-text-primary)'),
-          border: isHollow ? '2px solid var(--color-text-primary)' : 'none',
-          opacity: isInWindow ? (hoverState === 'default' ? 0.9 : 1) : 0,
+          background: isCard || isLink ? 'transparent' : 'var(--color-text-primary)',
+          border: isCard || isLink ? '1.5px solid var(--color-text-primary)' : 'none',
+          opacity: isInWindow && !isNative ? (hoverState === 'default' ? 0.85 : 1) : 0,
         }}
       >
-        {showViewText && (
-          <span className="cursor-text">View</span>
+        {isCard && (
+          <svg className="cursor-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="15 3 21 3 21 9"/>
+            <polyline points="9 21 3 21 3 15"/>
+            <line x1="21" y1="3" x2="14" y2="10"/>
+            <line x1="3" y1="21" x2="10" y2="14"/>
+          </svg>
         )}
       </div>
 
@@ -143,13 +157,23 @@ export default function CustomCursor() {
           justify-content: center;
         }
 
-        .cursor-text {
-          font-size: 10px;
-          font-weight: 600;
-          color: white;
-          text-transform: uppercase;
-          letter-spacing: 0.05em;
-          font-family: var(--font-body);
+        .cursor-icon {
+          color: var(--color-text-primary);
+          display: block;
+        }
+
+        @media (hover: hover) and (pointer: fine) {
+          model-viewer,
+          [data-native-cursor],
+          [data-native-cursor] * {
+            cursor: grab !important;
+          }
+
+          model-viewer:active,
+          [data-native-cursor]:active,
+          [data-native-cursor]:active * {
+            cursor: grabbing !important;
+          }
         }
 
         @media (hover: none) and (pointer: coarse) {

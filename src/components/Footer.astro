@@ -2,10 +2,29 @@
 const currentYear = new Date().getFullYear();
 ---
 
-<footer class="border-t border-border">
-  <div class="max-w-[var(--max-width)] mx-auto px-[var(--gutter)] lg:px-[var(--gutter-lg)] py-8">
-    <p class="text-center text-text-muted text-sm">
-      &copy; {currentYear} Omar Mohammed
-    </p>
+<footer class="site-footer">
+  <div class="footer-inner">
+    <p class="footer-copy">&copy; {currentYear} Omar Mohammed</p>
   </div>
 </footer>
+
+<style>
+  .site-footer {
+    border-top: 1px solid var(--color-border);
+    padding: 2rem var(--gutter);
+    margin-top: 4rem;
+  }
+
+  .footer-inner {
+    max-width: 720px;
+    margin: 0 auto;
+    text-align: center;
+  }
+
+  .footer-copy {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--color-text-muted);
+    margin: 0;
+  }
+</style>
