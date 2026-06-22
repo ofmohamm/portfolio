@@ -1,0 +1,9 @@
+name: FPGA Neural Network Accelerator
+status: In progress
+oneLiner: "I'm mapping CNN and Mamba RNN models onto AMD Versal FPGAs to run power-efficient inference. The work covers two fronts: RF signal detection and building energy modeling."
+tech:
+  - Vitis AI
+  - Vitis HLS
+  - Vivado
+  - C++/HLS
+  - Verilog

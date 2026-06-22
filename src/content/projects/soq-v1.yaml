@@ -1,0 +1,22 @@
+name: SOQ v1
+subtitle: Personal project · 2025
+oneLiner: A Kinect-audio tracking system that estimates sound direction from the mic array.
+order: 1
+mediaType: video
+model3d: null
+video: /videos/kinect-dashboard.mp4
+poster: /images/posters/kinect-dashboard.jpg
+tech:
+  - C++
+  - Python
+  - DSP
+github: https://github.com/ofmohamm
+body:
+  - Live dashboard that tracks the direction of an audio source in real time using the four-microphone array on the Kinect 360. Beamforming and time-of-arrival across the array feed an angle estimate, surfaced as a live indicator on screen.
+specs:
+  - key: Input
+    value: Kinect 360 4-mic array
+  - key: Signal
+    value: TDOA + steered-response beam-forming
+  - key: Stack
+    value: C++ DSP core, Python visualization
