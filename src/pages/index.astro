@@ -104,7 +104,7 @@ const skills = (skillsData?.groups ?? []).map((g) => ({
         {projects.map((p) => (
           <article class="project-card" data-project={p.id}>
             <div class="project-media-wrap" data-media={p.model3d ? '3d' : 'video'}>
-              {p.model3d && !p.video ? (
+              {p.model3d ? (
                 <PCBViewer
                   src={p.model3d}
                   alt={`${p.name} 3D model`}
@@ -115,7 +115,7 @@ const skills = (skillsData?.groups ?? []).map((g) => ({
                   minCameraOrbit="auto auto 0.18m"
                   maxCameraOrbit="auto auto 0.45m"
                 />
-              ) : (
+              ) : p.video ? (
                 <video
                   class="project-video"
                   src={p.video}
@@ -127,7 +127,9 @@ const skills = (skillsData?.groups ?? []).map((g) => ({
                   autoplay
                   aria-label={`${p.name} demo video`}
                 ></video>
-              )}
+              ) : p.poster ? (
+                <img class="project-video" src={p.poster} alt={`${p.name} preview`} />
+              ) : null}
             </div>
 
             <div class="project-body">
@@ -142,10 +144,12 @@ const skills = (skillsData?.groups ?? []).map((g) => ({
                 <button class="project-details-btn" data-open={p.id}>
                   Details
                 </button>
-                <a class="project-gh" href={p.github} target="_blank" rel="noopener noreferrer">
-                  GitHub
-                  <span class="cta-arrow" aria-hidden="true">↗</span>
-                </a>
+                {p.github && (
+                  <a class="project-gh" href={p.github} target="_blank" rel="noopener noreferrer">
+                    GitHub
+                    <span class="cta-arrow" aria-hidden="true">↗</span>
+                  </a>
+                )}
               </div>
             </div>
           </article>
@@ -198,7 +202,7 @@ const skills = (skillsData?.groups ?? []).map((g) => ({
           <div class="modal-media">
             <PCBViewer src={p.model3d} alt={`${p.name} 3D model`} fallback={p.poster} />
           </div>
-        ) : (
+        ) : p.video ? (
           <div class="modal-media">
             <video
               class="modal-video"
@@ -211,7 +215,11 @@ const skills = (skillsData?.groups ?? []).map((g) => ({
               autoplay
             ></video>
           </div>
-        )}
+        ) : p.poster ? (
+          <div class="modal-media">
+            <img class="modal-video" src={p.poster} alt={`${p.name} preview`} />
+          </div>
+        ) : null}
 
         {p.body.map((para) => <p class="modal-body">{para}</p>)}
 
@@ -225,10 +233,12 @@ const skills = (skillsData?.groups ?? []).map((g) => ({
         </div>
 
         <div class="modal-foot">
-          <a class="cta-primary" href={p.github} target="_blank" rel="noopener noreferrer">
-            View on GitHub
-            <span class="cta-arrow" aria-hidden="true">↗</span>
-          </a>
+          {p.github ? (
+            <a class="cta-primary" href={p.github} target="_blank" rel="noopener noreferrer">
+              View on GitHub
+              <span class="cta-arrow" aria-hidden="true">↗</span>
+            </a>
+          ) : <span></span>}
           <span class="modal-esc-hint">esc to close</span>
         </div>
       </div>
