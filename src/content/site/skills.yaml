@@ -1,0 +1,16 @@
+groups:
+  - label: FPGA / RTL
+    items:
+      - Vivado
+      - Vitis AI
+      - Vitis HLS
+      - VHDL
+      - SystemVerilog
+  - label: Languages
+    items:
+      - Python
+      - C
+      - C++
+  - label: PCB
+    items:
+      - KiCad

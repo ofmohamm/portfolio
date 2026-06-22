@@ -1,0 +1,25 @@
+name: Flood Detection Sensor PCB
+subtitle: CHaRTS Research Lab · Syracuse University · Summer 2025
+oneLiner: A battery-powered flood monitor for urban areas. It does thermal imaging, environmental sensing, and pushes data over LoRa.
+order: 0
+mediaType: 3d
+model3d: /models/flood-sensor-pcb.glb
+video: null
+poster: /images/posters/flood-sensor-pcb.jpg
+tech:
+  - KiCad
+  - PCB
+  - LoRaWAN
+github: https://github.com/ofmohamm/SU-WaterCam-PCB
+body:
+  - Custom 2-layer PCB for a battery-powered flood monitoring system. Integrates a FLIR Lepton thermal camera, BNO055 IMU, mDot LoRaWAN radio, and Witty Pi 4 power management for remote urban deployment.
+  - First PCB I designed. Taught myself KiCad and went from schematic to fabrication-ready Gerbers in a few weeks. Mentored by Dr. Elizabeth Carter and Manu Shergill.
+specs:
+  - key: Board
+    value: 2-layer, 0.25mm signal / 0.5mm power traces
+  - key: Power
+    value: 3.3V + 5V rails, Witty Pi 4 power management
+  - key: Comms
+    value: LoRaWAN (mDot module), I²C, UART
+  - key: Sensors
+    value: FLIR Lepton thermal camera, BNO055 IMU

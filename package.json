@@ -10,8 +10,11 @@
   },
   "dependencies": {
     "@astrojs/mdx": "^4.3.13",
+    "@astrojs/netlify": "^6.6.5",
     "@astrojs/react": "^4.4.2",
     "@google/model-viewer": "^4.1.0",
+    "@keystatic/astro": "^5.1.0",
+    "@keystatic/core": "^0.5.50",
     "@studio-freight/lenis": "^1.0.42",
     "@tailwindcss/vite": "^4.1.18",
     "@types/react": "^19.2.11",
