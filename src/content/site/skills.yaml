@@ -1,16 +1,19 @@
 groups:
-  - label: FPGA / RTL
+  - label: Embedded Systems
     items:
-      - Vivado
-      - Vitis AI
-      - Vitis HLS
+      - PCB Design (KiCad)
+      - Arduino
+      - Raspberry Pi
+      - Microcontrollers
+  - label: FPGA
+    items:
       - VHDL
       - SystemVerilog
-  - label: Languages
+      - Vivado
+      - Vitis AI
+  - label: Programming
     items:
       - Python
-      - C
       - C++
-  - label: PCB
-    items:
-      - KiCad
+      - C
+      - Agentic Development (Claude Code)
