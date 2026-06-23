@@ -3,8 +3,8 @@ subtitle: Personal project · 2025
 oneLiner: A Kinect-audio tracking system that estimates sound direction from the mic array.
 order: 1
 mediaType: video
-video: /videos/kinect-dashboard.mp4
-poster: /images/posters/kinect-dashboard.jpg
+video: /videos/soq-v1/video.mp4
+poster: /images/posters/soq-v1/poster.jpg
 tech:
   - C++
   - Python
