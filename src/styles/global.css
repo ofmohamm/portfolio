@@ -12,15 +12,15 @@
   --color-text-secondary: #5C5C5C;
   --color-text-muted: #8B8B8B;
 
-  /* Greens - Slightly Saturated */
-  --color-green-primary: #2D5A3D;
-  --color-green-hover: #234830;
-  --color-green-light: #4A8C5A;
-  --color-green-bg: #E3EFE6;
+  /* Accent — matched to the "mo" logo mark (#355359 teal/slate) */
+  --color-green-primary: #355359;
+  --color-green-hover: #2A4448;
+  --color-green-light: #5E898F;
+  --color-green-bg: #E7EDEE;
 
   /* Borders */
   --color-border: #D9D4C7;
-  --color-border-hover: #2D5A3D;
+  --color-border-hover: #355359;
 
   /* Utility */
   --shadow-color: rgba(44, 44, 44, 0.08);

@@ -9,7 +9,7 @@ const navLinks = [
   <!-- DESKTOP NAV -->
   <nav class="nav-desktop">
     <a href="#hero" class="nav-logo" data-scroll-top aria-label="Back to top">
-      <span class="nav-logo-text">Omar Mohammed</span>
+      <img class="nav-logo-mark" src="/images/mo-logo.png" alt="Omar Mohammed" width="841" height="428" />
     </a>
 
     <div class="nav-links">
@@ -24,7 +24,7 @@ const navLinks = [
   <!-- MOBILE NAV BAR -->
   <nav class="nav-mobile-bar">
     <a href="#hero" class="nav-logo-mobile" data-scroll-top aria-label="Back to top">
-      <span class="nav-logo-text">Omar Mohammed</span>
+      <img class="nav-logo-mark" src="/images/mo-logo.png" alt="Omar Mohammed" width="841" height="428" />
     </a>
 
     <div class="nav-mobile-actions">
@@ -77,13 +77,10 @@ const navLinks = [
     transition: opacity 0.2s ease;
   }
 
-  .nav-logo-text {
-    font-family: var(--font-sans);
-    font-weight: 600;
-    font-size: 0.9rem;
-    letter-spacing: -0.01em;
-    color: var(--color-text-primary);
-    line-height: 1;
+  .nav-logo-mark {
+    height: 22px;
+    width: auto;
+    display: block;
   }
 
   .nav-logo:hover { opacity: 0.6; }
@@ -127,7 +124,7 @@ const navLinks = [
       text-decoration: none;
     }
 
-    .nav-logo-mobile .nav-logo-text { font-size: 0.85rem; }
+    .nav-logo-mobile .nav-logo-mark { height: 20px; }
 
     .nav-mobile-actions {
       display: inline-flex;
