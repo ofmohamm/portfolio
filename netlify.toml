@@ -4,12 +4,8 @@
 
 [build.environment]
   NODE_VERSION = "20"
-  # The Astro build runs as a single Node process that, left uncapped, lazily
-  # grabs ~14GB of heap on a large host and defers GC. On Netlify's smaller
-  # build container that resident memory exceeds the physical RAM limit and the
-  # kernel OOM-kills it (exit 137). Capping the V8 heap forces aggressive GC so
-  # the build fits. A LOWER cap is safer here, not higher: raising it lets RSS
-  # balloon until it's killed. Measured locally — the build completes cleanly
-  # under a 2048MB cap, so this leaves headroom for the container's non-heap
-  # overhead.
-  NODE_OPTIONS = "--max-old-space-size=2048"
+  # NOTE: the Netlify OOM (exit 137) was NOT a V8 heap problem — it was
+  # Tailwind v4's automatic content detection scanning large binary assets in
+  # public/ (4.7MB GLB models, etc.) as text, ballooning the build to ~14GB
+  # RSS. The real fix lives in src/styles/global.css, which scopes Tailwind's
+  # source detection to source files only. With that, peak build RSS is ~1.3GB.

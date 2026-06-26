@@ -1,4 +1,9 @@
-@import "tailwindcss";
+/* Disable Tailwind v4's automatic content detection — left on, it scans the
+   whole project and reads large binary assets in public/ (4.7MB GLB models,
+   videos, images) into memory as text, ballooning the build to ~14GB RSS and
+   getting OOM-killed on Netlify. Scope scanning to source code only. */
+@import "tailwindcss" source(none);
+@source "../**/*.{astro,html,js,jsx,ts,tsx,md,mdx}";
 
 @theme {
   /* Backgrounds */
