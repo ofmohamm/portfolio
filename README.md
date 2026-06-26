@@ -20,4 +20,4 @@ Vibe coded with [Conductor](https://conductor.build/) and Claude Code.
 
 ## Contact
 
-[LinkedIn](https://linkedin.com/in/ofmohammed) · [GitHub](https://github.com/ofmohamm) · mail.omarmohammed@gmail.com
+[LinkedIn](https://linkedin.com/in/ofmohammed) · mail.omarmohammed@gmail.com
