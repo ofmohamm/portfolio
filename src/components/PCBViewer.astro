@@ -8,6 +8,9 @@ interface Props {
   cameraOrbit?: string;
   minCameraOrbit?: string;
   maxCameraOrbit?: string;
+  // When false, the viewer just spins on its own (no drag, no zoom, no hint)
+  // and lets pointer events pass through — used as a card preview.
+  interactive?: boolean;
 }
 
 const {
@@ -18,25 +21,29 @@ const {
   cameraOrbit = '45deg 55deg 0.3m',
   minCameraOrbit = 'auto auto 0.2m',
   maxCameraOrbit = 'auto auto 0.6m',
+  interactive = true,
 } = Astro.props;
 
 const modelViewerInteractionAttrs = disableZoom
   ? { 'disable-zoom': true, 'touch-action': 'pan-y' }
   : { 'touch-action': 'none' };
+
+// Card-preview mode: continuous auto-rotate, no user interaction.
+const interactionAttrs = interactive
+  ? { 'camera-controls': true, 'auto-rotate-delay': '2000', ...modelViewerInteractionAttrs }
+  : { 'auto-rotate-delay': '0' };
 ---
 
-<div class="viewer-container" data-native-cursor data-disable-zoom={disableZoom ? 'true' : 'false'}>
+<div class="viewer-container" data-native-cursor data-disable-zoom={disableZoom ? 'true' : 'false'} data-interactive={interactive ? 'true' : 'false'}>
   <model-viewer
     src={src}
     alt={alt}
     data-native-cursor
-    camera-controls
     auto-rotate
-    auto-rotate-delay="2000"
-    rotation-per-second="20deg"
+    rotation-per-second="22deg"
     interaction-prompt="none"
     disable-tap
-    {...modelViewerInteractionAttrs}
+    {...interactionAttrs}
     shadow-intensity="1"
     shadow-softness="0.5"
     exposure="1"
@@ -46,7 +53,7 @@ const modelViewerInteractionAttrs = disableZoom
     class="pcb-viewer"
   >
   </model-viewer>
-  <p class="viewer-hint">{hint}</p>
+  {interactive && <p class="viewer-hint">{hint}</p>}
 </div>
 
 <style>
@@ -75,6 +82,12 @@ const modelViewerInteractionAttrs = disableZoom
 
   .pcb-viewer:focus {
     outline: none;
+  }
+
+  /* Card-preview mode: spin only, let clicks reach the card underneath. */
+  .viewer-container[data-interactive='false'] .pcb-viewer {
+    cursor: inherit;
+    pointer-events: none;
   }
 
   .viewer-hint {
