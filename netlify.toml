@@ -5,5 +5,5 @@
 [build.environment]
   # The Keystatic admin UI is a large bundle; bundling it into the SSR
   # function exceeds Node's default heap on Netlify's build container and
-  # gets OOM-killed (exit 137). Raise the heap ceiling so the build fits.
-  NODE_OPTIONS = "--max-old-space-size=4096"
+  # gets OOM-killed. Raise the heap ceiling so the build fits.
+  NODE_OPTIONS = "--max-old-space-size=8192"
