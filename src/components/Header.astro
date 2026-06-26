@@ -3,28 +3,19 @@ const navLinks = [
   { href: '#projects', label: 'Projects' },
   { href: '#skills', label: 'Skills' },
 ];
-const RESUME_URL = 'https://drive.google.com/file/d/1-0OkidhFCiwY4Qzrx7l75aHpLJc4_KkF/view?usp=sharing';
 ---
 
 <header class="site-header">
   <!-- DESKTOP NAV -->
   <nav class="nav-desktop">
     <a href="#hero" class="nav-logo" data-scroll-top aria-label="Back to top">
-      <span class="nav-logo-text">MO</span>
+      <span class="nav-logo-text">Omar Mohammed</span>
     </a>
 
     <div class="nav-links">
       {navLinks.map((link) => (
         <a href={link.href} class="nav-link">{link.label}</a>
       ))}
-      <a
-        href={RESUME_URL}
-        class="nav-resume"
-        target="_blank"
-        rel="noopener noreferrer"
-      >
-        Resume
-      </a>
     </div>
 
     <div class="nav-right-spacer" aria-hidden="true"></div>
@@ -33,18 +24,13 @@ const RESUME_URL = 'https://drive.google.com/file/d/1-0OkidhFCiwY4Qzrx7l75aHpLJc
   <!-- MOBILE NAV BAR -->
   <nav class="nav-mobile-bar">
     <a href="#hero" class="nav-logo-mobile" data-scroll-top aria-label="Back to top">
-      <span class="nav-logo-text">MO</span>
+      <span class="nav-logo-text">Omar Mohammed</span>
     </a>
 
     <div class="nav-mobile-actions">
-      <a
-        href={RESUME_URL}
-        class="nav-resume nav-resume-mobile"
-        target="_blank"
-        rel="noopener noreferrer"
-      >
-        Resume
-      </a>
+      {navLinks.map((link) => (
+        <a href={link.href} class="nav-link nav-link-mobile">{link.label}</a>
+      ))}
     </div>
   </nav>
 </header>
@@ -92,18 +78,15 @@ const RESUME_URL = 'https://drive.google.com/file/d/1-0OkidhFCiwY4Qzrx7l75aHpLJc
   }
 
   .nav-logo-text {
-    font-family: var(--font-mono);
+    font-family: var(--font-sans);
     font-weight: 600;
     font-size: 0.9rem;
-    letter-spacing: 0.05em;
+    letter-spacing: -0.01em;
     color: var(--color-text-primary);
-    padding: 4px 8px;
-    border: 1px solid var(--color-text-primary);
-    border-radius: 3px;
     line-height: 1;
   }
 
-  .nav-logo:hover { opacity: 0.7; }
+  .nav-logo:hover { opacity: 0.6; }
 
   .nav-links {
     display: flex;
@@ -121,23 +104,6 @@ const RESUME_URL = 'https://drive.google.com/file/d/1-0OkidhFCiwY4Qzrx7l75aHpLJc
     transition: color 0.2s ease;
   }
   .nav-link:hover { color: var(--color-green-primary); }
-
-  .nav-resume {
-    font-family: var(--font-sans);
-    font-size: 0.875rem;
-    font-weight: 500;
-    color: var(--color-green-primary);
-    background: transparent;
-    border: 1px solid var(--color-green-primary);
-    border-radius: var(--radius-md);
-    padding: 0.4rem 0.9rem;
-    text-decoration: none;
-    transition: background 0.15s ease, color 0.15s ease;
-  }
-  .nav-resume:hover {
-    background: var(--color-green-primary);
-    color: #FAF9F6;
-  }
 
   .nav-right-spacer { display: none; }
 
@@ -166,13 +132,12 @@ const RESUME_URL = 'https://drive.google.com/file/d/1-0OkidhFCiwY4Qzrx7l75aHpLJc
     .nav-mobile-actions {
       display: inline-flex;
       align-items: center;
-      gap: 0.55rem;
+      gap: 1.1rem;
     }
 
-    .nav-resume-mobile {
+    .nav-link-mobile {
       font-size: 0.8rem;
-      padding: 0.34rem 0.72rem;
-      border-radius: 6px;
+      padding: 0.25rem 0;
     }
   }
 </style>

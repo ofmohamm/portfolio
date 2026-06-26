@@ -3,7 +3,6 @@ import '../styles/global.css';
 import Header from '../components/Header.astro';
 import CustomCursor from '../components/CustomCursor';
 import Footer from '../components/Footer.astro';
-import Sidebar from '../components/Sidebar.astro';
 
 interface Props {
   title: string;
@@ -34,7 +33,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || 'https://omarmoha
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&family=Playfair+Display:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
 
     <!-- Open Graph -->
     <meta property="og:title" content={title} />
@@ -88,9 +87,6 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || 'https://omarmoha
 
     <!-- Header with navigation -->
     <Header />
-
-    <!-- Side socials -->
-    <Sidebar />
 
     <!-- Custom cursor -->
     <CustomCursor client:load />

@@ -1,9 +1,33 @@
 ---
 const currentYear = new Date().getFullYear();
+
+const social = [
+  { href: 'https://github.com/ofmohamm', label: 'GitHub', external: true },
+  { href: 'https://linkedin.com/in/ofmohammed', label: 'LinkedIn', external: true },
+  { href: 'mailto:mail.omarmohammed@gmail.com', label: 'Email', external: false },
+  {
+    href: 'https://drive.google.com/file/d/1-0OkidhFCiwY4Qzrx7l75aHpLJc4_KkF/view?usp=sharing',
+    label: 'Résumé',
+    external: true,
+  },
+];
 ---
 
 <footer class="site-footer">
   <div class="footer-inner">
+    <nav class="footer-links" aria-label="Profiles and resume">
+      {social.map((s) => (
+        <a
+          class="footer-link"
+          href={s.href}
+          target={s.external ? '_blank' : undefined}
+          rel={s.external ? 'noopener noreferrer' : undefined}
+        >
+          {s.label}
+          {s.external && <span class="footer-link-arrow" aria-hidden="true">↗</span>}
+        </a>
+      ))}
+    </nav>
     <p class="footer-copy">&copy; {currentYear} Omar Mohammed</p>
   </div>
 </footer>
@@ -11,14 +35,53 @@ const currentYear = new Date().getFullYear();
 <style>
   .site-footer {
     border-top: 1px solid var(--color-border);
-    padding: 2rem var(--gutter);
-    margin-top: 4rem;
+    padding: 2.5rem var(--gutter);
+    margin-top: 7rem;
   }
 
   .footer-inner {
-    max-width: 720px;
+    max-width: 920px;
     margin: 0 auto;
-    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+  }
+
+  .footer-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.35rem;
+  }
+
+  .footer-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--color-text-primary);
+    text-decoration: none;
+    border-bottom: 1px solid transparent;
+    padding-bottom: 1px;
+    transition: color 0.15s ease, border-color 0.15s ease;
+  }
+
+  .footer-link:hover {
+    color: var(--color-green-primary);
+    border-bottom-color: var(--color-green-primary);
+  }
+
+  .footer-link-arrow {
+    font-size: 0.8em;
+    color: var(--color-text-muted);
+    transition: color 0.15s ease;
+  }
+
+  .footer-link:hover .footer-link-arrow {
+    color: var(--color-green-primary);
   }
 
   .footer-copy {
@@ -26,5 +89,15 @@ const currentYear = new Date().getFullYear();
     font-size: 0.75rem;
     color: var(--color-text-muted);
     margin: 0;
+    white-space: nowrap;
+  }
+
+  @media (max-width: 560px) {
+    .footer-inner {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 1.25rem;
+    }
   }
 </style>
+</content>
