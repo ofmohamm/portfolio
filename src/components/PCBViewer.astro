@@ -16,7 +16,6 @@ interface Props {
 const {
   src,
   alt,
-  fallback,
   disableZoom = false,
   hint = 'Drag to rotate · Scroll to zoom',
   cameraOrbit = '45deg 55deg 0.3m',
@@ -40,9 +39,6 @@ const interactionAttrs = interactive
     src={src}
     alt={alt}
     data-native-cursor
-    loading="lazy"
-    reveal="auto"
-    poster={fallback}
     auto-rotate
     rotation-per-second="22deg"
     interaction-prompt="none"
