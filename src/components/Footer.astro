@@ -74,17 +74,20 @@ const RESUME_URL = 'https://drive.google.com/file/d/1-0OkidhFCiwY4Qzrx7l75aHpLJc
 
   .footer-resume {
     font-family: var(--font-sans);
-    font-size: 0.875rem;
+    font-size: 0.8rem;
     font-weight: 500;
     color: var(--color-text-primary);
     text-decoration: none;
-    border-bottom: 1px solid var(--color-text-muted);
-    padding-bottom: 1px;
-    transition: color 0.15s ease, border-color 0.15s ease;
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    padding: 0.34rem 0.72rem;
+    line-height: 1;
+    transition: color 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
   }
   .footer-resume:hover {
     color: var(--color-green-primary);
-    border-bottom-color: var(--color-green-primary);
+    border-color: var(--color-green-primary);
+    transform: translateY(-2px);
   }
 
   .footer-copy {
