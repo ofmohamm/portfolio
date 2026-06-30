@@ -154,8 +154,8 @@ const RESUME_URL = 'https://drive.google.com/file/d/1-0OkidhFCiwY4Qzrx7l75aHpLJc
   </section>
 
   <!-- ============ SKILLS ============ -->
-  <section id="skills" class="content-section reveal">
-    <div class="content-inner">
+  <section id="skills" class="content-section content-section--wide reveal">
+    <div class="content-inner content-inner--wide">
       <h2 class="section-heading">Skills</h2>
 
       <div class="skills-list">
@@ -273,7 +273,10 @@ const RESUME_URL = 'https://drive.google.com/file/d/1-0OkidhFCiwY4Qzrx7l75aHpLJc
   /* ============ HERO ============ */
   .hero {
     position: relative;
-    min-height: 100vh;
+    /* Cap the hero so it doesn't stretch on very tall / zoomed-out viewports,
+       which would leave a large empty band between the centered content and
+       the projects section below. */
+    min-height: min(100vh, 860px);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -726,7 +729,9 @@ const RESUME_URL = 'https://drive.google.com/file/d/1-0OkidhFCiwY4Qzrx7l75aHpLJc
   body.modal-open model-viewer * { cursor: grab !important; }
 
   /* ============ TABLET / MOBILE ============ */
-  @media (max-width: 820px) {
+  /* Keep the 2-up grid down through tablets; single column only on phones,
+     so portrait tablets don't get oversized full-width 4:3 tiles. */
+  @media (max-width: 640px) {
     .work-grid { grid-template-columns: 1fr; }
   }
 
