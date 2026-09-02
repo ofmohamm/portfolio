@@ -37,8 +37,21 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || 'https://omarmoha
     <meta name="description" content={description} />
     <meta name="generator" content={Astro.generator} />
 
-    <!-- Favicon — the "mo" logo mark, transparent -->
-    <link rel="icon" type="image/png" href="/favicon.png" />
+    <!--
+      Favicons. /favicon.ico matters specifically because browsers and Google
+      request that path automatically whether or not it is declared, and it was
+      previously still Astro's default logo.
+    -->
+    <link rel="icon" href="/favicon.ico" sizes="16x16 32x32 48x48" />
+    <link rel="icon" type="image/png" href="/favicon.png" sizes="192x192" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+
+    <!--
+      /llms.txt v2 link relations: point agents at the markdown twin of this
+      page and at the llms.txt that describes it.
+    -->
+    <link rel="alternate" type="text/markdown" href="/index.md" />
+    <link rel="describedby" href="/llms.txt" />
 
     <!--
       Fonts are self-hosted (see global.css). No third-party origin, no
