@@ -256,3 +256,51 @@ h1, h2, h3, h4, h5, h6 {
 .no-js .modal-close {
   text-decoration: none;
 }
+
+/* ============================================================
+   Mobile fixes
+   ============================================================ */
+
+/* While a dialog is open, stop the page behind it from scrolling. Without
+   this, touch scrolling inside the modal chains to the page underneath once
+   the modal hits its end, which feels broken on a phone. */
+body.modal-open {
+  overflow: hidden;
+  touch-action: none;
+}
+
+/* Touch targets. On a coarse pointer, expand the hit area of small controls to
+   44px using a pseudo-element, so nothing about the layout or the visual size
+   changes. ::before is used because .nav-link::after is the current-section
+   underline. */
+@media (pointer: coarse) {
+  .hero-icon,
+  .footer-icon,
+  .nav-link,
+  .hero-resume,
+  .footer-resume,
+  .nav-logo,
+  .nav-logo-mobile,
+  .hero-scroll-cue,
+  .modal-close {
+    position: relative;
+  }
+
+  .hero-icon::before,
+  .footer-icon::before,
+  .nav-link::before,
+  .hero-resume::before,
+  .footer-resume::before,
+  .nav-logo::before,
+  .nav-logo-mobile::before,
+  .hero-scroll-cue::before,
+  .modal-close::before {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: max(100%, 44px);
+    height: max(100%, 44px);
+    transform: translate(-50%, -50%);
+  }
+}

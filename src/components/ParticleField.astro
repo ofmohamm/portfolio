@@ -49,6 +49,11 @@
     if (!ctx) return;
 
     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    // A coarse pointer cannot hover, so the mouse-repel interaction is
+    // unreachable and the loop would only drain battery. Draw one frame and
+    // stop, exactly as reduced-motion does.
+    const coarsePointer = window.matchMedia('(pointer: coarse)').matches;
+    const staticOnly = reduceMotion || coarsePointer;
 
     let w = 0, h = 0, dpr = 1;
     let dots: Dot[] = [];
@@ -192,7 +197,7 @@
     }
 
     function start() {
-      if (running || reduceMotion) return;
+      if (running || staticOnly) return;
       running = true;
       lastPaint = 0;
       raf = requestAnimationFrame(loop);
@@ -212,7 +217,7 @@
     if (!resize()) return;
     seed();
 
-    if (reduceMotion) {
+    if (staticOnly) {
       step();          // one static frame, then nothing
       return;
     }

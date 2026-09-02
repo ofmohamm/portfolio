@@ -106,6 +106,22 @@ import navLogo from '../assets/mo-logo.png';
   }
   .nav-link:hover { color: var(--color-green-primary); }
 
+  /* Current-section indicator. Deliberately a hairline with no transition:
+     on a two-item nav anything heavier reads as fussy. */
+  .nav-link {
+    position: relative;
+  }
+
+  .nav-link[aria-current='true']::after {
+    content: '';
+    position: absolute;
+    left: 0.25rem;
+    right: 0.25rem;
+    bottom: 0.3rem;
+    height: 1px;
+    background: currentColor;
+  }
+
   .nav-right-spacer { display: none; }
 
   /* MOBILE */
@@ -144,6 +160,60 @@ import navLogo from '../assets/mo-logo.png';
 </style>
 
 <script>
+  // Marks the nav link for whichever section is currently in view. Uses
+  // aria-current so it is announced, not just drawn.
+  function wireNavActive() {
+    const links = Array.from(
+      document.querySelectorAll<HTMLAnchorElement>('.nav-link[href^="#"]')
+    );
+    if (links.length === 0) return;
+
+    // Desktop and mobile navs both exist, so group links by target.
+    const byHash = new Map<string, HTMLAnchorElement[]>();
+    for (const link of links) {
+      const hash = link.getAttribute('href');
+      if (!hash || hash.length < 2) continue;
+      const list = byHash.get(hash) ?? [];
+      list.push(link);
+      byHash.set(hash, list);
+    }
+
+    const sections = Array.from(byHash.keys())
+      .map((hash) => document.querySelector<HTMLElement>(hash))
+      .filter((el): el is HTMLElement => el !== null);
+    if (sections.length === 0) return;
+    if (!('IntersectionObserver' in window)) return; // no indicator is fine
+
+    function setCurrent(hash: string | null) {
+      for (const [h, els] of byHash) {
+        for (const el of els) {
+          if (h === hash) el.setAttribute('aria-current', 'true');
+          else el.removeAttribute('aria-current');
+        }
+      }
+    }
+
+    const inBand = new Set<string>();
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          const id = (entry.target as HTMLElement).id;
+          if (entry.isIntersecting) inBand.add(id);
+          else inBand.delete(id);
+        }
+        // Narrow band near the top third of the viewport, so normally only one
+        // section qualifies. Ties resolve to document order.
+        const current = sections.find((sec) => inBand.has(sec.id));
+        setCurrent(current ? `#${current.id}` : null);
+      },
+      { rootMargin: '-40% 0px -55% 0px', threshold: 0 }
+    );
+    for (const sec of sections) io.observe(sec);
+  }
+
+  wireNavActive();
+  document.addEventListener('astro:page-load', wireNavActive);
+
   function wireHeader() {
     document.querySelectorAll<HTMLAnchorElement>('[data-scroll-top]').forEach((el) => {
       el.addEventListener('click', (e) => {

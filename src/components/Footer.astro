@@ -23,12 +23,12 @@ const RESUME_ICON = `<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 
 ---
 
 <footer class="site-footer">
-  <p class="footer-intent">
+  <div class="footer-rule" aria-hidden="true"></div>
+  <p class="footer-intent"><span class="footer-intent-measure">
     Always looking to connect with builders, founders, and creators. If you
-    are working on something in hardware, firmware, or silicon, I would like
+    are working on something in hardware, firmware, or silicon, I would love
     to hear about it.
-    <a class="footer-intent-link" href="mailto:mail.omarmohammed@gmail.com">Get in touch</a>
-  </p>
+  </span></p>
   <div class="footer-inner">
     <nav class="footer-links" aria-label="Profiles and resume">
       {socialIcons.map((s) => (
@@ -47,31 +47,39 @@ const RESUME_ICON = `<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 
 
 <style>
   .site-footer {
-    border-top: 1px solid var(--color-border);
-    padding: 2.5rem var(--gutter);
-    margin-top: 7rem;
+    /* No full-bleed border. A rule spanning the whole viewport while every
+       other element sits in a 920px column reads as disconnected. The
+       separator below is constrained to the content width instead. */
+    padding: 0 var(--gutter) 2.5rem;
+    margin-top: 8rem;
+  }
+
+  .footer-rule {
+    max-width: 920px;
+    margin: 0 auto 2.5rem;
+    height: 1px;
+    background: var(--color-border);
   }
 
   .footer-intent {
+    /* Sits in the same 920px column as .footer-inner, left-aligned with the
+       icons below it. The measure is capped for readability without centering
+       the block. */
     max-width: 920px;
     margin: 0 auto 2rem;
+    text-align: left;
     font-family: var(--font-sans);
     font-size: 0.95rem;
     line-height: 1.65;
     color: var(--color-text-secondary);
-    max-inline-size: 62ch;
   }
 
-  .footer-intent-link {
-    display: inline-block;
-    margin-left: 0.35rem;
-    font-weight: 500;
-    color: var(--color-green-primary);
-    text-decoration: none;
-    border-bottom: 1px solid currentColor;
+  .footer-intent-measure {
+    display: block;   /* max-width has no effect on an inline element */
+    max-width: 62ch;
   }
 
-  .footer-intent-link:hover { color: var(--color-green-hover); }
+
 
 
   .footer-inner {
