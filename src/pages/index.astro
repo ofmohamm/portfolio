@@ -85,10 +85,19 @@ const RESUME_ICON = `<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 
     <ParticleField />
 
     <div class="hero-inner">
+      <!--
+        The signature is the visual H1. The name is carried as real text for
+        crawlers and screen readers, and the image is marked decorative so the
+        name is not announced twice.
+      -->
+      <h1 class="hero-h1">
+        <span class="sr-only">{`${hero?.firstName ?? 'Omar'} ${hero?.lastName ?? 'Mohammed'}`}</span>
+      </h1>
       <img
         class="hero-signature"
         src={heroImg.src}
-        alt={`${hero?.firstName ?? 'Omar'} ${hero?.lastName ?? 'Mohammed'}`}
+        alt=""
+        aria-hidden="true"
         width={heroImg.width}
         height={heroImg.height}
         fetchpriority="high"
@@ -339,6 +348,12 @@ const RESUME_ICON = `<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 
     flex-direction: column;
     align-items: center;
     text-align: center;
+  }
+
+  .hero-h1 {
+    margin: 0;
+    padding: 0;
+    line-height: 0;
   }
 
   .hero-signature {
