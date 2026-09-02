@@ -1,39 +1,54 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
-import InteractiveBackground from '../components/InteractiveBackground';
-import PCBViewer from '../components/PCBViewer.astro';
-import { createReader } from '@keystatic/core/reader';
-import keystaticConfig from '../../keystatic.config';
+import ParticleField from '../components/ParticleField.astro';
+import { Image } from 'astro:assets';
+import { getCollection, getEntry } from 'astro:content';
 
-// All content below is managed through the dashboard at /keystatic.
-const reader = createReader(process.cwd(), keystaticConfig);
+// Project cover images live in src/assets so Astro can convert and resize them.
+import watercamPcb from '../assets/projects/watercam-pcb.png';
+import privacyTracker from '../assets/projects/privacy-tracker.jpg';
+import heroLogo from '../assets/logo.png';
 
-const [hero, featuredProject, skillsData, seo, projectEntries] = await Promise.all([
-  reader.singletons.hero.read(),
-  reader.singletons.featured.read(),
-  reader.singletons.skills.read(),
-  reader.singletons.seo.read(),
-  reader.collections.projects.all(),
+const covers: Record<string, ImageMetadata> = {
+  'flood-detection-sensor-pcb': watercamPcb,
+  'privacy-based-tracker': privacyTracker,
+};
+
+// Content is YAML on disk, read at build time by Astro's content layer.
+const [heroEntry, featuredEntry, skillsEntry, seoEntry, projectEntries] = await Promise.all([
+  getEntry('site', 'hero'),
+  getEntry('site', 'featured'),
+  getEntry('site', 'skills'),
+  getEntry('site', 'seo'),
+  getCollection('projects'),
 ]);
 
+// The hero signature is flat line art with alpha. A palette PNG encodes it far
+// smaller than lossy WebP (12kB vs 37kB), so the source is pre-quantized and
+// served as-is. One fixed asset also means the <head> preload and the <img>
+// request resolve to the same file, with no double download.
+const heroImg = heroLogo;
+
+const hero = heroEntry?.data;
+const featuredProject = featuredEntry?.data;
+const seo = seoEntry?.data;
+
 const projects = projectEntries
-  .map(({ slug, entry }) => ({
-    id: slug,
-    name: entry.name,
-    subtitle: entry.subtitle,
-    oneLiner: entry.oneLiner,
-    order: entry.order,
-    poster: entry.poster ?? undefined,
-    model3d: entry.mediaType === '3d' ? entry.model3d ?? undefined : undefined,
-    video: entry.mediaType === 'video' ? entry.video ?? undefined : undefined,
-    tech: entry.tech,
-    github: entry.github ?? undefined,
-    body: entry.body,
-    specs: entry.specs.map((s) => [s.key, s.value] as const),
+  .map((entry) => ({
+    id: entry.id,
+    name: entry.data.name,
+    subtitle: entry.data.subtitle,
+    oneLiner: entry.data.oneLiner,
+    order: entry.data.order,
+    cover: covers[entry.id],
+    tech: entry.data.tech,
+    github: entry.data.github,
+    body: entry.data.body,
+    specs: entry.data.specs.map((sp) => [sp.key, sp.value] as const),
   }))
   .sort((a, b) => a.order - b.order);
 
-const skills = (skillsData?.groups ?? []).map((g) => ({
+const skills = (skillsEntry?.data.groups ?? []).map((g) => ({
   label: g.label,
   items: g.items,
 }));
@@ -61,26 +76,23 @@ const RESUME_ICON = `<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 
 ---
 
 <BaseLayout
+  preloadImage={heroImg.src}
   title={seo?.title ?? 'Omar Mohammed — FPGA, embedded firmware, PCB design'}
   description={seo?.description ?? 'Hardware design focused EE student at Syracuse. FPGA accelerators (Vivado, SystemVerilog, VHDL), embedded firmware (C/C++, LoRaWAN), and PCB design (KiCad).'}
 >
-  {/* Preload 3D models during the hero so the modal opens instantly */}
-  {projects.filter((p) => p.model3d).map((p) => (
-    <link rel="prefetch" href={p.model3d} />
-  ))}
-
   <!-- ============ HERO ============ -->
   <section id="hero" class="snap-section hero">
-    <InteractiveBackground client:load />
+    <ParticleField />
 
     <div class="hero-inner">
       <img
         class="hero-signature"
-        src="/images/logo.png"
+        src={heroImg.src}
         alt={`${hero?.firstName ?? 'Omar'} ${hero?.lastName ?? 'Mohammed'}`}
-        width="560"
-        height="180"
+        width={heroImg.width}
+        height={heroImg.height}
         fetchpriority="high"
+        decoding="async"
       />
 
       <p class="hero-positioning">
@@ -123,25 +135,19 @@ const RESUME_ICON = `<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 
 
       <div class="work-grid">
         {projects.map((p) => (
-          <button class="project-card" data-open={p.id} aria-label={`${p.name} — open details`}>
-            <div class="card-media" data-media={p.model3d ? '3d' : 'video'}>
-              {p.model3d ? (
-                <img class="card-video" src={p.poster} alt={`${p.name} preview`} />
-              ) : p.video ? (
-                <video
+          <button class="project-card" id={p.id} data-open={p.id} aria-label={`${p.name} — open details`}>
+            <div class="card-media" data-media="image">
+              {p.cover && (
+                <Image
                   class="card-video"
-                  src={p.video}
-                  poster={p.poster}
-                  muted
-                  loop
-                  playsinline
-                  preload="metadata"
-                  autoplay
-                  aria-label={`${p.name} demo video`}
-                ></video>
-              ) : p.poster ? (
-                <img class="card-video" src={p.poster} alt={`${p.name} preview`} />
-              ) : null}
+                  src={p.cover}
+                  alt={`${p.name} preview`}
+                  widths={[480, 800, 1200]}
+                  sizes="(max-width: 768px) 100vw, 540px"
+                  loading="lazy"
+                  decoding="async"
+                />
+              )}
               <div class="card-overlay">
                 <h3 class="card-name">{p.name}</h3>
                 <span class="card-cue" aria-hidden="true">View<span class="cue-arrow">↗</span></span>
@@ -193,28 +199,19 @@ const RESUME_ICON = `<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 
           </button>
         </div>
 
-        {p.model3d ? (
+        {p.cover && (
           <div class="modal-media">
-            <PCBViewer src={p.model3d} alt={`${p.name} 3D model`} fallback={p.poster} />
-          </div>
-        ) : p.video ? (
-          <div class="modal-media">
-            <video
+            <Image
               class="modal-video"
-              src={p.video}
-              poster={p.poster}
-              muted
-              loop
-              playsinline
-              preload="metadata"
-              autoplay
-            ></video>
+              src={p.cover}
+              alt={`${p.name}`}
+              widths={[640, 1000, 1400]}
+              sizes="(max-width: 768px) 100vw, 900px"
+              loading="lazy"
+              decoding="async"
+            />
           </div>
-        ) : p.poster ? (
-          <div class="modal-media">
-            <img class="modal-video" src={p.poster} alt={`${p.name} preview`} />
-          </div>
-        ) : null}
+        )}
 
         {p.body.map((para) => <p class="modal-body">{para}</p>)}
 

@@ -1,6 +1,10 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
-import { Home, ArrowLeft } from 'lucide-react';
+
+// Icons are inline SVG, matching the rest of the site. Avoids pulling in
+// lucide-react (and React) for two glyphs.
+const ICON_HOME = `<path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>`;
+const ICON_BACK = `<line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/>`;
 ---
 
 <BaseLayout title="Page Not Found | Omar Mohammed">
@@ -20,14 +24,14 @@ import { Home, ArrowLeft } from 'lucide-react';
           href="/"
           class="inline-flex items-center gap-2 px-6 py-3 bg-green-primary text-white font-medium rounded-lg hover:bg-green-hover transition-all"
         >
-          <Home className="w-5 h-5" />
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={ICON_HOME} />
           Go Home
         </a>
         <button
           onclick="history.back()"
           class="inline-flex items-center gap-2 px-6 py-3 border-2 border-green-primary text-green-primary font-medium rounded-lg hover:bg-green-primary hover:text-white transition-all"
         >
-          <ArrowLeft className="w-5 h-5" />
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={ICON_BACK} />
           Go Back
         </button>
       </div>

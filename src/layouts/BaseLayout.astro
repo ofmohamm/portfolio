@@ -1,17 +1,24 @@
 ---
 import '../styles/global.css';
 import Header from '../components/Header.astro';
-import CustomCursor from '../components/CustomCursor';
 import Footer from '../components/Footer.astro';
+
+// Hashed URLs for the two self-hosted font subsets, so they can be preloaded.
+// @font-face declarations live in global.css.
+import newsreaderUrl from '../assets/fonts/newsreader-latin.woff2?url';
+import schibstedUrl from '../assets/fonts/schibsted-grotesk-latin.woff2?url';
 
 interface Props {
   title: string;
   description?: string;
   image?: string;
+  /** Optional above-the-fold image to preload (already-optimized URL). */
+  preloadImage?: string;
 }
 
 const {
   title,
+  preloadImage,
   description = "Hardware design focused EE student at Syracuse University. FPGA accelerators (Vivado, SystemVerilog, VHDL), embedded firmware (C/C++, LoRaWAN), and PCB design (KiCad).",
   image = "/og-image.png"
 } = Astro.props;
@@ -30,10 +37,15 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || 'https://omarmoha
     <!-- Favicon — the "mo" logo mark, transparent -->
     <link rel="icon" type="image/png" href="/favicon.png" />
 
-    <!-- Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400&display=swap" rel="stylesheet" />
+    <!--
+      Fonts are self-hosted (see global.css). No third-party origin, no
+      render-blocking stylesheet from fonts.googleapis.com.
+    -->
+    <link rel="preload" href={newsreaderUrl} as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href={schibstedUrl} as="font" type="font/woff2" crossorigin />
+
+    <!-- Above-the-fold image paints first; start it before the parser gets there. -->
+    {preloadImage && <link rel="preload" href={preloadImage} as="image" />}
 
     <!-- Open Graph -->
     <meta property="og:title" content={title} />
@@ -79,6 +91,17 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || 'https://omarmoha
     })} />
   </head>
   <body class="min-h-screen flex flex-col">
+    <!--
+      Reliability: scroll-reveal sections start hidden and are shown by an
+      IntersectionObserver. If JavaScript never runs, this makes them visible
+      instead of leaving the page permanently blank below the hero.
+    -->
+    <noscript>
+      <style>
+        .reveal { opacity: 1 !important; transform: none !important; }
+      </style>
+    </noscript>
+
     <!-- Grain texture overlay -->
     <div class="grain-overlay" aria-hidden="true"></div>
 
@@ -88,20 +111,10 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || 'https://omarmoha
     <!-- Header with navigation -->
     <Header />
 
-    <!-- Custom cursor -->
-    <CustomCursor client:load />
-
     <main id="main-content" class="flex-1">
       <slot />
     </main>
 
     <Footer />
-
-    <!-- Global model-viewer loader (used by PCBViewer) -->
-    <script>
-      if (!customElements.get('model-viewer')) {
-        import('@google/model-viewer');
-      }
-    </script>
   </body>
 </html>

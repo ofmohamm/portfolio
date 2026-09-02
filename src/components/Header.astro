@@ -3,13 +3,17 @@ const navLinks = [
   { href: '#projects', label: 'Projects' },
   { href: '#skills', label: 'Skills' },
 ];
+
+import { Image } from 'astro:assets';
+import navLogo from '../assets/mo-logo.png';
 ---
+
 
 <header class="site-header">
   <!-- DESKTOP NAV -->
   <nav class="nav-desktop">
     <a href="#hero" class="nav-logo" data-scroll-top aria-label="Back to top">
-      <img class="nav-logo-mark" src="/images/mo-logo.png" alt="Omar Mohammed" width="841" height="428" />
+      <Image class="nav-logo-mark" src={navLogo} alt="Omar Mohammed" width={88} densities={[1, 2]} format="webp" loading="eager" />
     </a>
 
     <div class="nav-links">
@@ -24,7 +28,7 @@ const navLinks = [
   <!-- MOBILE NAV BAR -->
   <nav class="nav-mobile-bar">
     <a href="#hero" class="nav-logo-mobile" data-scroll-top aria-label="Back to top">
-      <img class="nav-logo-mark" src="/images/mo-logo.png" alt="Omar Mohammed" width="841" height="428" />
+      <Image class="nav-logo-mark" src={navLogo} alt="Omar Mohammed" width={88} densities={[1, 2]} format="webp" loading="eager" />
     </a>
 
     <div class="nav-mobile-actions">

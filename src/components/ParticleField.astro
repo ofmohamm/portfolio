@@ -1,0 +1,82 @@
+---
+// Static decorative dot field. Drawn once on load, then the script exits.
+// No animation loop, no mouse tracking, no per-frame work.
+---
+
+<canvas class="particle-canvas" aria-hidden="true"></canvas>
+
+<style>
+  .particle-canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 0;
+  }
+</style>
+
+<script>
+  function drawParticleField() {
+    const canvas = document.querySelector<HTMLCanvasElement>('.particle-canvas');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const w = canvas.clientWidth;
+    const h = canvas.clientHeight;
+    if (!w || !h) return;
+
+    canvas.width = Math.round(w * dpr);
+    canvas.height = Math.round(h * dpr);
+    ctx.scale(dpr, dpr);
+    ctx.clearRect(0, 0, w, h);
+
+    const count = w < 768 ? 28 : 52;
+    const connect = 130;
+    const dots: { x: number; y: number; r: number; a: number }[] = [];
+    for (let i = 0; i < count; i++) {
+      dots.push({
+        x: Math.random() * w,
+        y: Math.random() * h,
+        r: Math.random() * 2 + 2,
+        a: Math.random() * 0.3 + 0.4,
+      });
+    }
+
+    // Connections first, batched into one path so this is a single stroke call.
+    const lines = new Path2D();
+    for (let i = 0; i < dots.length; i++) {
+      for (let j = i + 1; j < dots.length; j++) {
+        const dx = dots[i].x - dots[j].x;
+        const dy = dots[i].y - dots[j].y;
+        if (dx * dx + dy * dy < connect * connect) {
+          lines.moveTo(dots[i].x, dots[i].y);
+          lines.lineTo(dots[j].x, dots[j].y);
+        }
+      }
+    }
+    ctx.strokeStyle = 'rgba(107, 107, 107, 0.16)';
+    ctx.lineWidth = 1;
+    ctx.stroke(lines);
+
+    for (const d of dots) {
+      ctx.beginPath();
+      ctx.arc(d.x, d.y, d.r, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(107, 107, 107, ${d.a})`;
+      ctx.fill();
+    }
+  }
+
+  // Redraw on resize so the field stays sharp, debounced. Still no rAF loop.
+  let resizeTimer: number | undefined;
+  function onResize() {
+    window.clearTimeout(resizeTimer);
+    resizeTimer = window.setTimeout(drawParticleField, 200);
+  }
+
+  drawParticleField();
+  window.addEventListener('resize', onResize);
+  document.addEventListener('astro:page-load', drawParticleField);
+</script>

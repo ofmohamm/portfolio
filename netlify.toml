@@ -6,6 +6,47 @@
   NODE_VERSION = "20"
   # NOTE: the Netlify OOM (exit 137) was NOT a V8 heap problem — it was
   # Tailwind v4's automatic content detection scanning large binary assets in
-  # public/ (4.7MB GLB models, etc.) as text, ballooning the build to ~14GB
-  # RSS. The real fix lives in src/styles/global.css, which scopes Tailwind's
-  # source detection to source files only. With that, peak build RSS is ~1.3GB.
+  # public/ as text. The fix lives in src/styles/global.css, which scopes
+  # Tailwind's source detection to source files only.
+
+# ---------------------------------------------------------------
+# Security headers. Applied to every route.
+# ---------------------------------------------------------------
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=(), payment=(), usb=(), xr-spatial-tracking=()"
+    Cross-Origin-Opener-Policy = "same-origin"
+    Strict-Transport-Security = "max-age=63072000; includeSubDomains"
+    # Report-only first. Watch for violations, then promote to the enforcing
+    # Content-Security-Policy header. 'unsafe-inline' on script-src is still
+    # required by Astro's inline island/hydration scripts.
+    Content-Security-Policy-Report-Only = "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data:; media-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests"
+
+# ---------------------------------------------------------------
+# Caching. Astro's own output is content-hashed, so it is immutable.
+# Files in public/ are not hashed, so they get a shorter max-age with
+# revalidation rather than "immutable".
+# ---------------------------------------------------------------
+[[headers]]
+  for = "/_astro/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/images/*"
+  [headers.values]
+    Cache-Control = "public, max-age=604800, stale-while-revalidate=86400"
+
+[[headers]]
+  for = "/favicon.png"
+  [headers.values]
+    Cache-Control = "public, max-age=604800"
+
+[[headers]]
+  for = "/og-image.png"
+  [headers.values]
+    Cache-Control = "public, max-age=604800"

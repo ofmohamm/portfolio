@@ -1,9 +1,10 @@
-name: SOQ 1
+name: Privacy Based Tracker
 subtitle: Personal project · 2025
-oneLiner: A Kinect-audio tracking system that estimates and targets a detected sound.
+oneLiner: >-
+  A Kinect-audio tracking system that estimates and targets a detected sound,
+  without recording or transmitting any audio.
 order: 1
-mediaType: video
-video: /videos/soq-1/video.mp4
+mediaType: image
 tech:
   - C
   - Python
@@ -15,6 +16,9 @@ body:
     array and fuses it with absolute heading from a servo-mounted IMU to point
     at the source in real time. Controller firmware in C, signal processing and
     a live Qt visualizer in Python, with telemetry over UDP.
+  - >-
+    Tracking is audio-only by design. There is no camera in the signal path, all
+    processing runs on the host, and no audio is stored or transmitted.
 specs:
   - key: Input
     value: Kinect 360 4-mic array, servo-mounted IMU
@@ -22,3 +26,5 @@ specs:
     value: left/right audio direction fused with IMU heading
   - key: Stack
     value: C firmware, Python signal processing, Qt visualizer, UDP telemetry
+  - key: Privacy
+    value: audio-only, processed on-host, nothing recorded or sent

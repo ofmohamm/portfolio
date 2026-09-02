@@ -1,0 +1,25 @@
+name: CI
+
+# Build-only check. Deployment is handled by Netlify, which builds from this
+# repo on its own. This workflow deliberately holds no deploy permissions.
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      # `npm ci` installs exactly what the lockfile pins, and ignoring install
+      # scripts stops a compromised transitive dependency from executing here.
+      - run: npm ci --ignore-scripts
+      - run: npm run build
