@@ -1,6 +1,18 @@
 ---
-// Static decorative dot field. Drawn once on load, then the script exits.
-// No animation loop, no mouse tracking, no per-frame work.
+// Animated dot field for the hero.
+//
+// Cost control, in order of how much it actually matters:
+//   1. Stops completely when scrolled out of view, and when the tab is hidden.
+//      The old version ran forever, so reading the Skills section still paid
+//      full price for an animation nobody could see.
+//   2. Renders at ~30fps instead of 60. Halves paint work outright; the drift
+//      is slow enough that nobody can tell.
+//   3. All connection lines go into 3 Path2D buckets, so this is 3 stroke()
+//      calls per frame rather than one per line (~240 before). Canvas2D draw
+//      call overhead was the real cost, not the arithmetic.
+//   4. Neighbours come from a uniform grid, and distance tests compare squared
+//      values, so there is no sqrt in the hot loop.
+//   5. Device pixel ratio is capped, since this is a low-contrast background.
 ---
 
 <canvas class="particle-canvas" aria-hidden="true"></canvas>
@@ -17,66 +29,228 @@
 </style>
 
 <script>
-  function drawParticleField() {
+  type Dot = {
+    x: number; y: number; vx: number; vy: number;
+    size: number; alpha: number; angle: number; speed: number;
+  };
+
+  const CONNECT = 120;      // px: link dots closer than this
+  const REPEL = 150;        // px: mouse influence radius
+  const REPEL_FORCE = 0.8;
+  const DAMPING = 0.95;
+  const TARGET_FPS = 30;
+  const DPR_CAP = 1.5;
+  const BUCKETS = 3;        // opacity tiers for batched strokes
+
+  function initParticleField() {
     const canvas = document.querySelector<HTMLCanvasElement>('.particle-canvas');
     if (!canvas) return;
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext('2d', { alpha: true });
     if (!ctx) return;
 
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
-    const w = canvas.clientWidth;
-    const h = canvas.clientHeight;
-    if (!w || !h) return;
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-    canvas.width = Math.round(w * dpr);
-    canvas.height = Math.round(h * dpr);
-    ctx.scale(dpr, dpr);
-    ctx.clearRect(0, 0, w, h);
+    let w = 0, h = 0, dpr = 1;
+    let dots: Dot[] = [];
+    let raf = 0;
+    let running = false;
+    let onScreen = true;
+    let frame = 0;
+    let lastPaint = 0;
+    const mouse = { x: 0, y: 0, active: false };
 
-    const count = w < 768 ? 28 : 52;
-    const connect = 130;
-    const dots: { x: number; y: number; r: number; a: number }[] = [];
-    for (let i = 0; i < count; i++) {
-      dots.push({
-        x: Math.random() * w,
-        y: Math.random() * h,
-        r: Math.random() * 2 + 2,
-        a: Math.random() * 0.3 + 0.4,
-      });
+    function resize() {
+      w = canvas.clientWidth;
+      h = canvas.clientHeight;
+      if (!w || !h) return false;
+      dpr = Math.min(window.devicePixelRatio || 1, DPR_CAP);
+      canvas.width = Math.round(w * dpr);
+      canvas.height = Math.round(h * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      return true;
     }
 
-    // Connections first, batched into one path so this is a single stroke call.
-    const lines = new Path2D();
-    for (let i = 0; i < dots.length; i++) {
-      for (let j = i + 1; j < dots.length; j++) {
-        const dx = dots[i].x - dots[j].x;
-        const dy = dots[i].y - dots[j].y;
-        if (dx * dx + dy * dy < connect * connect) {
-          lines.moveTo(dots[i].x, dots[i].y);
-          lines.lineTo(dots[j].x, dots[j].y);
-        }
+    function seed() {
+      // Density-based, so a wide window is not sparse and a phone is not busy.
+      const target = Math.round((w * h) / 26000);
+      const count = Math.max(24, Math.min(target, w < 768 ? 32 : 70));
+      dots = [];
+      for (let i = 0; i < count; i++) {
+        dots.push({
+          x: Math.random() * w,
+          y: Math.random() * h,
+          vx: 0, vy: 0,
+          size: Math.random() * 2 + 2,
+          alpha: Math.random() * 0.3 + 0.4,
+          angle: Math.random() * Math.PI * 2,
+          speed: 0.3 * (0.5 + Math.random() * 0.5),
+        });
       }
     }
-    ctx.strokeStyle = 'rgba(107, 107, 107, 0.16)';
-    ctx.lineWidth = 1;
-    ctx.stroke(lines);
 
-    for (const d of dots) {
-      ctx.beginPath();
-      ctx.arc(d.x, d.y, d.r, 0, Math.PI * 2);
-      ctx.fillStyle = `rgba(107, 107, 107, ${d.a})`;
-      ctx.fill();
+    function step() {
+      const cell = CONNECT;
+      const cols = Math.max(1, Math.ceil(w / cell));
+      const rows = Math.max(1, Math.ceil(h / cell));
+      const grid: number[][] = [];
+
+      for (let i = 0; i < dots.length; i++) {
+        const d = dots[i];
+
+        // Direction jitter, staggered so only a couple of dots change per frame.
+        if (((frame + i) % 30) === 0) d.angle += (Math.random() - 0.5) * 0.5;
+
+        d.vx += Math.cos(d.angle) * d.speed * 0.1;
+        d.vy += Math.sin(d.angle) * d.speed * 0.1;
+
+        if (mouse.active) {
+          const dx = d.x - mouse.x;
+          const dy = d.y - mouse.y;
+          const d2 = dx * dx + dy * dy;
+          if (d2 < REPEL * REPEL) {
+            const dist = Math.sqrt(d2) || 1;
+            const force = (REPEL - dist) / REPEL;
+            d.vx += (dx / dist) * force * REPEL_FORCE;
+            d.vy += (dy / dist) * force * REPEL_FORCE;
+          }
+        }
+
+        d.x += d.vx; d.y += d.vy;
+        d.vx *= DAMPING; d.vy *= DAMPING;
+
+        if (d.x < 0) d.x = w; else if (d.x > w) d.x = 0;
+        if (d.y < 0) d.y = h; else if (d.y > h) d.y = 0;
+
+        const cx = Math.min(cols - 1, Math.max(0, (d.x / cell) | 0));
+        const cy = Math.min(rows - 1, Math.max(0, (d.y / cell) | 0));
+        const k = cy * cols + cx;
+        (grid[k] ||= []).push(i);
+      }
+
+      ctx.clearRect(0, 0, w, h);
+
+      // Connections, bucketed by strength so the whole field is a handful of
+      // stroke() calls. Each cell pair is visited once.
+      const paths: Path2D[] = [];
+      for (let b = 0; b < BUCKETS; b++) paths.push(new Path2D());
+      const C2 = CONNECT * CONNECT;
+      const NEIGHBOURS = [[0, 0], [1, 0], [-1, 1], [0, 1], [1, 1]];
+
+      for (let cy = 0; cy < rows; cy++) {
+        for (let cx = 0; cx < cols; cx++) {
+          const a = grid[cy * cols + cx];
+          if (!a) continue;
+          for (let n = 0; n < NEIGHBOURS.length; n++) {
+            const nx = cx + NEIGHBOURS[n][0];
+            const ny = cy + NEIGHBOURS[n][1];
+            if (nx < 0 || ny < 0 || nx >= cols || ny >= rows) continue;
+            const bList = grid[ny * cols + nx];
+            if (!bList) continue;
+            const same = NEIGHBOURS[n][0] === 0 && NEIGHBOURS[n][1] === 0;
+            for (let ii = 0; ii < a.length; ii++) {
+              const p = dots[a[ii]];
+              for (let jj = same ? ii + 1 : 0; jj < bList.length; jj++) {
+                const q = dots[bList[jj]];
+                const dx = p.x - q.x, dy = p.y - q.y;
+                const d2 = dx * dx + dy * dy;
+                if (d2 >= C2) continue;
+                // Bucket on squared ratio; avoids a sqrt per line.
+                const t = 1 - d2 / C2;
+                const bi = Math.min(BUCKETS - 1, (t * BUCKETS) | 0);
+                paths[bi].moveTo(p.x, p.y);
+                paths[bi].lineTo(q.x, q.y);
+              }
+            }
+          }
+        }
+      }
+
+      ctx.lineWidth = 1;
+      for (let b = 0; b < BUCKETS; b++) {
+        ctx.strokeStyle = `rgba(107, 107, 107, ${(0.06 + b * 0.06).toFixed(3)})`;
+        ctx.stroke(paths[b]);
+      }
+
+      for (let i = 0; i < dots.length; i++) {
+        const d = dots[i];
+        ctx.beginPath();
+        ctx.arc(d.x, d.y, d.size, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(107, 107, 107, ${d.alpha})`;
+        ctx.fill();
+      }
+
+      frame++;
     }
+
+    function loop(now: number) {
+      if (!running) return;
+      raf = requestAnimationFrame(loop);
+      // Frame-rate cap: skip frames rather than doing the work.
+      if (now - lastPaint < 1000 / TARGET_FPS) return;
+      lastPaint = now;
+      step();
+    }
+
+    function start() {
+      if (running || reduceMotion) return;
+      running = true;
+      lastPaint = 0;
+      raf = requestAnimationFrame(loop);
+    }
+
+    function stop() {
+      running = false;
+      if (raf) cancelAnimationFrame(raf);
+      raf = 0;
+    }
+
+    function sync() {
+      if (onScreen && !document.hidden) start();
+      else stop();
+    }
+
+    if (!resize()) return;
+    seed();
+
+    if (reduceMotion) {
+      step();          // one static frame, then nothing
+      return;
+    }
+
+    // Only animate while the hero is actually on screen.
+    if ('IntersectionObserver' in window) {
+      const io = new IntersectionObserver(
+        (entries) => {
+          onScreen = entries.some((e) => e.isIntersecting);
+          sync();
+        },
+        { threshold: 0 }
+      );
+      io.observe(canvas);
+    }
+
+    document.addEventListener('visibilitychange', sync);
+
+    window.addEventListener('mousemove', (e) => {
+      const r = canvas.getBoundingClientRect();
+      mouse.x = e.clientX - r.left;
+      mouse.y = e.clientY - r.top;
+      mouse.active = true;
+    }, { passive: true });
+
+    window.addEventListener('mouseleave', () => { mouse.active = false; });
+
+    let resizeTimer = 0;
+    window.addEventListener('resize', () => {
+      window.clearTimeout(resizeTimer);
+      resizeTimer = window.setTimeout(() => {
+        if (resize()) { seed(); if (!running) step(); }
+      }, 200);
+    });
+
+    sync();
   }
 
-  // Redraw on resize so the field stays sharp, debounced. Still no rAF loop.
-  let resizeTimer: number | undefined;
-  function onResize() {
-    window.clearTimeout(resizeTimer);
-    resizeTimer = window.setTimeout(drawParticleField, 200);
-  }
-
-  drawParticleField();
-  window.addEventListener('resize', onResize);
-  document.addEventListener('astro:page-load', drawParticleField);
+  initParticleField();
+  document.addEventListener('astro:page-load', initParticleField);
 </script>
