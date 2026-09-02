@@ -1,7 +1,7 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import ParticleField from '../components/ParticleField.astro';
-import { Image } from 'astro:assets';
+import { Image, Picture } from 'astro:assets';
 import { getCollection, getEntry } from 'astro:content';
 
 // Project cover images live in src/assets so Astro can convert and resize them.
@@ -138,12 +138,14 @@ const RESUME_ICON = `<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 
           <button class="project-card" id={p.id} data-open={p.id} aria-label={`${p.name} — open details`}>
             <div class="card-media" data-media="image">
               {p.cover && (
-                <Image
+                <Picture
                   class="card-video"
                   src={p.cover}
                   alt={`${p.name} preview`}
                   widths={[480, 800, 1200]}
                   sizes="(max-width: 768px) 100vw, 540px"
+                  formats={['avif', 'webp']}
+                  fallbackFormat="webp"
                   loading="lazy"
                   decoding="async"
                 />
@@ -201,12 +203,14 @@ const RESUME_ICON = `<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 
 
         {p.cover && (
           <div class="modal-media">
-            <Image
+            <Picture
               class="modal-video"
               src={p.cover}
               alt={`${p.name}`}
               widths={[640, 1000, 1400]}
               sizes="(max-width: 768px) 100vw, 900px"
+              formats={['avif', 'webp']}
+              fallbackFormat="webp"
               loading="lazy"
               decoding="async"
             />
@@ -245,6 +249,10 @@ const RESUME_ICON = `<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 
 
   .content-section {
     padding: 7rem var(--gutter) 0;
+    /* Skip layout and paint for these until they are near the viewport. The
+       contain-intrinsic-size keeps the scrollbar honest before they render. */
+    content-visibility: auto;
+    contain-intrinsic-size: auto 600px;
   }
 
   .content-inner {
