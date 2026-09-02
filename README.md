@@ -14,7 +14,7 @@ Vibe coded with [Conductor](https://conductor.build/) and Claude Code.
 
 **Flood Detection Sensor PCB** — Battery-powered flood monitor for urban areas. Thermal imaging, environmental sensing, LoRa, and a 3D PCB viewer.
 
-**Privary based audio tracker** — Kinect-audio tracking system that estimates sound direction from the mic array.
+**Privacy based audio tracker** — Kinect-audio tracking system that estimates sound direction from the mic array.
 
 ---
 
