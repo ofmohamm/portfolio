@@ -28,7 +28,7 @@ const ICON_BACK = `<line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19
           Go Home
         </a>
         <button
-          onclick="history.back()"
+          data-go-back
           class="inline-flex items-center gap-2 px-6 py-3 border-2 border-green-primary text-green-primary font-medium rounded-lg hover:bg-green-primary hover:text-white transition-all"
         >
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={ICON_BACK} />
@@ -38,3 +38,15 @@ const ICON_BACK = `<line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19
     </div>
   </section>
 </BaseLayout>
+
+<script>
+  // "Go back" is only useful if there is somewhere on this site to go back to.
+  // Arriving from an external broken link would otherwise bounce the visitor
+  // straight off the site.
+  document.querySelectorAll<HTMLButtonElement>('[data-go-back]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      if (history.length > 1 && document.referrer.includes(location.host)) history.back();
+      else location.href = '/';
+    });
+  });
+</script>

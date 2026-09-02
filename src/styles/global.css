@@ -21,7 +21,7 @@
 @font-face {
   font-family: 'Newsreader';
   font-style: normal;
-  font-weight: 200 800;
+  font-weight: 400 600;
   font-display: swap;
   src: url('../assets/fonts/newsreader-latin.woff2') format('woff2');
   unicode-range: U+20-7e, U+b2, U+b7, U+2014, U+2019, U+201c-201d, U+2197;
@@ -39,7 +39,7 @@
 @font-face {
   font-family: 'Schibsted Grotesk';
   font-style: normal;
-  font-weight: 400 900;
+  font-weight: 400 600;
   font-display: swap;
   src: url('../assets/fonts/schibsted-grotesk-latin.woff2') format('woff2');
   unicode-range: U+20-7e, U+b2, U+b7, U+2014, U+2019, U+201c-201d, U+2197;
@@ -228,4 +228,31 @@ h1, h2, h3, h4, h5, h6 {
 
 ::-webkit-scrollbar-thumb:hover {
   background: var(--color-text-muted);
+}
+
+/* ============================================================
+   No-JavaScript fallback for the project modals.
+
+   With JS the cards are intercepted and the dialog is opened via
+   showModal(). Without JS they stay plain anchors, so :target shows
+   the dialog instead. No backdrop and no focus trap in that mode, but
+   the content is reachable and readable, which is the point.
+
+   This lives in the global sheet rather than a component <style> because
+   Astro scopes component selectors per-element, and `.no-js` sits on
+   <html>, which carries no scope attribute.
+   ============================================================ */
+.no-js .project-modal:target {
+  display: block;
+  position: fixed;
+  z-index: 1200;
+  inset: 1rem;
+  margin: auto;
+  max-width: 760px;
+  max-height: calc(100vh - 2rem);
+  overflow: auto;
+}
+
+.no-js .modal-close {
+  text-decoration: none;
 }

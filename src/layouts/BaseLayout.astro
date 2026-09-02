@@ -27,9 +27,12 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || 'https://omarmoha
 ---
 
 <!doctype html>
-<html lang="en">
+<html lang="en" class="no-js">
   <head>
     <meta charset="UTF-8" />
+    <!-- Drops the no-js class immediately so CSS can target the no-JS case.
+         Inline and ~60 bytes; no network cost. -->
+    <script is:inline>document.documentElement.classList.remove('no-js')</script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content={description} />
     <meta name="generator" content={Astro.generator} />

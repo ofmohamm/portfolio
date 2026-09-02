@@ -251,6 +251,17 @@
     sync();
   }
 
-  initParticleField();
-  document.addEventListener('astro:page-load', initParticleField);
+  // The first draw competes with first paint if it runs immediately, so hand it
+  // to the idle callback. This is a decorative background; it can arrive a frame
+  // or two late. Falls back to a timeout where requestIdleCallback is missing.
+  function deferInit() {
+    if ('requestIdleCallback' in window) {
+      (window as any).requestIdleCallback(initParticleField, { timeout: 500 });
+    } else {
+      setTimeout(initParticleField, 1);
+    }
+  }
+
+  deferInit();
+  document.addEventListener('astro:page-load', deferInit);
 </script>
