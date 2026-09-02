@@ -23,6 +23,12 @@ const RESUME_ICON = `<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 
 ---
 
 <footer class="site-footer">
+  <p class="footer-intent">
+    Always looking to connect with builders, founders, and creators. If you
+    are working on something in hardware, firmware, or silicon, I would like
+    to hear about it.
+    <a class="footer-intent-link" href="mailto:mail.omarmohammed@gmail.com">Get in touch</a>
+  </p>
   <div class="footer-inner">
     <nav class="footer-links" aria-label="Profiles and resume">
       {socialIcons.map((s) => (
@@ -45,6 +51,28 @@ const RESUME_ICON = `<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 
     padding: 2.5rem var(--gutter);
     margin-top: 7rem;
   }
+
+  .footer-intent {
+    max-width: 920px;
+    margin: 0 auto 2rem;
+    font-family: var(--font-sans);
+    font-size: 0.95rem;
+    line-height: 1.65;
+    color: var(--color-text-secondary);
+    max-inline-size: 62ch;
+  }
+
+  .footer-intent-link {
+    display: inline-block;
+    margin-left: 0.35rem;
+    font-weight: 500;
+    color: var(--color-green-primary);
+    text-decoration: none;
+    border-bottom: 1px solid currentColor;
+  }
+
+  .footer-intent-link:hover { color: var(--color-green-hover); }
+
 
   .footer-inner {
     max-width: 920px;

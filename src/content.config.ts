@@ -35,6 +35,8 @@ const site = defineCollection({
     status: z.string().optional(),
     oneLiner: z.string().optional(),
     tech: z.array(z.string()).optional(),
+    body: z.array(z.string()).optional(),
+    note: z.string().optional(),
     groups: z
       .array(z.object({ label: z.string(), items: z.array(z.string()) }))
       .optional(),

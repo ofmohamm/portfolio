@@ -7,6 +7,8 @@ oneLiner: >-
   Verilog, including Mamba's sequence-dependent selective scan. Targeting
   low-power edge applications such as building energy monitoring, as part of an
   honors thesis.
+note: >-
+  Honors thesis in progress. Writeup and measured results to follow.
 tech:
   - AMD Versal
   - Vitis AI
