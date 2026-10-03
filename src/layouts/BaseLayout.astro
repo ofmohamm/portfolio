@@ -19,7 +19,7 @@ interface Props {
 const {
   title,
   preloadImage,
-  description = "Hardware design focused EE student at Syracuse University. FPGA accelerators (Vivado, SystemVerilog, VHDL), embedded firmware (C/C++, LoRaWAN), and PCB design (KiCad).",
+  description = "Electrical engineering student at Syracuse University working in firmware engineering and embedded systems. Edge AI, embedded ML, PCB design, C/C++.",
   image = "/og-image.png"
 } = Astro.props;
 
@@ -87,8 +87,8 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || 'https://omarmoha
       "@type": "Person",
       "name": "Omar Mohammed",
       "jobTitle": "Electrical Engineering Student",
-      "description": "Hardware design focused EE student. FPGA accelerators, embedded firmware, PCB design.",
-      "knowsAbout": ["Digital Design", "Firmware Development", "Embedded Systems", "FPGA", "RTL", "SystemVerilog", "VHDL", "PCB Design", "KiCad", "LoRaWAN", "C", "C++", "Microcontrollers"],
+      "description": "Electrical engineering student focused on firmware engineering and embedded systems.",
+      "knowsAbout": ["Firmware Development", "Embedded Systems", "Edge AI", "Machine Learning", "Power Measurement", "Register-Level Programming", "Bare-Metal Firmware", "STM32", "ATSAMD21", "VHDL", "RTL Design", "PCB Design", "KiCad", "C", "C++", "Python", "MATLAB"],
       "affiliation": {
         "@type": "CollegeOrUniversity",
         "name": "Syracuse University",
@@ -99,6 +99,10 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || 'https://omarmoha
         "addressLocality": "Syracuse",
         "addressRegion": "NY",
         "addressCountry": "US"
+      },
+      "worksFor": {
+        "@type": "Organization",
+        "name": "Flox Intelligence"
       },
       "url": "https://omarmohammed.co",
       "sameAs": [

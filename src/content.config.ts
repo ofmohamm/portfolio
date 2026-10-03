@@ -12,12 +12,17 @@ const projects = defineCollection({
     subtitle: z.string().optional(),
     oneLiner: z.string().optional(),
     order: z.number().default(0),
+    // current work sits above past projects
+    status: z.enum(['current', 'past']).default('past'),
+    // organisation shown above the card title (omitted for personal work)
+    org: z.string().optional(),
     // Every project is a still image now; the 3D model and the video are gone.
     mediaType: z.literal('image').default('image'),
     tech: z.array(z.string()).default([]),
     github: z.string().url().optional(),
     body: z.array(z.string()).default([]),
     specs: z.array(z.object({ key: z.string(), value: z.string() })).default([]),
+    team: z.array(z.object({ name: z.string(), url: z.string().url() })).default([]),
   }),
 });
 

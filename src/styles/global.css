@@ -65,7 +65,7 @@
   /* Text */
   --color-text-primary: #2C2C2C;
   --color-text-secondary: #5C5C5C;
-  --color-text-muted: #8B8B8B;
+  --color-text-muted: #6B6B6B;  /* 5.06:1 on the page background (was #8B8B8B, 3.24:1) */
 
   /* Accent — matched to the "mo" logo mark (#355359 teal/slate) */
   --color-green-primary: #355359;
