@@ -3,6 +3,7 @@ subtitle: Personal project · 2025
 oneLiner: >-
   A Kinect-audio tracking system that estimates and targets a detected sound,
   without recording or transmitting any audio.
+status: past
 order: 1
 mediaType: image
 tech:

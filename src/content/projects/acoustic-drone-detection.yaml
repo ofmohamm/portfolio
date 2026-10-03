@@ -1,0 +1,40 @@
+name: Acoustic Drone Detection
+org: HII
+status: current
+subtitle: Senior Design · Huntington Ingalls Industries · 2026-2027 · In progress
+oneLiner: >-
+  Detecting drones by the sound of their rotors and showing where they are on a
+  live display, with ML models tuned to run fast.
+order: 1
+mediaType: image
+tech:
+  - Machine learning
+  - Model optimization
+  - Edge inference
+  - Microphone arrays
+  - DSP
+body:
+  - >-
+    Drones are loud. Their rotors make a sound microphones can pick up, even
+    when the drone isn't sending any signal and even when you can't see it. That
+    makes sound a cheap, passive way to detect drones alongside radar and radio
+    tracking. Our team is building a microphone array and a machine learning
+    model that hears a drone, tells it apart from other noise, and shows where it
+    is on a live display.
+  - >-
+    My focus is the machine learning. I'm training the models that detect and
+    classify drones, then optimizing them to run fast. Speed matters here because
+    the display is live. If the model is slow, the drone has already moved by the
+    time the screen catches up.
+team:
+  - name: Owens Liu
+    url: https://www.linkedin.com/in/owens-liu/
+  - name: Logan Lewellen
+    url: https://www.linkedin.com/in/logan-lewellen-a0a1a6293/
+  - name: Ryan Weiss
+    url: https://www.linkedin.com/in/ryanw-/
+specs:
+  - key: My focus
+    value: Training and optimizing the ML models
+  - key: System
+    value: Live drone detection, classification, and location on a real-time display

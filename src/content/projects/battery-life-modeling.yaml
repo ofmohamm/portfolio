@@ -1,0 +1,39 @@
+name: Battery-Life Modeling for an Edge AI Camera
+org: Flox Intelligence
+status: current
+subtitle: Embedded AI Systems Researcher · Flox Intelligence · Sept 2026 · In progress
+oneLiner: >-
+  Measuring the real power draw of a battery-powered edge AI camera, so battery
+  life is predicted from bench data instead of datasheet values.
+order: 0
+mediaType: image
+tech:
+  - Power measurement
+  - Battery modeling
+  - Edge AI
+  - Embedded firmware
+body:
+  - >-
+    Datasheets tell you how much power a part should use. They don't tell you
+    what it actually uses inside a real device. At Flox, I'm measuring those
+    real numbers on a battery-powered edge AI camera. It wakes up when it senses
+    motion, takes a picture, runs an AI model on the device, can trigger a
+    deterrent, sends the result over cellular, and goes back to sleep. I'm
+    measuring the power each part draws in every one of those states, so
+    battery-life estimates come from bench data instead of datasheet values.
+  - >-
+    The part nobody measures is the switching. Every time a module changes
+    modes, it uses energy, and no vendor publishes how much. I'm leading the
+    bench work to measure those transitions across all five modules. That gives
+    us a battery-life model for every event the camera handles, which will shape
+    the next hardware revision and the firmware's power settings so the camera
+    lasts longer between charges.
+specs:
+  - key: Platform
+    value: Battery-powered edge AI camera that wakes on motion
+  - key: Measured
+    value: Power draw for each part across capture, inference, deterrence, and sleep
+  - key: Also measured
+    value: Energy used switching modes, across all 5 modules
+  - key: Output
+    value: Battery-life model per event
