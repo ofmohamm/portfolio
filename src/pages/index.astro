@@ -236,6 +236,15 @@ const RESUME_ICON = `<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 
           </div>
         )}
 
+        {p.github && (
+          <div class="modal-actions">
+            <a class="cta-primary" href={p.github} target="_blank" rel="noopener noreferrer">
+              View on GitHub
+              <span class="cta-arrow" aria-hidden="true">↗</span>
+            </a>
+          </div>
+        )}
+
         {p.body.map((para) => <p class="modal-body">{para}</p>)}
 
         <div class="modal-specs">
@@ -257,14 +266,6 @@ const RESUME_ICON = `<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 
           ))}
         </div>
 
-        {p.github && (
-          <div class="modal-foot">
-            <a class="cta-primary" href={p.github} target="_blank" rel="noopener noreferrer">
-              View on GitHub
-              <span class="cta-arrow" aria-hidden="true">↗</span>
-            </a>
-          </div>
-        )}
       </div>
     </dialog>
   ))}
@@ -773,6 +774,16 @@ const RESUME_ICON = `<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 
   .spec-row:last-child { border-bottom: none; }
   .spec-key { color: var(--color-text-muted); }
   .spec-val { color: var(--color-text-primary); }
+
+  /* Source link sits right under the image, so it is visible as soon as the
+     modal opens instead of after scrolling past the write-up. */
+  .modal-actions {
+    margin: -0.25rem 0 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
 
   .modal-foot {
     margin-top: 1.5rem;
