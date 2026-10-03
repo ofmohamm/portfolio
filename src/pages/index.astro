@@ -163,20 +163,12 @@ const RESUME_ICON = `<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 
                       decoding="async"
                     />
                   )}
-                  {g.key === 'past' && (
-                    <div class="card-overlay">
-                      <h3 class="card-name">{p.name}</h3>
-                      <span class="card-cue" aria-hidden="true">View details</span>
-                    </div>
-                  )}
-                </div>
-                {g.key === 'current' && (
-                  <div class="card-caption">
+                  <div class="card-overlay">
                     {p.org && <span class="card-org">{p.org}{p.status === 'current' && ' · In progress'}</span>}
-                    <h3 class="card-caption-name">{p.name}</h3>
-                    <span class="card-caption-cue" aria-hidden="true">View details</span>
+                    <h3 class="card-name">{p.name}</h3>
+                    <span class="card-cue" aria-hidden="true">View details</span>
                   </div>
-                )}
+                </div>
               </a>
             ))}
           </div>
@@ -196,10 +188,7 @@ const RESUME_ICON = `<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 
             <h3 class="skill-cat">{s.label}</h3>
             <p class="skill-items">
               {s.items.map((i, idx) => (
-                <>
-                  {idx > 0 && <span class="skill-sep" aria-hidden="true">,</span>}
-                  <span class="skill-item">{i}</span>
-                </>
+                <>{idx > 0 && <span class="skill-sep" aria-hidden="true">, </span>}<span class="skill-item">{i}</span></>
               ))}
             </p>
           </div>
@@ -446,49 +435,16 @@ const RESUME_ICON = `<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 
   /* ============ PROJECT GROUPS ============ */
   .project-group + .project-group { margin-top: 3rem; }
 
-
-  /* Current work: a taller 5:4 photo with the text underneath rather than on
-     top. Both current photos fit 5:4 without losing the subject, and keeping
-     the text off the image means nothing is hidden under a gradient. */
-  .work-grid--current .card-media { aspect-ratio: 5 / 4; }
-
-  .card-caption {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    padding: 1.1rem 1.35rem 1.25rem;
-    background: var(--color-bg-card);
-    border-top: 1px solid var(--color-border);
-  }
-
   .card-org {
     font-family: var(--font-sans);
     font-size: 0.72rem;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.13em;
-    color: var(--color-green-primary);
-    margin-bottom: 0.4rem;
+    color: rgba(250, 249, 246, 0.85);
+    margin-bottom: 0.35rem;
+    text-shadow: 0 1px 8px rgba(0, 0, 0, 0.3);
   }
-
-  .card-caption-name {
-    font-family: var(--font-display);
-    font-weight: 500;
-    font-size: clamp(1.25rem, 2.2vw, 1.55rem);
-    line-height: 1.15;
-    color: var(--color-text-primary);
-    margin: 0;
-  }
-
-  .card-caption-cue {
-    margin-top: 0.6rem;
-    font-family: var(--font-sans);
-    font-size: 0.82rem;
-    font-weight: 500;
-    color: var(--color-green-primary);
-  }
-
-  .project-card:hover .card-caption-cue { text-decoration: underline; }
 
   .spec-link {
     color: var(--color-green-primary);
