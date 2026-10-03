@@ -551,6 +551,30 @@ const RESUME_ICON = `<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 
   .cue-arrow { font-size: 0.9em; }
   .project-card:hover .card-cue { opacity: 1; transform: translateY(0); }
 
+  /* "View details" is hover-revealed only where hover exists. The cue stays in
+     the layout (opacity, not display), so the title never jumps. Touch devices
+     keep it visible because they cannot hover, and keyboard focus reveals it
+     the same way hover does. */
+  @media (hover: hover) and (pointer: fine) {
+    .card-cue {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+    .project-card:hover .card-cue,
+    .project-card:focus-visible .card-cue {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: reduce) {
+    .card-cue,
+    .project-card:hover .card-cue,
+    .project-card:focus-visible .card-cue {
+      transform: none;
+    }
+  }
+
   /* ============ SKILLS (editorial big-type list) ============ */
   .skills-list {
     display: flex;
