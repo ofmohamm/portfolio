@@ -1,6 +1,7 @@
 name: Flood Detection Sensor PCB
 subtitle: CHaRTS Research Lab · Syracuse University · Summer 2025
 oneLiner: ' A battery-powered flood monitor for urban areas on a custom 2-layer PCB. Thermal imaging, environmental sensing, and data over LoRaWAN.'
+status: past
 order: 0
 mediaType: image
 tech:
