@@ -24,7 +24,7 @@
   font-weight: 400 600;
   font-display: swap;
   src: url('../assets/fonts/newsreader-latin.woff2') format('woff2');
-  unicode-range: U+20-7e, U+b2, U+b7, U+2014, U+2019, U+201c-201d, U+2197;
+  unicode-range: U+20-7e, U+b0-b2, U+b5, U+b7, U+2014, U+2019, U+201c-201d, U+2197;
 }
 
 @font-face {
@@ -42,7 +42,7 @@
   font-weight: 400 600;
   font-display: swap;
   src: url('../assets/fonts/schibsted-grotesk-latin.woff2') format('woff2');
-  unicode-range: U+20-7e, U+b2, U+b7, U+2014, U+2019, U+201c-201d, U+2197;
+  unicode-range: U+20-7e, U+b0-b2, U+b5, U+b7, U+2014, U+2019, U+201c-201d, U+2197;
 }
 
 @font-face {

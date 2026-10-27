@@ -1,0 +1,169 @@
+---
+import './figure.css';
+import { simulate, PRESETS, SOURCE, START, DURATION } from './lib/pd';
+const W = 560, TOP = 230, STRIP = 80, GAP = 18, H = TOP + GAP + STRIP;
+const Y0 = 80, Y1 = 150, E = 40;
+const sx = (t: number) => 34 + (t / DURATION) * (W - 42);
+const sy = (a: number) => 8 + (1 - (a - Y0) / (Y1 - Y0)) * (TOP - 16);
+const ey = (e: number) => TOP + GAP + (1 - (e + E) / (2 * E)) * STRIP;
+const sim = simulate(0.06, 0.005, true);
+const path = (ys: number[], f: (v: number) => number) =>
+  'M' + sim.t.map((t, i) => `${sx(t).toFixed(1)},${f(Math.max(Y0 - 5, Math.min(Y1 + 5, ys[i]))).toFixed(1)}`).join('L');
+const sentPath = (() => {
+  let d = '', last = 0;
+  sim.t.forEach((t, i) => { if (!Number.isNaN(sim.sent[i])) last = sim.sent[i]; d += `${d ? 'L' : 'M'}${sx(t).toFixed(1)},${ey(Math.max(-E, Math.min(E, last))).toFixed(1)}`; });
+  return d;
+})();
+const ticks = [90, 105, 120, 135, 150];
+---
+
+<figure class="fig fig-pd" data-fig="pd" aria-label="Servo angle over time for a sound source 30 degrees to the side, with adjustable PD gains">
+  <div class="fig-stage">
+    <div class="fig-pd-plot">
+      <svg class="fig-svg" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+        <defs><clipPath id="pd-clip"><rect x="34" y="0" width={W - 34} height={TOP} /></clipPath></defs>
+        {ticks.map((a) => <line x1="34" x2={W - 8} y1={sy(a)} y2={sy(a)} stroke="var(--figure-grid)" />)}
+        <line x1="34" x2={W - 8} y1={sy(SOURCE)} y2={sy(SOURCE)} stroke="var(--figure-ink)" stroke-opacity="0.55" stroke-dasharray="6 5" />
+        <g clip-path="url(#pd-clip)">
+          <path class="pd-servo" d={path(sim.servo, sy)} fill="none" stroke="var(--figure-accent)" stroke-width="2" stroke-linejoin="round" />
+        </g>
+        <line x1="34" x2={W - 8} y1={ey(0)} y2={ey(0)} stroke="var(--figure-grid)" />
+        <g class="pd-est">
+          {sim.t.map((t, i) => Number.isNaN(sim.est[i]) ? null : (
+            <circle cx={sx(t).toFixed(1)} cy={ey(Math.max(-E, Math.min(E, sim.est[i]))).toFixed(1)} r="1.4"
+              fill={Number.isNaN(sim.outlier[i]) ? 'var(--figure-muted)' : 'var(--figure-warn)'} />
+          ))}
+        </g>
+        <path class="pd-sent" d={sentPath} fill="none" stroke="var(--figure-ink)" stroke-width="1.3" />
+      </svg>
+      {ticks.map((a) => <span class="fig-label muted pd-tick" style={`left:${(28 / W) * 100}%;top:${(sy(a) / H) * 100}%`}>{a}°</span>)}
+      <span class="fig-label muted pd-lab" style={`left:${(46 / W) * 100}%;top:${((sy(SOURCE) - 9) / H) * 100}%`}>sound source</span>
+      <span class="fig-label muted pd-lab" style={`left:${(46 / W) * 100}%;top:${((TOP + GAP - 4) / H) * 100}%`}>what the controller is told</span>
+      <span class="fig-label warn pd-rail" style={`left:70%;top:${(12 / H) * 100}%`} hidden>runs into the 180° end stop</span>
+    </div>
+    <div class="fig-pd-x"><span>0 s</span><span>time</span><span>{DURATION} s</span></div>
+
+    <div class="pd-controls">
+      <div class="fig-slider">
+        <label for="pd-kp">Kp</label>
+        <input id="pd-kp" type="range" min="0" max="0.3" step="0.005" value="0.06" />
+        <output for="pd-kp" class="pd-kp-out">0.060</output>
+      </div>
+      <div class="fig-slider">
+        <label for="pd-kd">Kd</label>
+        <input id="pd-kd" type="range" min="0" max="0.03" step="0.0005" value="0.005" />
+        <output for="pd-kd" class="pd-kd-out">0.0050</output>
+      </div>
+    </div>
+    <div class="fig-row">
+      <div class="fig-seg pd-presets" role="group" aria-label="Presets">
+        {PRESETS.map((p, i) => (
+          <button type="button" data-kp={p.kp} data-kd={p.kd} aria-pressed={i === 0 ? 'true' : 'false'}>{p.label}</button>
+        ))}
+      </div>
+      <div class="fig-group">
+        <span class="fig-seg-label">command gate</span>
+        <div class="fig-seg" role="group" aria-label="Command gate">
+          <button type="button" data-gate="on" aria-pressed="true">on</button>
+          <button type="button" data-gate="off" aria-pressed="false">off</button>
+        </div>
+      </div>
+    </div>
+    <p class="fig-readout pd-readout" aria-live="polite"></p>
+  </div>
+  <figcaption class="fig-caption">
+    Simulated with the shipped gains and the real 16 kHz lag quantization. Not recorded telemetry.
+  </figcaption>
+</figure>
+
+<style>
+  .fig-pd-plot { position: relative; }
+  .pd-tick { transform: translate(-100%, -50%); }
+  .pd-lab { transform: translate(0, -50%); }
+  .fig-pd-x { display: flex; justify-content: space-between; font-size: 0.7rem; color: var(--color-text-muted); padding-left: 6%; }
+  .pd-controls { display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem 1.5rem; margin-top: 0.6rem; }
+  @media (max-width: 520px) { .pd-controls { grid-template-columns: 1fr; } }
+  .pd-presets { flex-wrap: wrap; border-radius: 16px; }
+  .pd-readout { margin: 0.7rem 0 0; color: var(--color-text-muted); min-height: 1.2em; }
+</style>
+
+<script>
+  import { simulate, score, SOURCE, DURATION } from './lib/pd';
+
+  const W = 560, TOP = 230, STRIP = 80, GAP = 18, H = TOP + GAP + STRIP;
+  const Y0 = 80, Y1 = 150, E = 40;
+  const sx = (t: number) => 34 + (t / DURATION) * (W - 42);
+  const sy = (a: number) => 8 + (1 - (a - Y0) / (Y1 - Y0)) * (TOP - 16);
+  const ey = (e: number) => TOP + GAP + (1 - (e + E) / (2 * E)) * STRIP;
+  const NS = 'http://www.w3.org/2000/svg';
+
+  function init(root: HTMLElement) {
+    if (root.dataset.ready) return;
+    root.dataset.ready = '1';
+    const q = <T extends Element>(s: string) => root.querySelector<T>(s)!;
+    const servo = q<SVGPathElement>('.pd-servo'), sent = q<SVGPathElement>('.pd-sent');
+    const estG = q<SVGGElement>('.pd-est'), rail = q<HTMLElement>('.pd-rail');
+    const kp = q<HTMLInputElement>('#pd-kp'), kd = q<HTMLInputElement>('#pd-kd');
+    const kpOut = q<HTMLOutputElement>('.pd-kp-out'), kdOut = q<HTMLOutputElement>('.pd-kd-out');
+    const readout = q<HTMLElement>('.pd-readout');
+    const presets = [...root.querySelectorAll<HTMLButtonElement>('.pd-presets button')];
+    const gateBtns = [...root.querySelectorAll<HTMLButtonElement>('[data-gate]')];
+    let gate = true, raf = 0;
+
+    // Reuse the estimate dots instead of rebuilding them on every frame.
+    const dots: SVGCircleElement[] = [...estG.querySelectorAll('circle')];
+    const dot = (i: number) => {
+      if (!dots[i]) { const c = document.createElementNS(NS, 'circle'); c.setAttribute('r', '1.4'); estG.appendChild(c); dots[i] = c; }
+      return dots[i];
+    };
+
+    const render = () => {
+      raf = 0;
+      const p = +kp.value, d = +kd.value;
+      const s = simulate(p, d, gate);
+      let path = '';
+      for (let i = 0; i < s.t.length; i++)
+        path += `${i ? 'L' : 'M'}${sx(s.t[i]).toFixed(1)},${sy(Math.max(Y0 - 5, Math.min(Y1 + 5, s.servo[i]))).toFixed(1)}`;
+      servo.setAttribute('d', path);
+      let sp = '', last = 0, n = 0;
+      for (let i = 0; i < s.t.length; i++) {
+        if (!Number.isNaN(s.sent[i])) last = s.sent[i];
+        sp += `${i ? 'L' : 'M'}${sx(s.t[i]).toFixed(1)},${ey(Math.max(-E, Math.min(E, last))).toFixed(1)}`;
+        if (!Number.isNaN(s.est[i])) {
+          const c = dot(n++);
+          c.setAttribute('cx', sx(s.t[i]).toFixed(1));
+          c.setAttribute('cy', ey(Math.max(-E, Math.min(E, s.est[i]))).toFixed(1));
+          c.setAttribute('fill', Number.isNaN(s.outlier[i]) ? 'var(--figure-muted)' : 'var(--figure-warn)');
+          c.removeAttribute('display');
+        }
+      }
+      for (let i = n; i < dots.length; i++) dots[i].setAttribute('display', 'none');
+      sent.setAttribute('d', sp);
+      kpOut.textContent = p.toFixed(3); kdOut.textContent = d.toFixed(4);
+      const sc = score(s);
+      const railed = Math.max(...s.servo) >= 179;
+      rail.hidden = !railed;
+      servo.setAttribute('stroke', railed ? 'var(--figure-warn)' : 'var(--figure-accent)');
+      readout.textContent = railed
+        ? 'never settles: each correction overshoots further than the last'
+        : sc.settle === null
+          ? `still ${Math.abs(Math.round(s.servo[s.servo.length - 1] - SOURCE))}° off after ${DURATION} s`
+          : `settles in ${sc.settle.toFixed(2)} s, overshoot ${Math.max(0, sc.overshoot).toFixed(0)}°`;
+      presets.forEach((b) => b.setAttribute('aria-pressed', String(Math.abs(+b.dataset.kp! - p) < 1e-9 && Math.abs(+b.dataset.kd! - d) < 1e-9)));
+    };
+    const schedule = () => { if (!raf) raf = requestAnimationFrame(render); };
+    kp.addEventListener('input', schedule);
+    kd.addEventListener('input', schedule);
+    presets.forEach((b) => b.addEventListener('click', () => { kp.value = b.dataset.kp!; kd.value = b.dataset.kd!; schedule(); }));
+    gateBtns.forEach((b) => b.addEventListener('click', () => {
+      gate = b.dataset.gate === 'on';
+      gateBtns.forEach((x) => x.setAttribute('aria-pressed', String(x === b))); schedule();
+    }));
+    render();
+  }
+
+  const io = new IntersectionObserver((entries) => {
+    for (const e of entries) if (e.isIntersecting) { init(e.target as HTMLElement); io.unobserve(e.target); }
+  });
+  document.querySelectorAll<HTMLElement>('[data-fig="pd"]').forEach((el) => io.observe(el));
+</script>

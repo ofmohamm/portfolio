@@ -1,9 +1,15 @@
 name: Flood Detection Sensor PCB
 subtitle: CHaRTS Research Lab · Syracuse University · Summer 2025
-oneLiner: ' A battery-powered flood monitor for urban areas on a custom 2-layer PCB. Thermal imaging, environmental sensing, and data over LoRaWAN.'
+oneLiner: >-
+  A battery-powered urban flood monitor on a custom 2-layer PCB. Thermal
+  imaging, IMU, and telemetry over LoRaWAN.
 status: past
 order: 0
 mediaType: image
+# The modal shows the rotating KiCad render; the card keeps the still.
+coverVideo:
+  webm: /videos/pcb-rotate.webm
+  mp4: /videos/pcb-rotate.mp4
 tech:
   - KiCad
   - PCB
@@ -11,19 +17,30 @@ tech:
 github: https://github.com/ofmohamm/SU-WaterCam-PCB
 body:
   - >-
-    Custom 2-layer PCB for a battery-powered flood monitoring system. Integrates
-    a FLIR Lepton thermal camera, BNO055 IMU, mDot LoRaWAN radio, and Witty Pi 4
-    power management for remote urban deployment.
+    A sensor node on a lab bench and a sensor node in a storm drain are
+    different machines. The lab's units worked: a compute module, a FLIR Lepton
+    thermal camera, a BNO055 IMU, a LoRaWAN radio, and power management, wired
+    together on breakout boards with jumper leads. That assembly survives being
+    carried across a room. It doesn't survive a season outdoors, where vibration
+    walks connectors loose one millimeter at a time and water finds every gap
+    you didn't design.
   - >-
-    First PCB I designed. Taught myself KiCad and went from schematic to
-    fabrication-ready Gerbers in a few weeks. Mentored by Dr. Elizabeth Carter
-    and Manu Shergill.
-specs:
-  - key: Board
-    value: 2-layer, 0.25mm signal / 0.5mm power traces
-  - key: Power
-    value: 3.3V + 5V rails, Witty Pi 4 power management
-  - key: Comms
-    value: LoRaWAN (mDot module), I²C, UART
-  - key: Sensors
-    value: FLIR Lepton thermal camera, BNO055 IMU
+    So the stack goes onto one board, inside a waterproof enclosure. I designed
+    it.
+  - >-
+    **Why LoRaWAN over cellular.** Cellular is the obvious pick, right up until
+    you look at where these nodes go. Deployment sites have no reliable
+    coverage, and every node runs on a battery that has to last the whole
+    deployment. LoRaWAN costs a small fraction of the power per packet and needs
+    no carrier plan at all.
+  - >-
+    You pay for that in bandwidth, and the bill is steep: enough for telemetry,
+    nowhere near enough for imagery. Which is why thermal data gets reduced on
+    the node before anything is transmitted. The radio choice reaches back and
+    changes what the firmware has to do, which is usually how radio choices
+    work.
+  - >-
+    This was my first board. I taught myself KiCad and went from schematic to
+    fabrication-ready Gerbers in a few weeks, including footprint verification
+    and a DFM pass before release to fab, mentored by Dr. Elizabeth Carter and
+    Manu Shergill.

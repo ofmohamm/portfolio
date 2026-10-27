@@ -1,0 +1,146 @@
+---
+import './figure.css';
+import { W, H, FRAME, COLS, ROWS, TILE_W, TILE_H, SENSORS, evaluate, FOX } from './lib/pir';
+const start = { x: FRAME.x + FRAME.w * 0.24, y: FRAME.y + FRAME.h * 0.3 };
+const s0 = evaluate(start.x, start.y, true);
+const tiles = [];
+for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) tiles.push({ r, c });
+const coneR = Math.hypot(FRAME.w, FRAME.h) * 0.42;
+const cone = (s: (typeof SENSORS)[number]) => {
+  const dx = s.qx === 0 ? 1 : -1, dy = s.qy === 0 ? 1 : -1;
+  const a0 = Math.atan2(0, dx), a1 = Math.atan2(dy, 0);
+  const p0 = [s.cx + coneR * Math.cos(a0), s.cy + coneR * Math.sin(a0)];
+  const p1 = [s.cx + coneR * Math.cos(a1), s.cy + coneR * Math.sin(a1)];
+  const sweep = dx * dy > 0 ? 1 : 0;
+  return `M${s.cx},${s.cy}L${p0[0].toFixed(1)},${p0[1].toFixed(1)}A${coneR.toFixed(1)},${coneR.toFixed(1)} 0 0 ${sweep} ${p1[0].toFixed(1)},${p1[1].toFixed(1)}Z`;
+};
+---
+
+<figure class="fig fig-pir" data-fig="pir" aria-label="Camera frame split into 24 tiles, with four PIR sensors deciding which tiles the CNN evaluates">
+  <div class="fig-stage">
+    <svg class="fig-svg" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMid meet">
+      <defs>
+        <clipPath id="pir-frame-clip"><rect x={FRAME.x} y={FRAME.y} width={FRAME.w} height={FRAME.h} rx="6" /></clipPath>
+      </defs>
+      <g clip-path="url(#pir-frame-clip)">
+        <rect x={FRAME.x} y={FRAME.y} width={FRAME.w} height={FRAME.h} fill="#FAF9F6" />
+        {SENSORS.map((s, i) => (
+          <path class="pir-cone" data-i={i} d={cone(s)} fill="var(--figure-accent)" fill-opacity={s0.lit[i] ? 0.08 : 0} />
+        ))}
+        {tiles.map(({ r, c }, i) => (
+          <rect class="pir-tile" data-i={i}
+            x={FRAME.x + c * TILE_W + 2} y={FRAME.y + r * TILE_H + 2}
+            width={TILE_W - 4} height={TILE_H - 4} rx="3"
+            fill="var(--figure-accent)" fill-opacity={s0.tiles[i] ? 0.2 : 0.03}
+            stroke="var(--figure-accent)" stroke-opacity={s0.tiles[i] ? 0.55 : 0.1} />
+        ))}
+      </g>
+      <rect x={FRAME.x} y={FRAME.y} width={FRAME.w} height={FRAME.h} rx="6" fill="none" stroke="var(--figure-ink)" stroke-opacity="0.55" stroke-width="1.5" />
+      {SENSORS.map((s, i) => (
+        <g class="pir-sensor" data-i={i} transform={`translate(${s.cx},${s.cy})`}>
+          <circle r="11" fill="#FAF9F6" stroke="var(--figure-ink)" stroke-opacity="0.6" stroke-width="1.5" />
+          <circle class="pir-led" r="5.5" fill={s0.lit[i] ? 'var(--figure-accent)' : 'var(--figure-grid)'} />
+        </g>
+      ))}
+      <g class="pir-fox fig-drag" transform={`translate(${start.x},${start.y})`}
+         tabindex="0" role="slider" aria-label="Animal position. Drag, or use the arrow keys."
+         aria-valuetext={`tiles evaluated ${s0.count} of 24`}>
+        <circle r="46" fill="transparent" />
+        <circle class="fig-focus-ring" r="40" fill="none" />
+        <path d={FOX} fill="var(--figure-ink)" fill-opacity="0.82" />
+      </g>
+    </svg>
+    <div class="fig-row">
+      <span class="fig-readout pir-readout" aria-live="polite">tiles evaluated: {s0.count} of 24</span>
+      <div class="fig-group">
+        <span class="fig-seg-label">gating</span>
+        <div class="fig-seg" role="group" aria-label="PIR gating">
+          <button type="button" data-gate="off" aria-pressed="false">off</button>
+          <button type="button" data-gate="on" aria-pressed="true">on</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <figcaption class="fig-caption">
+    Drag the animal around the frame. Illustrative four-sensor layout, not the device's actual PIR arrangement.
+  </figcaption>
+</figure>
+
+<script>
+  import { evaluate, clampPos, FRAME } from './lib/pir';
+
+  function init(root: HTMLElement) {
+    if (root.dataset.ready) return;
+    root.dataset.ready = '1';
+    const svg = root.querySelector<SVGSVGElement>('svg')!;
+    const fox = root.querySelector<SVGGElement>('.pir-fox')!;
+    const tiles = [...root.querySelectorAll<SVGRectElement>('.pir-tile')];
+    const cones = [...root.querySelectorAll<SVGPathElement>('.pir-cone')];
+    const leds = [...root.querySelectorAll<SVGCircleElement>('.pir-led')];
+    const readout = root.querySelector<HTMLElement>('.pir-readout')!;
+    const gateBtns = [...root.querySelectorAll<HTMLButtonElement>('[data-gate]')];
+    let pos = { x: FRAME.x + FRAME.w * 0.24, y: FRAME.y + FRAME.h * 0.3 };
+    let gating = true, raf = 0, last = '';
+
+    const render = () => {
+      raf = 0;
+      fox.setAttribute('transform', `translate(${pos.x.toFixed(1)},${pos.y.toFixed(1)})`);
+      const s = evaluate(pos.x, pos.y, gating);
+      const key = s.lit.join() + s.tiles.join() + gating;
+      if (key === last) return;           // nothing changed, skip the DOM writes
+      last = key;
+      s.tiles.forEach((on, i) => {
+        tiles[i].setAttribute('fill-opacity', on ? '0.2' : '0.03');
+        tiles[i].setAttribute('stroke-opacity', on ? '0.55' : '0.1');
+      });
+      s.lit.forEach((on, i) => {
+        cones[i].setAttribute('fill-opacity', on && gating ? '0.08' : '0');
+        leds[i].setAttribute('fill', on ? 'var(--figure-accent)' : 'var(--figure-grid)');
+      });
+      const text = `tiles evaluated: ${s.count} of 24`;
+      readout.textContent = text;
+      fox.setAttribute('aria-valuetext', text);
+    };
+    const schedule = () => { if (!raf) raf = requestAnimationFrame(render); };
+
+    const toSvg = (e: PointerEvent) => {
+      const pt = svg.createSVGPoint();
+      pt.x = e.clientX; pt.y = e.clientY;
+      return pt.matrixTransform(svg.getScreenCTM()!.inverse());
+    };
+    let grab: { dx: number; dy: number } | null = null;
+    fox.addEventListener('pointerdown', (e) => {
+      const p = toSvg(e);
+      grab = { dx: pos.x - p.x, dy: pos.y - p.y };
+      fox.setPointerCapture(e.pointerId);
+      e.preventDefault();
+    });
+    fox.addEventListener('pointermove', (e) => {
+      if (!grab) return;
+      const p = toSvg(e);
+      pos = clampPos(p.x + grab.dx, p.y + grab.dy);
+      schedule();
+    });
+    const end = () => { grab = null; };
+    fox.addEventListener('pointerup', end);
+    fox.addEventListener('pointercancel', end);
+    fox.addEventListener('keydown', (e) => {
+      const step = e.shiftKey ? 40 : 10;
+      const d = { ArrowLeft: [-step, 0], ArrowRight: [step, 0], ArrowUp: [0, -step], ArrowDown: [0, step] }[e.key];
+      if (!d) return;
+      e.preventDefault();
+      pos = clampPos(pos.x + d[0], pos.y + d[1]);
+      schedule();
+    });
+    gateBtns.forEach((b) => b.addEventListener('click', () => {
+      gating = b.dataset.gate === 'on';
+      gateBtns.forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+      last = ''; schedule();
+    }));
+  }
+
+  const io = new IntersectionObserver((entries) => {
+    for (const e of entries) if (e.isIntersecting) { init(e.target as HTMLElement); io.unobserve(e.target); }
+  });
+  document.querySelectorAll<HTMLElement>('[data-fig="pir"]').forEach((el) => io.observe(el));
+</script>

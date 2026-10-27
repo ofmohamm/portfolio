@@ -25,16 +25,10 @@ export const GET: APIRoute = async () => {
   const render = (p: (typeof ordered)[number]) => {
     out.push(`### ${p.data.name}`, '');
     if (p.data.subtitle) out.push(tidy(p.data.subtitle), '');
-    for (const para of p.data.body) out.push(tidy(para), '');
-    if (p.data.team.length) {
-      out.push(`Team: ${p.data.team.map((m) => `[${m.name}](${m.url})`).join(', ')}`, '');
-    }
-    if (p.data.specs.length) {
-      for (const s of p.data.specs) out.push(`- ${s.key}: ${tidy(s.value)}`);
-      out.push('');
-    }
+    for (const para of p.data.body) if (typeof para === 'string') out.push(tidy(para), '');
     if (p.data.tech.length) out.push(`Tags: ${p.data.tech.join(', ')}`, '');
     if (p.data.github) out.push(`Source: ${p.data.github}`, '');
+    if (p.data.cta) out.push(`${p.data.cta.label}: ${p.data.cta.url}`, '');
   };
 
   const current = ordered.filter((p) => p.data.status === 'current');

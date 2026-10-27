@@ -1,29 +1,11 @@
 groups:
   - label: Embedded
-    items:
-      - ATSAMD21
-      - STM32
-      - Arduino
-      - Register-Level Programming
-      - Bare-Metal
-      - UART
-      - I2C
-      - Interrupts
-      - Timers
-      - ADC
-      - PWM
-      - KiCad
-      - Logic Analyzer
-  - label: Digital Design
-    items:
-      - VHDL
-      - RTL Design
-      - FSM Design
-      - Intel Quartus
+    items: [ATSAMD21, STM32, Arduino, Raspberry Pi, bare-metal and register-level C, UART, I²C, I²S, interrupts, timers, ADC, PWM]
+  - label: Hardware and bench
+    items: [KiCad, PCB schematic and layout, oscilloscope, logic analyzer, Analog Discovery 2, Joulescope, power and current measurement, soldering]
+  - label: Digital design
+    items: [VHDL, RTL design, FSM design, Intel Quartus]
   - label: Programming
-    items:
-      - C
-      - C++
-      - Python
-      - MATLAB
-      - Agentic Development
+    items: [C, C++, Python, MATLAB]
+  - label: Tools and workflow
+    items: [Git, MPLAB X, STM32CubeIDE, Qt, Claude Code, agentic development]

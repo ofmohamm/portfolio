@@ -1,0 +1,126 @@
+---
+import './figure.css';
+import { bounds, geometry, dataY, measY, TOTAL } from './lib/power';
+const W = 720, H = 260;
+const g = geometry(W, H);
+const bands = bounds();
+// Rendered on the server in the "datasheet" state, so the figure is correct
+// with JavaScript off. The script only adds the toggle and the morph.
+const dataLine = g.line(dataY), dataArea = g.area(dataY);
+const stepLine = g.step();
+const measLine = g.line(measY), measArea = g.area(measY);
+---
+
+<figure class="fig fig-power" data-fig="power" aria-label="Current draw over one wake event, datasheet model compared with a bench-shaped trace">
+  <div class="fig-stage">
+    <div class="fig-row fig-power-top">
+      <span class="fig-hint">one wake event, sleep to sleep</span>
+      <div class="fig-seg" role="group" aria-label="Trace">
+        <button type="button" data-mode="datasheet" aria-pressed="true">datasheet model</button>
+        <button type="button" data-mode="measured" aria-pressed="false">measured</button>
+      </div>
+    </div>
+    <div class="fig-power-plot">
+      <span class="fig-power-y">current draw</span>
+      <svg class="fig-svg" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+        {bands.map((b) => (
+          <line x1={g.sx(b.x0)} x2={g.sx(b.x0)} y1="6" y2={H - 8} stroke="var(--figure-grid)" />
+        ))}
+        <line x1="8" x2={W - 8} y1={H - 8} y2={H - 8} stroke="var(--figure-muted)" />
+        <!-- datasheet reference, shown dashed once the bench trace is up -->
+        <path class="pw-ref-area" d={dataArea} fill="var(--figure-ink)" fill-opacity="0.05" />
+        <path class="pw-ref" d={stepLine} fill="none" stroke="var(--figure-muted)" stroke-width="1.5" stroke-dasharray="5 4" />
+        <!-- the live trace; morphs between the two -->
+        <path class="pw-area" d={dataArea} fill="var(--figure-accent)" fill-opacity="0.15" />
+        <path class="pw-line" d={dataLine} fill="none" stroke="var(--figure-accent)" stroke-width="2" stroke-linejoin="round" />
+        <!-- no-JS fallback: show the bench trace too -->
+        <path class="pw-nojs" d={measLine} fill="none" stroke="var(--figure-accent)" stroke-width="2" />
+      </svg>
+    </div>
+    <div class="fig-power-bands" aria-hidden="true">
+      {bands.map((b, i) => (
+        <span
+          class={`fig-power-band ${i % 2 ? 'low' : 'high'}`}
+          style={`left:${(((b.x0 + b.x1) / 2) / TOTAL) * 100}%`}
+        >{b.label}</span>
+      ))}
+    </div>
+    <div class="fig-power-x"><span>time</span></div>
+  </div>
+  <figcaption class="fig-caption">
+    Shape is representative of a measured wake cycle. Absolute values are Flox's and are not shown.
+  </figcaption>
+</figure>
+
+<style>
+  .fig-power-top { margin-top: 0; margin-bottom: 0.5rem; }
+  .fig-power-plot { position: relative; padding-left: 1.1rem; }
+  .fig-power-y {
+    position: absolute; left: 0; top: 50%; transform: translate(-30%, -50%) rotate(-90deg);
+    font-size: 0.7rem; color: var(--color-text-muted); white-space: nowrap;
+  }
+  .fig-power-bands { position: relative; height: 2.4rem; margin-left: 1.1rem; }
+  .fig-power-band {
+    position: absolute; transform: translateX(-50%); font-size: 0.7rem; white-space: nowrap;
+    color: var(--figure-ink);
+  }
+  .fig-power-band.high { top: 0.15rem; }
+  .fig-power-band.low { top: 1.2rem; color: var(--color-text-muted); }
+  .fig-power-band:first-child { transform: translateX(-30%); }
+  .fig-power-band:last-child { transform: translateX(-70%); }
+  .fig-power-x { text-align: right; font-size: 0.7rem; color: var(--color-text-muted); margin-top: -0.2rem; }
+  .pw-ref, .pw-ref-area { opacity: 0; transition: opacity 0.3s ease; }
+  .fig-power[data-state='measured'] .pw-ref,
+  .fig-power[data-state='measured'] .pw-ref-area { opacity: 1; }
+  .pw-nojs { display: none; }
+  :global(.no-js) .pw-nojs { display: inline; }
+  :global(.no-js) .pw-ref, :global(.no-js) .pw-ref-area { opacity: 1; }
+</style>
+
+<script>
+  import { geometry, dataY, measY } from './lib/power';
+
+  const W = 720, H = 260;
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const ease = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2);
+
+  function init(root: HTMLElement) {
+    if (root.dataset.ready) return;
+    root.dataset.ready = '1';
+    const g = geometry(W, H);
+    const line = root.querySelector<SVGPathElement>('.pw-line')!;
+    const area = root.querySelector<SVGPathElement>('.pw-area')!;
+    const buttons = [...root.querySelectorAll<HTMLButtonElement>('[data-mode]')];
+    let t = 0, target = 0, raf = 0, from = 0, startTime = 0;
+    const DUR = 400;
+
+    const draw = (k: number) => {
+      const ys = dataY.map((d, i) => d + (measY[i] - d) * k);
+      line.setAttribute('d', g.line(ys));
+      area.setAttribute('d', g.area(ys));
+    };
+    const frame = (now: number) => {
+      const p = Math.min(1, (now - startTime) / DUR);
+      t = from + (target - from) * ease(p);
+      draw(t);
+      raf = p < 1 && !document.hidden ? requestAnimationFrame(frame) : 0;
+      if (!raf) { t = target; draw(t); }
+    };
+    const set = (mode: string) => {
+      target = mode === 'measured' ? 1 : 0;
+      root.dataset.state = mode;
+      buttons.forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.mode === mode)));
+      cancelAnimationFrame(raf);
+      if (reduce) { t = target; draw(t); return; }
+      from = t; startTime = performance.now();
+      raf = requestAnimationFrame(frame);
+    };
+    buttons.forEach((b) => b.addEventListener('click', () => set(b.dataset.mode!)));
+  }
+
+  // Do nothing until the figure is actually on screen.
+  const io = new IntersectionObserver((entries) => {
+    for (const e of entries) if (e.isIntersecting) { init(e.target as HTMLElement); io.unobserve(e.target); }
+  });
+  document.querySelectorAll<HTMLElement>('[data-fig="power"]').forEach((el) => io.observe(el));
+</script>

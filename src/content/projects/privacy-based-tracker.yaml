@@ -1,8 +1,8 @@
 name: Privacy Based Tracker
 subtitle: Personal project · 2025
 oneLiner: >-
-  A Kinect-audio tracking system that estimates and targets a detected sound,
-  without recording or transmitting any audio.
+  A Kinect-audio tracker that finds and follows a sound source without
+  recording or transmitting any audio.
 status: past
 order: 1
 mediaType: image
@@ -10,22 +10,68 @@ tech:
   - C
   - Python
   - Qt
+  - Sensor fusion
 github: https://github.com/ofmohamm/soqv1
 body:
   - >-
-    Estimates left/right sound direction from the Kinect 360's four-microphone
-    array and fuses it with absolute heading from a servo-mounted IMU to point
-    at the source in real time. Controller firmware in C, signal processing and
-    a live Qt visualizer in Python, with telemetry over UDP.
+    Most things that track you point a camera at you. We wanted to know whether
+    a system could follow a subject accurately with no camera in the signal path
+    at all, using only the sound the subject makes.
   - >-
-    Tracking is audio-only by design. There is no camera in the signal path, all
-    processing runs on the host, and no audio is stored or transmitted.
-specs:
-  - key: Input
-    value: Kinect 360 4-mic array, servo-mounted IMU
-  - key: Signal
-    value: left/right audio direction fused with IMU heading
-  - key: Stack
-    value: C firmware, Python signal processing, Qt visualizer, UDP telemetry
-  - key: Privacy
-    value: audio-only, processed on-host, nothing recorded or sent
+    A sound reaching two microphones hits the closer one first, and that delay
+    tells you where it came from. The Kinect has four mics and we use the outer
+    pair, because a wider baseline means a bigger delay for the same angle. With
+    a 22.6 cm baseline, `sin(theta) = tau * c / d` turns the delay into an
+    angle. Zero is straight ahead, negative is left, positive is right.
+  - >-
+    Measuring that delay is the hard part. Plain cross-correlation falls apart
+    in a normal room, where reflections arrive looking like new sources.
+    GCC-PHAT takes the cross-power spectrum of the two channels and divides it
+    by its own magnitude, which flattens every frequency to equal weight and
+    sharpens the correlation peak. It also throws away loudness. Only the phase
+    relationship between the two mics survives, which is the reason the system
+    can track you without ever capturing what you said.
+  - >-
+    Then the number you get back is coarser than you'd like. We sample at 16
+    kHz, so one sample of lag is 62.5 µs, and across the full 22.6 cm baseline
+    the whole usable range is about 23 discrete lag values. Near straight
+    ahead, one sample is roughly 5.4 degrees. The servo is being asked to aim
+    at something the measurement can only resolve in 5-degree steps, and the
+    audio is noisy on top of that.
+  - >-
+    So most of the work is in conditioning the input before the controller ever
+    sees it. A 300 to 3000 Hz bandpass covers speech and claps and rejects HVAC
+    hum below and hiss above. An RMS energy gate skips quiet frames, so the
+    system stops chasing the correlation of room noise when nobody is talking.
+    The lag search is bounded to physically possible delays, plus or minus
+    `d/c`, which throws out a whole class of spurious peaks for free. An
+    exponential moving average smooths the angle, and a command only goes to
+    the servo once three recent estimates agree within 15 degrees.
+  - >-
+    A PD loop on an Arduino closes it, Kp 0.06 and Kd 0.005, running at 50 Hz
+    with its output clamped to 20 degrees per update. The integral term is zero
+    on purpose. There's no steady-state offset to chase here, and with a
+    measurement this quantized an integrator mostly accumulates noise.
+  - figure: pd-loop
+  - >-
+    **What the IMU is for.** A BNO055 on the same board reports absolute
+    heading. The acoustic estimate is relative to wherever the array is
+    currently facing, which is exactly what the servo needs and exactly the
+    wrong frame for anyone watching. Adding heading to the acoustic angle gives
+    a bearing in world coordinates, so the visualizer shows where the sound is
+    in the room rather than where it is relative to a rig that keeps moving.
+    Sensing and actuation share one board.
+  - >-
+    **Privacy is built into the architecture.** There's no camera in the signal
+    path, all processing runs on the host, and no audio is written to disk or
+    sent off the machine. The only thing that leaves the loop is a bearing. A
+    setting can be toggled. A missing camera can't.
+  - >-
+    **My focus is the data processing pipeline and the dashboard.** I built the
+    path from raw multichannel audio through direction-of-arrival estimation to
+    a fused bearing, and the live Qt visualizer that shows it.
+    Direction-of-arrival is computed in Python on the host, not on the MCU, with
+    the microcontroller handling the servo and streaming IMU heading over UART.
+  - >-
+    Built with Quintin Hatzis and Sawyer Falkenbush, who owned the controller
+    firmware and the mechanical and sensor integration.

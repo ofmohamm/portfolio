@@ -20,7 +20,15 @@ const projects = defineCollection({
     mediaType: z.literal('image').default('image'),
     tech: z.array(z.string()).default([]),
     github: z.string().url().optional(),
-    body: z.array(z.string()).default([]),
+    // A paragraph (inline **bold**, `code` and [links](url) allowed) or an
+    // interactive figure dropped in at that point in the write-up.
+    body: z
+      .array(z.union([z.string(), z.object({ figure: z.string() })]))
+      .default([]),
+    // Button under the image when the destination is not a GitHub repo.
+    cta: z.object({ label: z.string(), url: z.string().url() }).optional(),
+    // Looping video shown in the modal instead of the still image.
+    coverVideo: z.object({ webm: z.string(), mp4: z.string() }).optional(),
     specs: z.array(z.object({ key: z.string(), value: z.string() })).default([]),
     team: z.array(z.object({ name: z.string(), url: z.string().url() })).default([]),
   }),

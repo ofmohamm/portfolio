@@ -1,7 +1,22 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import ParticleField from '../components/ParticleField.astro';
-import { Image, Picture } from 'astro:assets';
+import { Image, Picture, getImage } from 'astro:assets';
+import { inlineMd } from '../lib/inline-md';
+import PowerTrace from '../components/figures/PowerTrace.astro';
+import PirGrid from '../components/figures/PirGrid.astro';
+import MicArray from '../components/figures/MicArray.astro';
+import PdLoop from '../components/figures/PdLoop.astro';
+import pcbPoster from '../assets/projects/pcb-rotate-poster.jpg';
+
+// Interactive figures, referenced by name from a project's body in YAML.
+const FIGURES: Record<string, any> = {
+  'power-trace': PowerTrace,
+  'pir-grid': PirGrid,
+  'mic-array': MicArray,
+  'pd-loop': PdLoop,
+};
+const videoPoster = (await getImage({ src: pcbPoster, width: 1280, format: 'webp' })).src;
 import { getCollection, getEntry } from 'astro:content';
 
 // Project cover images live in src/assets so Astro can convert and resize them.
@@ -14,7 +29,7 @@ import heroLogo from '../assets/logo.png';
 const covers: Record<string, ImageMetadata> = {
   'flood-detection-sensor-pcb': watercamPcb,
   'privacy-based-tracker': privacyTracker,
-  'battery-life-modeling': floxEdgeCamera,
+  'flox-edge-modeling': floxEdgeCamera,
   'acoustic-drone-detection': acousticDrone,
 };
 
@@ -48,6 +63,8 @@ const projects = projectEntries
     cover: covers[entry.id],
     tech: entry.data.tech,
     github: entry.data.github,
+    cta: entry.data.cta,
+    coverVideo: entry.data.coverVideo,
     body: entry.data.body,
     specs: entry.data.specs.map((sp) => [sp.key, sp.value] as const),
   }))
@@ -217,7 +234,17 @@ const socialIcons = [
           </div>
         </div>
 
-        {p.cover && (
+        {p.coverVideo ? (
+          <div class="modal-media">
+            <!-- Nothing downloads until the modal is opened and the video is on
+                 screen; see the play-when-visible script below. -->
+            <video class="modal-video" data-play-visible muted loop playsinline preload="none"
+              poster={videoPoster} width="1280" height="720" aria-label={`${p.name}, rotating 3D render`}>
+              <source src={p.coverVideo.webm} type='video/webm; codecs="av01.0.05M.08"' />
+              <source src={p.coverVideo.mp4} type="video/mp4" />
+            </video>
+          </div>
+        ) : p.cover && (
           <div class="modal-media">
             <Picture
               class={p.status === 'current' ? 'modal-video modal-video--crop' : 'modal-video'}
@@ -233,35 +260,20 @@ const socialIcons = [
           </div>
         )}
 
-        {p.github && (
+        {(p.github || p.cta) && (
           <div class="modal-actions">
-            <a class="cta-primary" href={p.github} target="_blank" rel="noopener noreferrer">
-              View on GitHub
+            <a class="cta-primary" href={p.github ?? p.cta!.url} target="_blank" rel="noopener noreferrer">
+              {p.github ? 'View on GitHub' : p.cta!.label}
               <span class="cta-arrow" aria-hidden="true">↗</span>
             </a>
           </div>
         )}
 
-        {p.body.map((para) => <p class="modal-body">{para}</p>)}
-
-        <div class="modal-specs">
-          {p.team.length > 0 && (
-            <div class="spec-row">
-              <span class="spec-key">Team</span>
-              <span class="spec-val">
-                {p.team.map((m, i) => (
-                  <>{i > 0 && ', '}<a class="spec-link" href={m.url} target="_blank" rel="noopener noreferrer">{m.name}</a></>
-                ))}
-              </span>
-            </div>
-          )}
-          {p.specs.map(([k, v]) => (
-            <div class="spec-row">
-              <span class="spec-key">{k}</span>
-              <span class="spec-val">{v}</span>
-            </div>
-          ))}
-        </div>
+        {p.body.map((block) => {
+          if (typeof block === 'string') return <p class="modal-body" set:html={inlineMd(block)} />;
+          const Figure = FIGURES[block.figure];
+          return Figure ? <Figure /> : null;
+        })}
 
       </div>
     </dialog>
@@ -381,7 +393,6 @@ const socialIcons = [
     transform: translateY(-2px);
   }
 
-
   @keyframes hero-fade {
     from { opacity: 0; transform: translateY(6px); }
     to { opacity: 1; transform: translateY(0); }
@@ -430,13 +441,6 @@ const socialIcons = [
     margin-bottom: 0.35rem;
     text-shadow: 0 1px 8px rgba(0, 0, 0, 0.3);
   }
-
-  .spec-link {
-    color: var(--color-green-primary);
-    text-decoration: none;
-    border-bottom: 1px solid currentColor;
-  }
-  .spec-link:hover { color: var(--color-green-hover); }
 
   /* ============ PROJECT TILES ============ */
   .work-grid {
@@ -725,6 +729,14 @@ const socialIcons = [
     max-height: none;
   }
 
+  .modal-body :global(strong) { font-weight: 600; }
+  .modal-body :global(code) {
+    font-family: var(--font-mono); font-size: 0.86em;
+    background: var(--color-bg-secondary); border-radius: 4px; padding: 0.08em 0.35em;
+  }
+  .modal-body :global(a) { color: var(--color-green-primary); text-decoration: none; border-bottom: 1px solid currentColor; }
+  .modal-body :global(a:hover) { color: var(--color-green-hover); }
+
   .modal-body {
     font-family: var(--font-sans);
     font-size: 1rem;
@@ -732,25 +744,6 @@ const socialIcons = [
     line-height: 1.7;
     margin: 0 0 0.9rem;
   }
-
-  .modal-specs {
-    margin-top: 1rem;
-    border-top: 1px solid var(--color-border);
-    padding-top: 1rem;
-  }
-
-  .spec-row {
-    display: grid;
-    grid-template-columns: 130px 1fr;
-    gap: 1rem;
-    padding: 0.45rem 0;
-    border-bottom: 1px solid var(--color-border);
-    font-family: var(--font-sans);
-    font-size: 0.875rem;
-  }
-  .spec-row:last-child { border-bottom: none; }
-  .spec-key { color: var(--color-text-muted); }
-  .spec-val { color: var(--color-text-primary); }
 
   /* Source link sits right under the image, so it is visible as soon as the
      modal opens instead of after scrolling past the write-up. */
@@ -805,7 +798,6 @@ const socialIcons = [
     .hero-signature { width: min(420px, 86vw); }
     .hero-positioning { font-size: 1rem; }
     .modal-inner { padding: 1.3rem; }
-    .spec-row { grid-template-columns: 1fr; gap: 0; }
   }
 
   @media (max-width: 560px) {
@@ -955,8 +947,26 @@ const socialIcons = [
     document.querySelectorAll('.reveal').forEach((el) => observer.observe(el));
   }
 
+  // Looping videos play only while actually visible (i.e. their modal is open
+  // and they are on screen), and never under reduced motion. preload="none" in
+  // the markup means nothing is fetched until the first play.
+  function wireVideos() {
+    const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const vids = document.querySelectorAll<HTMLVideoElement>('video[data-play-visible]');
+    if (reduce) { vids.forEach((v) => { v.controls = true; }); return; }
+    const io = new IntersectionObserver((entries) => {
+      for (const e of entries) {
+        const v = e.target as HTMLVideoElement;
+        if (e.isIntersecting && !document.hidden) v.play().catch(() => {});
+        else v.pause();
+      }
+    }, { threshold: 0.25 });
+    vids.forEach((v) => io.observe(v));
+  }
+
   wireModals();
   wireReveal();
+  wireVideos();
   document.addEventListener('astro:page-load', () => {
     wireModals();
     wireReveal();

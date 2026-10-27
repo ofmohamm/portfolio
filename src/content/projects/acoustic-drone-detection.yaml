@@ -1,10 +1,10 @@
 name: Acoustic Drone Detection
 org: HII
 status: current
-subtitle: Senior Design · Huntington Ingalls Industries · 2026-2027 · In progress
+subtitle: Senior Design · Huntington Ingalls Industries · 2026 to 2027
 oneLiner: >-
-  Detecting drones by the sound of their rotors and showing where they are on a
-  live display, with ML models tuned to run fast.
+  Detecting, classifying, and locating drones by rotor sound on a
+  six-microphone array, with models sized to a real-time latency budget.
 order: 1
 mediaType: image
 tech:
@@ -13,19 +13,7 @@ tech:
   - Edge inference
   - Microphone arrays
   - DSP
-body:
-  - >-
-    Drones are loud. Their rotors make a sound microphones can pick up, even
-    when the drone isn't sending any signal and even when you can't see it. That
-    makes sound a cheap, passive way to detect drones alongside radar and radio
-    tracking. Our team is building a microphone array and a machine learning
-    model that hears a drone, tells it apart from other noise, and shows where it
-    is on a live display.
-  - >-
-    My focus is the machine learning. I'm training the models that detect and
-    classify drones, then optimizing them to run fast. Speed matters here because
-    the display is live. If the model is slow, the drone has already moved by the
-    time the screen catches up.
+  - GCC-PHAT
 team:
   - name: Owens Liu
     url: https://www.linkedin.com/in/owens-liu/
@@ -33,8 +21,73 @@ team:
     url: https://www.linkedin.com/in/logan-lewellen-a0a1a6293/
   - name: Ryan Weiss
     url: https://www.linkedin.com/in/ryanw-/
-specs:
-  - key: My focus
-    value: Training and optimizing the ML models
-  - key: System
-    value: Live drone detection, classification, and location on a real-time display
+body:
+  - >-
+    A drone announces itself long before you can see it. Four rotors spinning at
+    a few thousand rpm push air, and the air pushes back at frequencies a cheap
+    microphone picks up from across a field. Radar needs line of sight. RF
+    tracking needs the drone to be transmitting. Sound needs the drone to be
+    flying, which is the one thing it can't stop doing. HII brought us this
+    problem because small commercial drones have become a real concern around
+    fixed sites and vessels, and a microphone costs a fraction of a radar while
+    giving away nothing about its own position.
+  - >-
+    Start with one microphone. It tells you a drone is somewhere nearby, which
+    is useful and nowhere near enough.
+  - >-
+    Add a second. Sound reaches the nearer microphone first, and that delay
+    tells you which direction it came from. But the answer is only an angle off
+    the line joining the two mics, so rotating the pair rotates the answer with
+    it.
+  - >-
+    So we use five, evenly spaced around a 15 cm ring. The delays between pairs
+    now resolve a direction anywhere in the horizontal plane. The ring has a
+    blind spot built into its geometry, though. A sound arriving from 30° above
+    and the same sound arriving from 30° below hit all five microphones at
+    exactly the same moments. A flat array can't tell them apart.
+  - >-
+    So a sixth microphone sits on a post, 15 cm above the ring. Breaking the
+    symmetry breaks the ambiguity, and it costs one extra channel.
+  - figure: mic-array
+  - >-
+    Here's the detail that's easy to miss and fatal to get wrong. The widest
+    baseline across the ring is 28.5 cm, so the longest delay we ever need to
+    measure is about 830 µs. At a 48 kHz sampling rate, one sample is 20.8 µs.
+    The whole measurement lives inside roughly forty samples. If each microphone
+    ran on its own clock, the drift between them would swamp the signal we're
+    trying to read. So a Teensy 4.1 drives all six on one shared bit clock and
+    captures every channel on the same edge. Any difference in arrival time is
+    then the sound's path and nothing else.
+  - >-
+    The audio streams to an NVIDIA Jetson over USB. There, a lightweight
+    detector runs continuously, because listening is cheap and the expensive
+    work should only happen when there's something to look at. Once it hears a
+    rotor, a classifier identifies the drone and GCC-PHAT compares arrival times
+    across microphone pairs to produce a direction. A live dashboard shows the
+    result.
+  - >-
+    **My focus is the models.** I train the detection and classification
+    networks and tune them for inference speed, targeting 0.5 to 1.5 s from a
+    rotor becoming audible to a result on the screen. The display is live, so a
+    slow model reports where the drone was instead of where it is.
+  - >-
+    The hard part is the data. Labeled drone audio is scarce, and a model
+    trained on clean public recordings won't survive a room with an HVAC unit
+    running in it. We combine public datasets with our own recordings captured
+    on this exact array, then augment with background noise, gain variation,
+    and pitch shifts that stand in for the rotor speeds and distances we
+    couldn't record ourselves.
+  - >-
+    Stretch goals. Beyond the baseline of placing a drone in the correct
+    quadrant, we are going after localization within ±15° in both azimuth and
+    elevation, and drone type classification at 80% accuracy or better. The
+    classification case rests on physics: different drone sizes spin different
+    rotors at different speeds, which leaves a distinct harmonic signature. The
+    array geometry already supports the finer localization, so it is a software
+    extension rather than a redesign.
+  - >-
+    Array hardware, capture firmware, localization pipeline, and dashboard are
+    owned by [Owens Liu](https://www.linkedin.com/in/owens-liu/),
+    [Logan Lewellen](https://www.linkedin.com/in/logan-lewellen-a0a1a6293/), and
+    [Ryan Weiss](https://www.linkedin.com/in/ryanw-/).
+  - Demo date is April 10, 2027.

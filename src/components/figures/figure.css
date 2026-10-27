@@ -1,0 +1,98 @@
+/* Shared look for the interactive figures. Modelled on the panel-plus-controls
+   layout of ciechanow.ski: the drawing sits on a quiet panel, controls sit
+   underneath it, and everything is drawn in the site's own palette.
+   Graphics are SVG; every piece of text is HTML so it stays legible when the
+   SVG scales down on a phone. */
+.fig {
+  --figure-ink: #2C2C2C;
+  --figure-muted: rgba(44, 44, 44, 0.4);
+  --figure-accent: #355359;
+  --figure-accent-soft: rgba(53, 83, 89, 0.16);
+  --figure-warn: #A4563D;
+  --figure-warn-soft: rgba(164, 86, 61, 0.16);
+  --figure-grid: rgba(44, 44, 44, 0.12);
+  --figure-panel: #F3EFE6;
+  margin: 1.6rem 0 1.9rem;
+  color: var(--figure-ink);
+  font-family: var(--font-sans);
+  /* opening a modal lays out its whole body; skip figures until they near the viewport */
+  content-visibility: auto;
+  contain-intrinsic-size: auto 520px;
+}
+.fig-stage {
+  position: relative;
+  background: var(--figure-panel);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 1rem 1rem 0.75rem;
+}
+.fig-svg { display: block; width: 100%; height: auto; overflow: visible; }
+.fig-svg text { font-family: var(--font-sans); }
+.fig-row {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+  gap: 0.6rem 1rem; margin-top: 0.85rem;
+}
+.fig-readout {
+  font-family: var(--font-mono); font-size: 0.8rem; color: var(--figure-ink);
+  font-variant-numeric: tabular-nums;
+}
+.fig-caption {
+  margin: 0.6rem 0.15rem 0; font-size: 0.8rem; line-height: 1.5;
+  color: var(--color-text-muted);
+}
+.fig-hint { font-size: 0.75rem; color: var(--color-text-muted); }
+
+/* Segmented control: a real <button> per option, aria-pressed carries state. */
+.fig-seg {
+  display: inline-flex; border: 1px solid var(--color-border); border-radius: 999px;
+  background: var(--color-bg-primary); padding: 2px;
+}
+.fig-seg button {
+  font: 500 0.78rem/1 var(--font-sans); color: var(--figure-ink);
+  background: transparent; border: 0; border-radius: 999px;
+  padding: 0.45rem 0.8rem; cursor: pointer; min-height: 32px;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.fig-seg button[aria-pressed='true'] { background: var(--figure-accent); color: #FAF9F6; }
+.fig-seg button:focus-visible { outline: 2px solid var(--figure-accent); outline-offset: 2px; }
+.fig-seg-label { font-size: 0.72rem; color: var(--color-text-muted); margin-right: 0.4rem; }
+.fig-group { display: inline-flex; align-items: center; }
+
+/* Sliders */
+.fig-slider { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 0.7rem; width: 100%; }
+.fig-slider label { font-size: 0.78rem; font-weight: 500; min-width: 4.2rem; }
+.fig-slider output { font-family: var(--font-mono); font-size: 0.78rem; min-width: 3.4rem; text-align: right; font-variant-numeric: tabular-nums; }
+.fig-slider input[type='range'] {
+  -webkit-appearance: none; appearance: none; width: 100%; height: 28px; background: transparent; cursor: pointer;
+}
+.fig-slider input[type='range']::-webkit-slider-runnable-track { height: 3px; background: var(--figure-grid); border-radius: 2px; }
+.fig-slider input[type='range']::-moz-range-track { height: 3px; background: var(--figure-grid); border-radius: 2px; }
+.fig-slider input[type='range']::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 18px; height: 18px; margin-top: -7.5px; border-radius: 50%;
+  background: var(--figure-accent); border: 2px solid #FAF9F6; box-shadow: 0 1px 3px rgba(0,0,0,0.25);
+}
+.fig-slider input[type='range']::-moz-range-thumb {
+  width: 18px; height: 18px; border-radius: 50%;
+  background: var(--figure-accent); border: 2px solid #FAF9F6; box-shadow: 0 1px 3px rgba(0,0,0,0.25);
+}
+.fig-slider input[type='range']:focus-visible { outline: 2px solid var(--figure-accent); outline-offset: 4px; border-radius: 4px; }
+
+/* Draggable things */
+.fig-drag { cursor: grab; touch-action: none; }
+.fig-drag:active { cursor: grabbing; }
+.fig-drag:focus { outline: none; }
+.fig-drag:focus-visible .fig-focus-ring { stroke: var(--figure-accent); stroke-width: 2; stroke-dasharray: 4 3; }
+
+/* Text overlaid on a drawing */
+.fig-label {
+  position: absolute; font-size: 0.72rem; line-height: 1.2; color: var(--figure-ink);
+  white-space: nowrap; pointer-events: none; transform: translate(-50%, -50%);
+  /* panel-coloured halo keeps labels legible where they cross a trace */
+  text-shadow: 0 0 2px var(--figure-panel), 0 0 2px var(--figure-panel), 0 0 4px var(--figure-panel);
+}
+.fig-label.muted { color: var(--color-text-muted); }
+.fig-label.warn { color: var(--figure-warn); font-weight: 500; }
+
+@media (prefers-reduced-motion: reduce) {
+  .fig *, .fig *::before, .fig *::after { transition: none !important; animation: none !important; }
+}
