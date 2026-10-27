@@ -40,13 +40,13 @@ body:
     the line joining the two mics, so rotating the pair rotates the answer with
     it.
   - >-
-    So we use five, evenly spaced around a 15 cm ring. The delays between pairs
+    So we use [five]{.slate}, evenly spaced around a 15 cm ring. The delays between pairs
     now resolve a direction anywhere in the horizontal plane. The ring has a
-    blind spot built into its geometry, though. A sound arriving from 30° above
-    and the same sound arriving from 30° below hit all five microphones at
+    blind spot built into its geometry, though. A sound arriving from [30° above]{.teal}
+    and the same sound arriving from [30° below]{.clay} hit all five microphones at
     exactly the same moments. A flat array can't tell them apart.
   - >-
-    So a sixth microphone sits on a post, 15 cm above the ring. Breaking the
+    So a [sixth microphone]{.ochre} sits on a post, 15 cm above the ring. Breaking the
     symmetry breaks the ambiguity, and it costs one extra channel.
   - figure: mic-array
   - >-

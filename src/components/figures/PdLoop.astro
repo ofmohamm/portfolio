@@ -1,6 +1,8 @@
 ---
 import './figure.css';
-import { simulate, PRESETS, SOURCE, START, DURATION } from './lib/pd';
+import PlayButton from './PlayButton.astro';
+import { simulate, PRESETS, SOURCE, DURATION } from './lib/pd';
+import { DIAL, dialPoint } from './lib/dial';
 const W = 560, TOP = 230, STRIP = 80, GAP = 18, H = TOP + GAP + STRIP;
 const Y0 = 80, Y1 = 150, E = 40;
 const sx = (t: number) => 34 + (t / DURATION) * (W - 42);
@@ -15,41 +17,80 @@ const sentPath = (() => {
   return d;
 })();
 const ticks = [90, 105, 120, 135, 150];
+// The device, top down: drawn at its final heading so the no-JS figure shows
+// where the loop ends up.
+const endAngle = sim.servo[sim.servo.length - 1];
+const p = (a: number, r: number) => { const q = dialPoint(a, r); return `${q.x.toFixed(1)},${q.y.toFixed(1)}`; };
+const dialTicks = Array.from({ length: 13 }, (_, i) => i * 15);
+const src = dialPoint(SOURCE, DIAL.R + 26);
 ---
 
-<figure class="fig fig-pd" data-fig="pd" aria-label="Servo angle over time for a sound source 30 degrees to the side, with adjustable PD gains">
+<figure class="fig fig-pd" data-fig="pd" aria-label="The array on its servo turning toward a sound source 30 degrees to the side, and the servo angle over time, with adjustable PD gains">
   <div class="fig-stage">
-    <div class="fig-pd-plot">
+    <div class="fig-view pd-dial">
+      <svg class="fig-svg" viewBox={`0 0 ${DIAL.W} ${DIAL.H}`} aria-hidden="true">
+        <path d={`M${p(0, DIAL.R)}A${DIAL.R},${DIAL.R} 0 0 0 ${p(180, DIAL.R)}`} fill="none" stroke="var(--figure-grid)" stroke-width="1.5" />
+        {dialTicks.map((a) => (
+          <line x1={dialPoint(a, DIAL.R).x} y1={dialPoint(a, DIAL.R).y} x2={dialPoint(a, DIAL.R - (a % 45 ? 6 : 11)).x} y2={dialPoint(a, DIAL.R - (a % 45 ? 6 : 11)).y}
+            stroke="var(--figure-ink)" stroke-opacity={a % 45 ? 0.25 : 0.5} stroke-width="1.5" />
+        ))}
+        <!-- line of sight to the sound -->
+        <line x1={DIAL.cx} y1={DIAL.cy} x2={src.x} y2={src.y} stroke="var(--c-ochre)" stroke-width="1.5" stroke-dasharray="6 5" />
+        <!-- a speaker, facing the array -->
+        <g transform={`translate(${src.x.toFixed(1)},${src.y.toFixed(1)}) rotate(${180 - SOURCE})`}>
+          <path d="M-9,-5h5l7,-6v22l-7,-6h-5z" fill="var(--c-ochre)" />
+          <path d="M9,-9a12,12 0 0 1 0,18M13,-14a19,19 0 0 1 0,28" fill="none" stroke="var(--c-ochre)" stroke-width="2" stroke-linecap="round" />
+        </g>
+        <!-- the array on its servo: the bar turns, the needle is its heading -->
+        <g class="pd-arm" transform={`rotate(${(90 - endAngle).toFixed(2)} ${DIAL.cx} ${DIAL.cy})`}>
+          <line x1={DIAL.cx} y1={DIAL.cy} x2={DIAL.cx} y2={DIAL.cy - DIAL.R + 10} stroke="var(--c-teal)" stroke-width="2.5" stroke-linecap="round" />
+          <rect x={DIAL.cx - 44} y={DIAL.cy - 9} width="88" height="18" rx="5" fill="color-mix(in srgb, var(--c-teal) 22%, var(--figure-panel))" stroke="var(--c-teal)" stroke-width="2" />
+          <circle cx={DIAL.cx - 33} cy={DIAL.cy} r="3.5" fill="var(--c-slate)" />
+          <circle cx={DIAL.cx + 33} cy={DIAL.cy} r="3.5" fill="var(--c-slate)" />
+        </g>
+        <circle cx={DIAL.cx} cy={DIAL.cy} r="4" fill="var(--figure-ink)" />
+      </svg>
+      <span class="fig-label muted" style={`left:${(dialPoint(90, DIAL.R + 12).x / DIAL.W) * 100}%;top:${(dialPoint(90, DIAL.R + 12).y / DIAL.H) * 100}%`}>90°</span>
+      <span class="fig-label muted" style={`left:${((dialPoint(180, DIAL.R).x - 16) / DIAL.W) * 100}%;top:${(DIAL.cy / DIAL.H) * 100}%`}>180°</span>
+      <span class="fig-label muted" style={`left:${((dialPoint(0, DIAL.R).x + 12) / DIAL.W) * 100}%;top:${(DIAL.cy / DIAL.H) * 100}%`}>0°</span>
+      <span class="fig-label c-ochre pd-src-lab" style={`left:${((src.x - 32) / DIAL.W) * 100}%;top:${((src.y - 4) / DIAL.H) * 100}%`}>sound</span>
+    </div>
+
+    <div class="fig-view fig-pd-plot">
       <svg class="fig-svg" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMid meet" aria-hidden="true">
         <defs><clipPath id="pd-clip"><rect x="34" y="0" width={W - 34} height={TOP} /></clipPath></defs>
         {ticks.map((a) => <line x1="34" x2={W - 8} y1={sy(a)} y2={sy(a)} stroke="var(--figure-grid)" />)}
-        <line x1="34" x2={W - 8} y1={sy(SOURCE)} y2={sy(SOURCE)} stroke="var(--figure-ink)" stroke-opacity="0.55" stroke-dasharray="6 5" />
+        <line x1="34" x2={W - 8} y1={sy(SOURCE)} y2={sy(SOURCE)} stroke="var(--c-ochre)" stroke-width="1.5" stroke-dasharray="6 5" />
         <g clip-path="url(#pd-clip)">
-          <path class="pd-servo" d={path(sim.servo, sy)} fill="none" stroke="var(--figure-accent)" stroke-width="2" stroke-linejoin="round" />
+          <path class="pd-servo" d={path(sim.servo, sy)} fill="none" stroke="var(--c-teal)" stroke-width="2.2" stroke-linejoin="round" />
         </g>
         <line x1="34" x2={W - 8} y1={ey(0)} y2={ey(0)} stroke="var(--figure-grid)" />
         <g class="pd-est">
           {sim.t.map((t, i) => Number.isNaN(sim.est[i]) ? null : (
-            <circle cx={sx(t).toFixed(1)} cy={ey(Math.max(-E, Math.min(E, sim.est[i]))).toFixed(1)} r="1.4"
-              fill={Number.isNaN(sim.outlier[i]) ? 'var(--figure-muted)' : 'var(--figure-warn)'} />
+            <circle cx={sx(t).toFixed(1)} cy={ey(Math.max(-E, Math.min(E, sim.est[i]))).toFixed(1)} r="1.5"
+              fill={Number.isNaN(sim.outlier[i]) ? 'var(--c-slate)' : 'var(--c-clay)'} fill-opacity={Number.isNaN(sim.outlier[i]) ? 0.55 : 1} />
           ))}
         </g>
-        <path class="pd-sent" d={sentPath} fill="none" stroke="var(--figure-ink)" stroke-width="1.3" />
+        <path class="pd-sent" d={sentPath} fill="none" stroke="var(--figure-ink)" stroke-width="1.4" />
+        <g class="pd-head">
+          <line class="pd-head-line" x1={sx(DURATION)} x2={sx(DURATION)} y1="0" y2={H} stroke="var(--figure-ink)" stroke-opacity="0.35" />
+          <circle class="pd-head-dot" cx={sx(DURATION)} cy={sy(endAngle)} r="5" fill="var(--c-teal)" stroke="var(--figure-panel)" stroke-width="2" />
+        </g>
       </svg>
       {ticks.map((a) => <span class="fig-label muted pd-tick" style={`left:${(28 / W) * 100}%;top:${(sy(a) / H) * 100}%`}>{a}°</span>)}
-      <span class="fig-label muted pd-lab" style={`left:${(46 / W) * 100}%;top:${((sy(SOURCE) - 9) / H) * 100}%`}>sound source</span>
-      <span class="fig-label muted pd-lab" style={`left:${(46 / W) * 100}%;top:${((TOP + GAP - 4) / H) * 100}%`}>what the controller is told</span>
+      <span class="fig-label c-ochre pd-lab" style={`left:${(46 / W) * 100}%;top:${((sy(SOURCE) - 10) / H) * 100}%`}>sound source</span>
+      <span class="fig-label pd-lab" style={`left:${(46 / W) * 100}%;top:${((TOP + GAP - 4) / H) * 100}%`}>what the controller is told</span>
       <span class="fig-label warn pd-rail" style={`left:70%;top:${(12 / H) * 100}%`} hidden>runs into the 180° end stop</span>
     </div>
     <div class="fig-pd-x"><span>0 s</span><span>time</span><span>{DURATION} s</span></div>
 
     <div class="pd-controls">
-      <div class="fig-slider">
+      <div class="fig-slider" style="--p:0.2">
         <label for="pd-kp">Kp</label>
         <input id="pd-kp" type="range" min="0" max="0.3" step="0.005" value="0.06" />
         <output for="pd-kp" class="pd-kp-out">0.060</output>
       </div>
-      <div class="fig-slider">
+      <div class="fig-slider" style={`--p:${0.005 / 0.03}`}>
         <label for="pd-kd">Kd</label>
         <input id="pd-kd" type="range" min="0" max="0.03" step="0.0005" value="0.005" />
         <output for="pd-kd" class="pd-kd-out">0.0050</output>
@@ -69,7 +110,10 @@ const ticks = [90, 105, 120, 135, 150];
         </div>
       </div>
     </div>
-    <p class="fig-readout pd-readout" aria-live="polite"></p>
+    <div class="pd-foot">
+      <PlayButton />
+      <p class="fig-readout pd-readout" aria-live="polite"></p>
+    </div>
   </div>
   <figcaption class="fig-caption">
     Simulated with the shipped gains and the real 16 kHz lag quantization. Not recorded telemetry.
@@ -77,18 +121,23 @@ const ticks = [90, 105, 120, 135, 150];
 </figure>
 
 <style>
-  .fig-pd-plot { position: relative; }
+  .pd-dial { max-width: 420px; margin: 0 auto 0.4rem; }
+  /* room on the left for the angle ticks, which sit outside the plot */
+  .fig-pd-plot { position: relative; margin-left: 1.4rem; }
   .pd-tick { transform: translate(-100%, -50%); }
   .pd-lab { transform: translate(0, -50%); }
-  .fig-pd-x { display: flex; justify-content: space-between; font-size: 0.7rem; color: var(--color-text-muted); padding-left: 6%; }
-  .pd-controls { display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem 1.5rem; margin-top: 0.6rem; }
+  .fig-pd-x { display: flex; justify-content: space-between; font-size: 0.7rem; color: var(--color-text-muted); margin-left: calc(1.4rem + 5%); }
+  .pd-controls { display: grid; grid-template-columns: 1fr 1fr; gap: 0 1.5rem; margin-top: 0.3rem; }
   @media (max-width: 520px) { .pd-controls { grid-template-columns: 1fr; } }
-  .pd-presets { flex-wrap: wrap; border-radius: 16px; }
-  .pd-readout { margin: 0.7rem 0 0; color: var(--color-text-muted); min-height: 1.2em; }
+  .pd-foot { display: flex; align-items: center; gap: 0.3rem; }
+  .pd-readout { margin: 0; color: var(--color-text-muted); min-height: 1.2em; }
+  :global(.no-js) .pd-head { display: none; }
 </style>
 
 <script>
   import { simulate, score, SOURCE, DURATION } from './lib/pd';
+  import { DIAL } from './lib/dial';
+  import { player, fillSlider } from './lib/ui';
 
   const W = 560, TOP = 230, STRIP = 80, GAP = 18, H = TOP + GAP + STRIP;
   const Y0 = 80, Y1 = 150, E = 40;
@@ -96,6 +145,7 @@ const ticks = [90, 105, 120, 135, 150];
   const sy = (a: number) => 8 + (1 - (a - Y0) / (Y1 - Y0)) * (TOP - 16);
   const ey = (e: number) => TOP + GAP + (1 - (e + E) / (2 * E)) * STRIP;
   const NS = 'http://www.w3.org/2000/svg';
+  const HOLD = 1.2;                     // seconds to rest on the final angle before replaying
 
   function init(root: HTMLElement) {
     if (root.dataset.ready) return;
@@ -103,24 +153,38 @@ const ticks = [90, 105, 120, 135, 150];
     const q = <T extends Element>(s: string) => root.querySelector<T>(s)!;
     const servo = q<SVGPathElement>('.pd-servo'), sent = q<SVGPathElement>('.pd-sent');
     const estG = q<SVGGElement>('.pd-est'), rail = q<HTMLElement>('.pd-rail');
+    const arm = q<SVGGElement>('.pd-arm');
+    const headLine = q<SVGLineElement>('.pd-head-line'), headDot = q<SVGCircleElement>('.pd-head-dot');
     const kp = q<HTMLInputElement>('#pd-kp'), kd = q<HTMLInputElement>('#pd-kd');
     const kpOut = q<HTMLOutputElement>('.pd-kp-out'), kdOut = q<HTMLOutputElement>('.pd-kd-out');
     const readout = q<HTMLElement>('.pd-readout');
     const presets = [...root.querySelectorAll<HTMLButtonElement>('.pd-presets button')];
     const gateBtns = [...root.querySelectorAll<HTMLButtonElement>('[data-gate]')];
-    let gate = true, raf = 0;
+    let gate = true, raf = 0, railed = false;
+    let sim = simulate(+kp.value, +kd.value, gate);
+    let t = DURATION, hold = 0;
 
     // Reuse the estimate dots instead of rebuilding them on every frame.
     const dots: SVGCircleElement[] = [...estG.querySelectorAll('circle')];
     const dot = (i: number) => {
-      if (!dots[i]) { const c = document.createElementNS(NS, 'circle'); c.setAttribute('r', '1.4'); estG.appendChild(c); dots[i] = c; }
+      if (!dots[i]) { const c = document.createElementNS(NS, 'circle'); c.setAttribute('r', '1.5'); estG.appendChild(c); dots[i] = c; }
       return dots[i];
+    };
+
+    // The replay: the dial and the playhead show the loop at time t.
+    const drawHead = () => {
+      const i = Math.min(sim.t.length - 1, Math.round((t / DURATION) * (sim.t.length - 1)));
+      const a = sim.servo[i], x = sx(t).toFixed(1);
+      arm.setAttribute('transform', `rotate(${(90 - a).toFixed(2)} ${DIAL.cx} ${DIAL.cy})`);
+      headLine.setAttribute('x1', x); headLine.setAttribute('x2', x);
+      headDot.setAttribute('cx', x);
+      headDot.setAttribute('cy', sy(Math.max(Y0 - 5, Math.min(Y1 + 5, a))).toFixed(1));
     };
 
     const render = () => {
       raf = 0;
       const p = +kp.value, d = +kd.value;
-      const s = simulate(p, d, gate);
+      const s = (sim = simulate(p, d, gate));
       let path = '';
       for (let i = 0; i < s.t.length; i++)
         path += `${i ? 'L' : 'M'}${sx(s.t[i]).toFixed(1)},${sy(Math.max(Y0 - 5, Math.min(Y1 + 5, s.servo[i]))).toFixed(1)}`;
@@ -130,34 +194,50 @@ const ticks = [90, 105, 120, 135, 150];
         if (!Number.isNaN(s.sent[i])) last = s.sent[i];
         sp += `${i ? 'L' : 'M'}${sx(s.t[i]).toFixed(1)},${ey(Math.max(-E, Math.min(E, last))).toFixed(1)}`;
         if (!Number.isNaN(s.est[i])) {
-          const c = dot(n++);
+          const c = dot(n++), out = !Number.isNaN(s.outlier[i]);
           c.setAttribute('cx', sx(s.t[i]).toFixed(1));
           c.setAttribute('cy', ey(Math.max(-E, Math.min(E, s.est[i]))).toFixed(1));
-          c.setAttribute('fill', Number.isNaN(s.outlier[i]) ? 'var(--figure-muted)' : 'var(--figure-warn)');
+          c.setAttribute('fill', out ? 'var(--c-clay)' : 'var(--c-slate)');
+          c.setAttribute('fill-opacity', out ? '1' : '0.55');
           c.removeAttribute('display');
         }
       }
       for (let i = n; i < dots.length; i++) dots[i].setAttribute('display', 'none');
       sent.setAttribute('d', sp);
       kpOut.textContent = p.toFixed(3); kdOut.textContent = d.toFixed(4);
+      fillSlider(kp); fillSlider(kd);
       const sc = score(s);
-      const railed = Math.max(...s.servo) >= 179;
+      railed = Math.max(...s.servo) >= 179;
       rail.hidden = !railed;
-      servo.setAttribute('stroke', railed ? 'var(--figure-warn)' : 'var(--figure-accent)');
+      const c = railed ? 'var(--c-clay)' : 'var(--c-teal)';
+      servo.setAttribute('stroke', c); headDot.setAttribute('fill', c);
       readout.textContent = railed
         ? 'never settles: each correction overshoots further than the last'
         : sc.settle === null
           ? `still ${Math.abs(Math.round(s.servo[s.servo.length - 1] - SOURCE))}° off after ${DURATION} s`
           : `settles in ${sc.settle.toFixed(2)} s, overshoot ${Math.max(0, sc.overshoot).toFixed(0)}°`;
       presets.forEach((b) => b.setAttribute('aria-pressed', String(Math.abs(+b.dataset.kp! - p) < 1e-9 && Math.abs(+b.dataset.kd! - d) < 1e-9)));
+      drawHead();
     };
     const schedule = () => { if (!raf) raf = requestAnimationFrame(render); };
+
+    // Real time: three simulated seconds take three seconds, so 0.71 s to
+    // settle looks like 0.71 s. Changing a gain doesn't restart the replay;
+    // the trace updates under the playhead and the next pass shows it.
+    const auto = player(root, (dt) => {
+      if (hold > 0) { hold -= dt; if (hold <= 0) t = 0; }
+      else { t += dt; if (t >= DURATION) { t = DURATION; hold = HOLD; } }
+      drawHead();
+    });
+    // Without motion the dial just shows where the loop ends up.
+    t = auto.playing ? 0 : DURATION;
+
     kp.addEventListener('input', schedule);
     kd.addEventListener('input', schedule);
-    presets.forEach((b) => b.addEventListener('click', () => { kp.value = b.dataset.kp!; kd.value = b.dataset.kd!; schedule(); }));
+    presets.forEach((b) => b.addEventListener('click', () => { kp.value = b.dataset.kp!; kd.value = b.dataset.kd!; t = 0; hold = 0; schedule(); }));
     gateBtns.forEach((b) => b.addEventListener('click', () => {
       gate = b.dataset.gate === 'on';
-      gateBtns.forEach((x) => x.setAttribute('aria-pressed', String(x === b))); schedule();
+      gateBtns.forEach((x) => x.setAttribute('aria-pressed', String(x === b))); t = 0; hold = 0; schedule();
     }));
     render();
   }

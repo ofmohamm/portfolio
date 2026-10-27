@@ -24,8 +24,8 @@ body:
     The answer is wrong.
   - >-
     It's wrong because the system is almost never in the state the datasheet
-    describes. It sleeps, wakes on motion, powers up a camera, runs a CNN
-    on-device, sometimes fires a deterrent, opens a cellular link, and goes back
+    describes. It [sleeps]{.slate}, [wakes on motion]{.sage}, [powers up a camera]{.ochre}, [runs a CNN]{.teal}
+    on-device, sometimes [fires a deterrent]{.clay}, [opens a cellular link]{.plum}, and goes back
     to sleep. Every one of those states draws something different. So you
     measure each subsystem in each state and weight it by how long the device
     spends there. That gets much closer. It's still wrong.
@@ -43,10 +43,10 @@ body:
     change an assumption, see what it costs in energy and in milliseconds.
   - >-
     The point of a model you can ask questions of is the questions. Here's one.
-    The device carries several PIR sensors. Treated as a single trigger, they
+    The device carries [several PIR sensors]{.ochre}. Treated as a single trigger, they
     tell you something moved. Treated as a pattern, they tell you roughly where
     in the frame it moved. And if you know roughly where, the CNN doesn't have
-    to evaluate the whole frame. It runs on the tiles the PIR pattern points to
+    to evaluate the whole frame. It runs on [the tiles the PIR pattern points to]{.teal}
     and skips the rest. Less inference means less energy per event and a
     shorter wake window, which is the same win counted twice.
   - figure: pir-grid

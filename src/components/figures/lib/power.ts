@@ -2,20 +2,20 @@
 // illustrative; the time axis is unitless, so short states are widened to stay
 // legible on a phone (the spec allows stretching time, never the peaks).
 export const STATES = [
-  { id: 'sleep', label: 'sleep', w: 150, i: 0.01 },
-  { id: 'pir', label: 'PIR wake', w: 95, i: 0.15 },
-  { id: 'boot', label: 'camera boot', w: 220, i: 0.45 },
-  { id: 'capture', label: 'capture', w: 130, i: 0.7 },
-  { id: 'infer', label: 'inference', w: 250, i: 1.0 },
-  { id: 'deter', label: 'deter', w: 300, i: 0.85 },
-  { id: 'lte', label: 'LTE tx', w: 400, i: 0.6 },
-  { id: 'sleep2', label: 'sleep', w: 160, i: 0.01 },
+  { id: 'sleep', label: 'sleep', c: 'slate', w: 150, i: 0.01 },
+  { id: 'pir', label: 'PIR wake', c: 'sage', w: 95, i: 0.15 },
+  { id: 'boot', label: 'camera boot', c: 'ochre', w: 220, i: 0.45 },
+  { id: 'capture', label: 'capture', c: 'ochre', w: 130, i: 0.7 },
+  { id: 'infer', label: 'inference', c: 'teal', w: 250, i: 1.0 },
+  { id: 'deter', label: 'deter', c: 'clay', w: 300, i: 0.85 },
+  { id: 'lte', label: 'LTE tx', c: 'plum', w: 400, i: 0.6 },
+  { id: 'sleep2', label: 'sleep', c: 'slate', w: 160, i: 0.01 },
 ];
 export const TOTAL = STATES.reduce((a, s) => a + s.w, 0);
 export const Y_MAX = 1.75;
 const N = 560;
 
-const starts: number[] = [];
+export const starts: number[] = [];
 STATES.reduce((a, s) => (starts.push(a), a + s.w), 0);
 const at = (x: number) => {
   let k = STATES.length - 1;
@@ -25,6 +25,7 @@ const at = (x: number) => {
 
 // Datasheet model: flat plateaus, instant jumps.
 export const datasheet = (x: number) => STATES[at(x).k].i;
+export const stateAt = (x: number) => STATES[at(x).k];
 
 // Bench-shaped trace: the same plateaus plus what a list of states leaves out.
 const rise = (t: number, w: number) => Math.min(1, Math.max(0, t / w));
@@ -63,7 +64,7 @@ export const measY = xs.map(measured);
 // Sample both curves on the same grid so one can morph into the other.
 // Add exact boundary points to the datasheet so its jumps are truly vertical.
 export function bounds() {
-  return starts.map((s, j) => ({ x0: s, x1: s + STATES[j].w, label: STATES[j].label }));
+  return starts.map((s, j) => ({ x0: s, x1: s + STATES[j].w, label: STATES[j].label, c: STATES[j].c }));
 }
 
 export function geometry(W: number, H: number, pad = { l: 8, r: 8, t: 14, b: 8 }) {

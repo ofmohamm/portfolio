@@ -1,4 +1,5 @@
 import type { APIRoute } from 'astro';
+import { stripMd } from '../lib/inline-md';
 import { getCollection, getEntry } from 'astro:content';
 
 // The markdown twin of the homepage, per the /llms.txt v2 proposal: a clean
@@ -15,7 +16,7 @@ export const GET: APIRoute = async () => {
 
   const name = `${hero?.data.firstName ?? 'Omar'} ${hero?.data.lastName ?? 'Mohammed'}`;
   const ordered = [...projects].sort((a, b) => a.data.order - b.data.order);
-  const tidy = (s?: string) => (s ?? '').replace(/\s+/g, ' ').trim();
+  const tidy = (s?: string) => stripMd(s ?? '');
 
   const out: string[] = [];
   out.push(`# ${name}`, '');

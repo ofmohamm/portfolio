@@ -55,7 +55,9 @@ function gauss(A: number[][], b: number[]) {
 }
 
 // Orthographic camera: yaw around z, then tilt by pitch. World z is up.
-export const VIEW = { W: 560, H: 360, cx: 280, cy: 205, scale: 560 };
+// The orbit never comes within ~60 units of the sides, so the visible box
+// (X0..X0+VW) crops that margin away and the array draws bigger.
+export const VIEW = { W: 560, H: 380, cx: 280, cy: 212, scale: 630, X0: 60, VW: 440 };
 export function projector(yawDeg: number, pitchDeg: number) {
   const ya = (yawDeg * Math.PI) / 180, pa = (pitchDeg * Math.PI) / 180;
   const cy = Math.cos(ya), sy = Math.sin(ya), cp = Math.cos(pa), sp = Math.sin(pa);

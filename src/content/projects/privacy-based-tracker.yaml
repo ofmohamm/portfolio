@@ -46,9 +46,9 @@ body:
     The lag search is bounded to physically possible delays, plus or minus
     `d/c`, which throws out a whole class of spurious peaks for free. An
     exponential moving average smooths the angle, and a command only goes to
-    the servo once three recent estimates agree within 15 degrees.
+    the servo once [three recent estimates]{.slate} agree within 15 degrees.
   - >-
-    A PD loop on an Arduino closes it, Kp 0.06 and Kd 0.005, running at 50 Hz
+    A [PD loop]{.teal} on an Arduino closes it, Kp 0.06 and Kd 0.005, running at 50 Hz
     with its output clamped to 20 degrees per update. The integral term is zero
     on purpose. There's no steady-state offset to chase here, and with a
     measurement this quantized an integrator mostly accumulates noise.

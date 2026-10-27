@@ -1,7 +1,8 @@
 ---
 import './figure.css';
-import { W, H, FRAME, COLS, ROWS, TILE_W, TILE_H, SENSORS, evaluate, FOX } from './lib/pir';
-const start = { x: FRAME.x + FRAME.w * 0.24, y: FRAME.y + FRAME.h * 0.3 };
+import PlayButton from './PlayButton.astro';
+import { W, H, FRAME, COLS, ROWS, TILE_W, TILE_H, SENSORS, evaluate, FOX, wander, WANDER0 } from './lib/pir';
+const start = wander(WANDER0);
 const s0 = evaluate(start.x, start.y, true);
 const tiles = [];
 for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) tiles.push({ r, c });
@@ -23,23 +24,23 @@ const cone = (s: (typeof SENSORS)[number]) => {
         <clipPath id="pir-frame-clip"><rect x={FRAME.x} y={FRAME.y} width={FRAME.w} height={FRAME.h} rx="6" /></clipPath>
       </defs>
       <g clip-path="url(#pir-frame-clip)">
-        <rect x={FRAME.x} y={FRAME.y} width={FRAME.w} height={FRAME.h} fill="#FAF9F6" />
+        <rect x={FRAME.x} y={FRAME.y} width={FRAME.w} height={FRAME.h} fill="#F3EFE6" />
         {SENSORS.map((s, i) => (
-          <path class="pir-cone" data-i={i} d={cone(s)} fill="var(--figure-accent)" fill-opacity={s0.lit[i] ? 0.08 : 0} />
+          <path class="pir-cone" data-i={i} d={cone(s)} fill="var(--c-ochre)" fill-opacity={s0.lit[i] ? 0.13 : 0} />
         ))}
         {tiles.map(({ r, c }, i) => (
           <rect class="pir-tile" data-i={i}
             x={FRAME.x + c * TILE_W + 2} y={FRAME.y + r * TILE_H + 2}
             width={TILE_W - 4} height={TILE_H - 4} rx="3"
-            fill="var(--figure-accent)" fill-opacity={s0.tiles[i] ? 0.2 : 0.03}
-            stroke="var(--figure-accent)" stroke-opacity={s0.tiles[i] ? 0.55 : 0.1} />
+            fill="var(--c-teal)" fill-opacity={s0.tiles[i] ? 0.3 : 0.04}
+            stroke="var(--c-teal)" stroke-width="1.5" stroke-opacity={s0.tiles[i] ? 0.9 : 0.1} />
         ))}
       </g>
       <rect x={FRAME.x} y={FRAME.y} width={FRAME.w} height={FRAME.h} rx="6" fill="none" stroke="var(--figure-ink)" stroke-opacity="0.55" stroke-width="1.5" />
       {SENSORS.map((s, i) => (
         <g class="pir-sensor" data-i={i} transform={`translate(${s.cx},${s.cy})`}>
-          <circle r="11" fill="#FAF9F6" stroke="var(--figure-ink)" stroke-opacity="0.6" stroke-width="1.5" />
-          <circle class="pir-led" r="5.5" fill={s0.lit[i] ? 'var(--figure-accent)' : 'var(--figure-grid)'} />
+          <circle r="12" fill="var(--figure-panel)" stroke="var(--c-ochre)" stroke-width="2" />
+          <circle class="pir-led" r="6.5" fill={s0.lit[i] ? 'var(--c-ochre)' : 'var(--figure-grid)'} />
         </g>
       ))}
       <g class="pir-fox fig-drag" transform={`translate(${start.x},${start.y})`}
@@ -47,11 +48,11 @@ const cone = (s: (typeof SENSORS)[number]) => {
          aria-valuetext={`tiles evaluated ${s0.count} of 24`}>
         <circle r="46" fill="transparent" />
         <circle class="fig-focus-ring" r="40" fill="none" />
-        <path d={FOX} fill="var(--figure-ink)" fill-opacity="0.82" />
+        <path class="pir-fox-body" d={FOX} fill="var(--figure-ink)" />
       </g>
     </svg>
     <div class="fig-row">
-      <span class="fig-readout pir-readout" aria-live="polite">tiles evaluated: {s0.count} of 24</span>
+      <span class="pir-left"><PlayButton /><span class="fig-readout pir-readout" aria-live="polite">tiles evaluated: {s0.count} of 24</span></span>
       <div class="fig-group">
         <span class="fig-seg-label">gating</span>
         <div class="fig-seg" role="group" aria-label="PIR gating">
@@ -66,8 +67,13 @@ const cone = (s: (typeof SENSORS)[number]) => {
   </figcaption>
 </figure>
 
+<style>
+  .pir-left { display: inline-flex; align-items: center; gap: 0.3rem; }
+</style>
+
 <script>
-  import { evaluate, clampPos, FRAME } from './lib/pir';
+  import { evaluate, clampPos, wander, WANDER0 } from './lib/pir';
+  import { player } from './lib/ui';
 
   function init(root: HTMLElement) {
     if (root.dataset.ready) return;
@@ -79,23 +85,36 @@ const cone = (s: (typeof SENSORS)[number]) => {
     const leds = [...root.querySelectorAll<SVGCircleElement>('.pir-led')];
     const readout = root.querySelector<HTMLElement>('.pir-readout')!;
     const gateBtns = [...root.querySelectorAll<HTMLButtonElement>('[data-gate]')];
-    let pos = { x: FRAME.x + FRAME.w * 0.24, y: FRAME.y + FRAME.h * 0.3 };
-    let gating = true, raf = 0, last = '';
+    let pos = wander(WANDER0);
+    const body = root.querySelector<SVGPathElement>('.pir-fox-body')!;
+    let gating = true, raf = 0, last = '', facing = 1;
+
+    // Left alone, the animal wanders and turns to face the way it walks.
+    // Once the reader grabs it, it stays where they put it.
+    let phase = WANDER0;
+    const auto = player(root, (dt) => {
+      phase += dt * 0.32;
+      const n = wander(phase);
+      if (Math.abs(n.x - pos.x) > 0.05) facing = n.x > pos.x ? 1 : -1;
+      pos = clampPos(n.x, n.y);
+      render();
+    });
 
     const render = () => {
       raf = 0;
       fox.setAttribute('transform', `translate(${pos.x.toFixed(1)},${pos.y.toFixed(1)})`);
+      body.setAttribute('transform', facing < 0 ? 'scale(-1,1)' : '');
       const s = evaluate(pos.x, pos.y, gating);
       const key = s.lit.join() + s.tiles.join() + gating;
       if (key === last) return;           // nothing changed, skip the DOM writes
       last = key;
       s.tiles.forEach((on, i) => {
-        tiles[i].setAttribute('fill-opacity', on ? '0.2' : '0.03');
-        tiles[i].setAttribute('stroke-opacity', on ? '0.55' : '0.1');
+        tiles[i].setAttribute('fill-opacity', on ? '0.3' : '0.04');
+        tiles[i].setAttribute('stroke-opacity', on ? '0.9' : '0.1');
       });
       s.lit.forEach((on, i) => {
-        cones[i].setAttribute('fill-opacity', on && gating ? '0.08' : '0');
-        leds[i].setAttribute('fill', on ? 'var(--figure-accent)' : 'var(--figure-grid)');
+        cones[i].setAttribute('fill-opacity', on && gating ? '0.13' : '0');
+        leds[i].setAttribute('fill', on ? 'var(--c-ochre)' : 'var(--figure-grid)');
       });
       const text = `tiles evaluated: ${s.count} of 24`;
       readout.textContent = text;
@@ -111,6 +130,7 @@ const cone = (s: (typeof SENSORS)[number]) => {
     let grab: { dx: number; dy: number } | null = null;
     fox.addEventListener('pointerdown', (e) => {
       const p = toSvg(e);
+      auto.interrupt();
       grab = { dx: pos.x - p.x, dy: pos.y - p.y };
       fox.setPointerCapture(e.pointerId);
       e.preventDefault();
@@ -118,7 +138,9 @@ const cone = (s: (typeof SENSORS)[number]) => {
     fox.addEventListener('pointermove', (e) => {
       if (!grab) return;
       const p = toSvg(e);
-      pos = clampPos(p.x + grab.dx, p.y + grab.dy);
+      const nx = p.x + grab.dx;
+      if (Math.abs(nx - pos.x) > 1) facing = nx > pos.x ? 1 : -1;
+      pos = clampPos(nx, p.y + grab.dy);
       schedule();
     });
     const end = () => { grab = null; };
@@ -128,7 +150,8 @@ const cone = (s: (typeof SENSORS)[number]) => {
       const step = e.shiftKey ? 40 : 10;
       const d = { ArrowLeft: [-step, 0], ArrowRight: [step, 0], ArrowUp: [0, -step], ArrowDown: [0, step] }[e.key];
       if (!d) return;
-      e.preventDefault();
+      e.preventDefault(); auto.interrupt();
+      if (d[0]) facing = d[0] > 0 ? 1 : -1;
       pos = clampPos(pos.x + d[0], pos.y + d[1]);
       schedule();
     });

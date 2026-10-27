@@ -1,5 +1,6 @@
 ---
 import './figure.css';
+import PlayButton from './PlayButton.astro';
 import { scene, VIEW, MAX_US } from './lib/array';
 const D0 = { yaw: -28, pitch: 22, az: 35, el: 30, raised: true };
 const s = scene(D0);
@@ -9,9 +10,9 @@ const f = (n: number) => n.toFixed(1);
 <figure class="fig fig-array" data-fig="array" aria-label="Five microphones on a ring plus one raised on a post, with a drone you can move">
   <div class="fig-stage">
     <div class="fig-array-view">
-      <svg class="fig-svg fig-array-svg" viewBox={`0 0 ${VIEW.W} ${VIEW.H}`} preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+      <svg class="fig-svg fig-array-svg" viewBox={`${VIEW.X0} 0 ${VIEW.VW} ${VIEW.H}`} preserveAspectRatio="xMidYMid meet" aria-hidden="true">
         <polyline class="ar-orbit" points={s.orbit} fill="none" stroke="var(--figure-grid)" stroke-dasharray="3 5" />
-        <polygon class="ar-ring" points={s.ring} fill="var(--figure-accent)" fill-opacity="0.06" stroke="var(--figure-ink)" stroke-opacity="0.45" stroke-width="1.2" />
+        <polygon class="ar-ring" points={s.ring} fill="var(--c-slate)" fill-opacity="0.08" stroke="var(--c-slate)" stroke-opacity="0.7" stroke-width="1.4" />
         <g class="ar-spokes">
           {s.mics.slice(0, 5).map((m) => (
             <line x1={f(s.center.x)} y1={f(s.center.y)} x2={f(m.x)} y2={f(m.y)} stroke="var(--figure-grid)" />
@@ -21,36 +22,36 @@ const f = (n: number) => n.toFixed(1);
         <line class="ar-drop" x1={f(s.drone.x)} y1={f(s.drone.y)} x2={f(s.foot.x)} y2={f(s.foot.y)} stroke="var(--figure-muted)" stroke-dasharray="3 3" />
         <line class="ar-gdrop" x1={f(s.ghost.x)} y1={f(s.ghost.y)} x2={f(s.foot.x)} y2={f(s.foot.y)} stroke="var(--figure-warn)" stroke-opacity="0" stroke-dasharray="3 3" />
         <circle class="ar-foot" cx={f(s.foot.x)} cy={f(s.foot.y)} r="2.5" fill="var(--figure-muted)" />
-        <line class="ar-est0" x1={f(s.center.x)} y1={f(s.center.y)} x2={f(s.ests[0].x)} y2={f(s.ests[0].y)} stroke="var(--figure-accent)" stroke-width="1.6" />
-        <line class="ar-est1" x1={f(s.center.x)} y1={f(s.center.y)} x2={f(s.center.x)} y2={f(s.center.y)} stroke="var(--figure-warn)" stroke-width="1.6" stroke-dasharray="5 4" stroke-opacity="0" />
-        <line class="ar-post" x1={f(s.center.x)} y1={f(s.center.y)} x2={f(s.postTop.x)} y2={f(s.postTop.y)} stroke="var(--figure-ink)" stroke-opacity="0.6" stroke-width="2" />
+        <line class="ar-est0" x1={f(s.center.x)} y1={f(s.center.y)} x2={f(s.ests[0].x)} y2={f(s.ests[0].y)} stroke="var(--c-teal)" stroke-width="2" />
+        <line class="ar-est1" x1={f(s.center.x)} y1={f(s.center.y)} x2={f(s.center.x)} y2={f(s.center.y)} stroke="var(--c-clay)" stroke-width="2" stroke-dasharray="5 4" stroke-opacity="0" />
+        <line class="ar-post" x1={f(s.center.x)} y1={f(s.center.y)} x2={f(s.postTop.x)} y2={f(s.postTop.y)} stroke="var(--c-ochre)" stroke-width="2.5" />
         <g class="ar-mics">
           {s.mics.map((m) => (
-            <circle class="ar-mic" data-i={m.i} cx={f(m.x)} cy={f(m.y)} r={m.i === 5 ? 6.5 : 5.5}
-              fill={m.i === 5 ? 'var(--figure-accent)' : 'var(--figure-ink)'} stroke="#FAF9F6" stroke-width="1.5" />
+            <circle class="ar-mic" data-i={m.i} cx={f(m.x)} cy={f(m.y)} r={m.i === 5 ? 7.5 : 6.5}
+              fill={m.i === 5 ? 'var(--c-ochre)' : 'var(--c-slate)'} stroke="var(--figure-panel)" stroke-width="1.5" />
           ))}
         </g>
         <g class="ar-ghost" transform={`translate(${f(s.ghost.x)},${f(s.ghost.y)})`} opacity="0">
-          <path d="M-11,-11L11,11M-11,11L11,-11" stroke="var(--figure-warn)" stroke-width="2" />
-          {[[-11,-11],[11,11],[-11,11],[11,-11]].map(([x,y]) => <circle cx={x} cy={y} r="5" fill="none" stroke="var(--figure-warn)" stroke-width="1.5" />)}
+          <path d="M-11,-11L11,11M-11,11L11,-11" stroke="var(--c-clay)" stroke-width="2.5" />
+          {[[-11,-11],[11,11],[-11,11],[11,-11]].map(([x,y]) => <circle cx={x} cy={y} r="5.5" fill="var(--figure-panel)" stroke="var(--c-clay)" stroke-width="1.8" />)}
         </g>
         <g class="ar-drone" transform={`translate(${f(s.drone.x)},${f(s.drone.y)})`}>
-          <path d="M-11,-11L11,11M-11,11L11,-11" stroke="var(--figure-ink)" stroke-width="2" />
-          {[[-11,-11],[11,11],[-11,11],[11,-11]].map(([x,y]) => <circle cx={x} cy={y} r="5" fill="#FAF9F6" stroke="var(--figure-ink)" stroke-width="1.5" />)}
-          <rect x="-4" y="-4" width="8" height="8" rx="1.5" fill="var(--figure-ink)" />
+          <path d="M-11,-11L11,11M-11,11L11,-11" stroke="var(--c-teal)" stroke-width="2.5" />
+          {[[-11,-11],[11,11],[-11,11],[11,-11]].map(([x,y]) => <circle cx={x} cy={y} r="5.5" fill="color-mix(in srgb, var(--c-teal) 22%, var(--figure-panel))" stroke="var(--c-teal)" stroke-width="1.8" />)}
+          <rect x="-4.5" y="-4.5" width="9" height="9" rx="1.5" fill="var(--c-teal)" />
         </g>
       </svg>
-      <span class="fig-label warn ar-ghost-label" style={`left:${(s.ghost.x / VIEW.W) * 100}%;top:${((s.ghost.y + 24) / VIEW.H) * 100}%`} hidden>indistinguishable</span>
+      <span class="fig-label warn ar-ghost-label" style={`left:${((s.ghost.x - VIEW.X0) / VIEW.VW) * 100}%;top:${((s.ghost.y + 24) / VIEW.H) * 100}%`} hidden>indistinguishable</span>
       <span class="fig-hint ar-hint">drag to rotate</span>
     </div>
 
     <div class="fig-array-controls">
-      <div class="fig-slider">
+      <div class="fig-slider" style={`--p:${D0.az / 359}`}>
         <label for="ar-az">azimuth</label>
         <input id="ar-az" type="range" min="0" max="359" step="1" value={D0.az} />
         <output for="ar-az" class="ar-az-out">{D0.az}°</output>
       </div>
-      <div class="fig-slider">
+      <div class="fig-slider" style={`--p:${(D0.el - 5) / 65}`}>
         <label for="ar-el">elevation</label>
         <input id="ar-el" type="range" min="5" max="70" step="1" value={D0.el} />
         <output for="ar-el" class="ar-el-out">{D0.el}°</output>
@@ -68,6 +69,7 @@ const f = (n: number) => n.toFixed(1);
     </div>
 
     <div class="fig-row">
+      <PlayButton />
       <div class="fig-group">
         <span class="fig-seg-label">raised mic</span>
         <div class="fig-seg" role="group" aria-label="Raised microphone">
@@ -94,22 +96,24 @@ const f = (n: number) => n.toFixed(1);
   .fig-array-svg { touch-action: pan-y; cursor: grab; user-select: none; -webkit-user-select: none; }
   .fig-array-svg:active { cursor: grabbing; }
   .ar-hint { position: absolute; right: 0.2rem; top: 0.1rem; }
-  .fig-array-controls { display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem 1.5rem; margin-top: 0.4rem; }
+  .fig-array-controls { display: grid; grid-template-columns: 1fr 1fr; gap: 0 1.5rem; margin-top: 0.2rem; }
   @media (max-width: 520px) { .fig-array-controls { grid-template-columns: 1fr; } }
   .ar-bars { display: grid; gap: 0.3rem; margin-top: 0.75rem; }
   .ar-bar-row { display: grid; grid-template-columns: 6.6rem 1fr 3.6rem; align-items: center; gap: 0.6rem; font-size: 0.72rem; }
-  .ar-bar-name { color: var(--color-text-muted); white-space: nowrap; }
-  .ar-bar-track { height: 8px; background: var(--figure-grid); border-radius: 4px; overflow: hidden; }
-  .ar-bar-fill { display: block; height: 100%; background: var(--figure-accent); border-radius: 4px; }
-  .ar-bar-row[data-i='5'] .ar-bar-fill { background: var(--figure-accent); opacity: 0.75; }
+  .ar-bar-name { color: var(--c-slate); white-space: nowrap; }
+  .ar-bar-track { height: 8px; background: color-mix(in srgb, var(--c-slate) 14%, transparent); border-radius: 4px; overflow: hidden; }
+  .ar-bar-fill { display: block; height: 100%; background: var(--c-slate); border-radius: 4px; }
+  .ar-bar-row[data-i='5'] .ar-bar-fill { background: var(--c-ochre); }
+  .ar-bar-row[data-i='5'] .ar-bar-name { color: var(--c-ochre); }
   .ar-bar-row.off .ar-bar-name, .ar-bar-row.off .ar-bar-val { opacity: 0.5; }
   .ar-bar-val { font-family: var(--font-mono); text-align: right; font-variant-numeric: tabular-nums; }
 </style>
 
 <script>
   import { scene, VIEW, MAX_US, SAMPLE_US } from './lib/array';
+  import { player, fillSlider, reduceMotion } from './lib/ui';
 
-  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const reduce = reduceMotion();
 
   function init(root: HTMLElement) {
     if (root.dataset.ready) return;
@@ -158,13 +162,13 @@ const f = (n: number) => n.toFixed(1);
         el.micsG.appendChild(c);
       });
       el.mics[5].setAttribute('opacity', st.raised ? '1' : '0.25');
-      el.post.setAttribute('stroke-opacity', st.raised ? '0.6' : '0.2');
+      el.post.setAttribute('stroke-opacity', st.raised ? '1' : '0.25');
       el.drone.setAttribute('transform', `translate(${s.drone.x.toFixed(1)},${s.drone.y.toFixed(1)})`);
       el.ghost.setAttribute('transform', `translate(${s.ghost.x.toFixed(1)},${s.ghost.y.toFixed(1)})`);
       el.ghost.setAttribute('opacity', st.raised ? '0' : '1');
       el.gdrop.setAttribute('stroke-opacity', st.raised ? '0' : '0.8');
       el.ghostLabel.hidden = st.raised;
-      el.ghostLabel.style.left = `${(s.ghost.x / VIEW.W) * 100}%`;
+      el.ghostLabel.style.left = `${((s.ghost.x - VIEW.X0) / VIEW.VW) * 100}%`;
       el.ghostLabel.style.top = `${((s.ghost.y + 26) / VIEW.H) * 100}%`;
       s.bars.forEach((v, i) => {
         const row = el.rows[i];
@@ -172,7 +176,7 @@ const f = (n: number) => n.toFixed(1);
         (row.querySelector('.ar-bar-fill') as HTMLElement).style.width = `${(Math.max(0, v ?? 0) / MAX_US) * 100}%`;
         (row.querySelector('.ar-bar-val') as HTMLElement).textContent = v === null ? 'off' : `${Math.round(v)} µs`;
       });
-      el.azOut.textContent = `${st.az}°`; el.elOut.textContent = `${st.el}°`;
+      el.azOut.textContent = `${Math.round(st.az)}°`; el.elOut.textContent = `${st.el}°`;
       if (!st.clock) loop();
     };
     const schedule = () => { if (!raf) raf = requestAnimationFrame(render); };
@@ -191,8 +195,14 @@ const f = (n: number) => n.toFixed(1);
       });
     }
 
-    el.az.addEventListener('input', () => { st.az = +el.az.value; schedule(); });
-    el.elv.addEventListener('input', () => { st.el = +el.elv.value; schedule(); });
+    // Left alone, the drone circles the array, so the delays keep moving.
+    const auto = player(root, (dt) => {
+      st.az = (st.az + dt * 16) % 360;
+      el.az.value = String(Math.round(st.az) % 360); fillSlider(el.az);
+      schedule();
+    });
+    el.az.addEventListener('input', () => { auto.interrupt(); st.az = +el.az.value; fillSlider(el.az); schedule(); });
+    el.elv.addEventListener('input', () => { auto.interrupt(); st.el = +el.elv.value; fillSlider(el.elv); schedule(); });
     root.querySelectorAll<HTMLButtonElement>('[data-raised]').forEach((b, _, all) => b.addEventListener('click', () => {
       st.raised = b.dataset.raised === 'on';
       all.forEach((x) => x.setAttribute('aria-pressed', String(x === b))); schedule();

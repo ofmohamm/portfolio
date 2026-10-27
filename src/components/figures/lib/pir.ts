@@ -30,6 +30,15 @@ export function evaluate(px: number, py: number, gating: boolean) {
   return { lit, tiles, count: tiles.filter(Boolean).length };
 }
 
+// The path the animal wanders when left alone: a slow Lissajous loop that
+// crosses both seams and the centre, so the tile count keeps changing. The
+// server draws the animal at WANDER0, so the first frame never jumps.
+export const WANDER0 = -0.651;
+export const wander = (phase: number) => ({
+  x: FRAME.x + FRAME.w / 2 + (FRAME.w / 2 - 34) * Math.sin(phase),
+  y: FRAME.y + FRAME.h / 2 + (FRAME.h / 2 - 28) * Math.sin(phase * 1.53 + 0.49),
+});
+
 export const clampPos = (x: number, y: number) => ({
   x: Math.max(FRAME.x + 30, Math.min(FRAME.x + FRAME.w - 30, x)),
   y: Math.max(FRAME.y + 24, Math.min(FRAME.y + FRAME.h - 24, y)),
