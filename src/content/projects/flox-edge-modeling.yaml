@@ -1,0 +1,63 @@
+name: Flox Edge Power Modeling
+org: Flox Intelligence
+status: current
+subtitle: Embedded AI Systems Researcher · Flox Intelligence · Sept 2026 to present
+oneLiner: >-
+  Finding where the battery and the latency go on a battery-powered edge AI
+  camera, then changing the firmware and hardware to get them back.
+order: 0
+mediaType: image
+cta:
+  label: View Flox Edge
+  url: https://floxintelligence.com/products/flox-edge
+tech:
+  - Power analysis
+  - System modeling
+  - Edge AI
+  - Embedded firmware
+  - CNN optimization
+body:
+  - >-
+    Every part in this system comes with a datasheet, and every datasheet lists
+    how much current that part draws. Add them up, divide the battery's capacity
+    by the total, and you've got a battery life. The arithmetic takes a minute.
+    The answer is wrong.
+  - >-
+    It's wrong because the system is almost never in the state the datasheet
+    describes. It [sleeps]{.slate}, [wakes on motion]{.sage}, [powers up a camera]{.ochre}, [runs a CNN]{.teal}
+    on-device, sometimes [fires a deterrent]{.clay}, [opens a cellular link]{.plum}, and goes back
+    to sleep. Every one of those states draws something different. So you
+    measure each subsystem in each state and weight it by how long the device
+    spends there. That gets much closer. It's still wrong.
+  - >-
+    Look at what a list of states leaves out. A module doesn't jump from
+    sleeping to running. It brings up a regulator, waits on a clock, settles.
+    That costs energy and it costs time, and no datasheet publishes the number,
+    because it depends on the board the part is sitting on. On a device that
+    wakes thousands of times between charges, those transitions add up.
+  - So I measure them, on the bench, for every subsystem.
+  - figure: power-trace
+  - >-
+    You could stop there and hand over a number. A number is easy to produce
+    and easy to ignore, so the measurements go into a model you can poke at:
+    change an assumption, see what it costs in energy and in milliseconds.
+  - >-
+    The point of a model you can ask questions of is the questions. Here's one.
+    The device carries [several PIR sensors]{.ochre}. Treated as a single trigger, they
+    tell you something moved. Treated as a pattern, they tell you roughly where
+    in the frame it moved. And if you know roughly where, the CNN doesn't have
+    to evaluate the whole frame. It runs on [the tiles the PIR pattern points to]{.teal}
+    and skips the rest. Less inference means less energy per event and a
+    shorter wake window, which is the same win counted twice.
+  - figure: pir-grid
+  - >-
+    That's a theory I can test because the model exists. The measurement work
+    pays for itself the first time it turns up a question like that one.
+  - >-
+    My focus: the power and latency analysis, the system model, and the
+    firmware and hardware changes that come out of it. The camera platform and
+    the detection model are Flox's.
+  - >-
+    My measured values are confidential, so this page describes the method and
+    the reasoning rather than the results. The device's published specs are on
+    the product page.

@@ -24,7 +24,7 @@
   font-weight: 400 600;
   font-display: swap;
   src: url('../assets/fonts/newsreader-latin.woff2') format('woff2');
-  unicode-range: U+20-7e, U+b2, U+b7, U+2014, U+2019, U+201c-201d, U+2197;
+  unicode-range: U+20-7e, U+b0-b2, U+b5, U+b7, U+2014, U+2019, U+201c-201d, U+2197;
 }
 
 @font-face {
@@ -42,7 +42,7 @@
   font-weight: 400 600;
   font-display: swap;
   src: url('../assets/fonts/schibsted-grotesk-latin.woff2') format('woff2');
-  unicode-range: U+20-7e, U+b2, U+b7, U+2014, U+2019, U+201c-201d, U+2197;
+  unicode-range: U+20-7e, U+b0-b2, U+b5, U+b7, U+2014, U+2019, U+201c-201d, U+2197;
 }
 
 @font-face {
@@ -65,7 +65,7 @@
   /* Text */
   --color-text-primary: #2C2C2C;
   --color-text-secondary: #5C5C5C;
-  --color-text-muted: #8B8B8B;
+  --color-text-muted: #6B6B6B;  /* 5.06:1 on the page background (was #8B8B8B, 3.24:1) */
 
   /* Accent — matched to the "mo" logo mark (#355359 teal/slate) */
   --color-green-primary: #355359;
@@ -277,8 +277,7 @@ body.modal-open {
   .hero-icon,
   .footer-icon,
   .nav-link,
-  .hero-resume,
-  .footer-resume,
+  .nav-resume,
   .nav-logo,
   .nav-logo-mobile,
   .hero-scroll-cue,
@@ -289,8 +288,7 @@ body.modal-open {
   .hero-icon::before,
   .footer-icon::before,
   .nav-link::before,
-  .hero-resume::before,
-  .footer-resume::before,
+  .nav-resume::before,
   .nav-logo::before,
   .nav-logo-mobile::before,
   .hero-scroll-cue::before,

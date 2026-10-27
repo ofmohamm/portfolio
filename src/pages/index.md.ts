@@ -1,4 +1,5 @@
 import type { APIRoute } from 'astro';
+import { stripMd } from '../lib/inline-md';
 import { getCollection, getEntry } from 'astro:content';
 
 // The markdown twin of the homepage, per the /llms.txt v2 proposal: a clean
@@ -6,9 +7,8 @@ import { getCollection, getEntry } from 'astro:content';
 // (a URL without a filename gets /index.md). Generated from the same content
 // the HTML page renders.
 export const GET: APIRoute = async () => {
-  const [hero, featured, skills, seo, projects] = await Promise.all([
+  const [hero, skills, seo, projects] = await Promise.all([
     getEntry('site', 'hero'),
-    getEntry('site', 'featured'),
     getEntry('site', 'skills'),
     getEntry('site', 'seo'),
     getCollection('projects'),
@@ -16,34 +16,26 @@ export const GET: APIRoute = async () => {
 
   const name = `${hero?.data.firstName ?? 'Omar'} ${hero?.data.lastName ?? 'Mohammed'}`;
   const ordered = [...projects].sort((a, b) => a.data.order - b.data.order);
-  const tidy = (s?: string) => (s ?? '').replace(/\s+/g, ' ').trim();
+  const tidy = (s?: string) => stripMd(s ?? '');
 
   const out: string[] = [];
   out.push(`# ${name}`, '');
   for (const line of hero?.data.positioning ?? []) out.push(tidy(line), '');
   if (seo?.data.description) out.push(tidy(seo.data.description), '');
 
-  out.push('## Projects', '');
-
-  if (featured) {
-    out.push(`### ${featured.data.name}`, '');
-    if (featured.data.status) out.push(`Status: ${featured.data.status}`, '');
-    out.push(tidy(featured.data.oneLiner), '');
-    if (featured.data.tech?.length) out.push(`Stack: ${featured.data.tech.join(', ')}`, '');
-    if (featured.data.note) out.push(tidy(featured.data.note), '');
-  }
-
-  for (const p of ordered) {
+  const render = (p: (typeof ordered)[number]) => {
     out.push(`### ${p.data.name}`, '');
     if (p.data.subtitle) out.push(tidy(p.data.subtitle), '');
-    for (const para of p.data.body) out.push(tidy(para), '');
-    if (p.data.specs.length) {
-      for (const s of p.data.specs) out.push(`- ${s.key}: ${tidy(s.value)}`);
-      out.push('');
-    }
+    for (const para of p.data.body) if (typeof para === 'string') out.push(tidy(para), '');
     if (p.data.tech.length) out.push(`Tags: ${p.data.tech.join(', ')}`, '');
     if (p.data.github) out.push(`Source: ${p.data.github}`, '');
-  }
+    if (p.data.cta) out.push(`${p.data.cta.label}: ${p.data.cta.url}`, '');
+  };
+
+  const current = ordered.filter((p) => p.data.status === 'current');
+  const past = ordered.filter((p) => p.data.status === 'past');
+  if (current.length) { out.push('## Current work', ''); current.forEach(render); }
+  if (past.length) { out.push('## Previous projects', ''); past.forEach(render); }
 
   out.push('## Skills', '');
   for (const g of skills?.data.groups ?? []) {
