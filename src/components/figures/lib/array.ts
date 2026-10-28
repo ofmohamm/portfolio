@@ -98,6 +98,6 @@ export function scene(o: { yaw: number; pitch: number; az: number; el: number; r
     mics: MICS.map((m, i) => ({ i, ...P(m) })),
     drone: P(drone), ghost: P(ghost), foot: P(foot),
     ests: ests.map((e) => P([e[0] * DIST, e[1] * DIST, e[2] * DIST])),
-    bars,
+    dirs: ests, bars,
   };
 }

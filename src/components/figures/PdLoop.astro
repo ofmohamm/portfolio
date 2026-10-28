@@ -28,7 +28,14 @@ const src = dialPoint(SOURCE, DIAL.R + 26);
 <figure class="fig fig-pd" data-fig="pd" aria-label="The array on its servo turning toward a sound source 30 degrees to the side, and the servo angle over time, with adjustable PD gains">
   <div class="fig-stage">
     <div class="fig-view pd-dial">
-      <svg class="fig-svg" viewBox={`0 0 ${DIAL.W} ${DIAL.H}`} aria-hidden="true">
+      <div class="fig-3d pd-3d">
+        <span class="fig-label muted pd-l3" data-a="90">90°</span>
+        <span class="fig-label muted pd-l3" data-a="180">180°</span>
+        <span class="fig-label muted pd-l3" data-a="0">0°</span>
+        <span class="fig-label c-ochre pd-l3" data-a="src">sound</span>
+        <span class="fig-hint pd-hint">drag to rotate</span>
+      </div>
+      <svg class="fig-svg fig-flat" viewBox={`0 0 ${DIAL.W} ${DIAL.H}`} aria-hidden="true">
         <path d={`M${p(0, DIAL.R)}A${DIAL.R},${DIAL.R} 0 0 0 ${p(180, DIAL.R)}`} fill="none" stroke="var(--figure-grid)" stroke-width="1.5" />
         {dialTicks.map((a) => (
           <line x1={dialPoint(a, DIAL.R).x} y1={dialPoint(a, DIAL.R).y} x2={dialPoint(a, DIAL.R - (a % 45 ? 6 : 11)).x} y2={dialPoint(a, DIAL.R - (a % 45 ? 6 : 11)).y}
@@ -50,10 +57,10 @@ const src = dialPoint(SOURCE, DIAL.R + 26);
         </g>
         <circle cx={DIAL.cx} cy={DIAL.cy} r="4" fill="var(--figure-ink)" />
       </svg>
-      <span class="fig-label muted" style={`left:${(dialPoint(90, DIAL.R + 12).x / DIAL.W) * 100}%;top:${(dialPoint(90, DIAL.R + 12).y / DIAL.H) * 100}%`}>90°</span>
-      <span class="fig-label muted" style={`left:${((dialPoint(180, DIAL.R).x - 16) / DIAL.W) * 100}%;top:${(DIAL.cy / DIAL.H) * 100}%`}>180°</span>
-      <span class="fig-label muted" style={`left:${((dialPoint(0, DIAL.R).x + 12) / DIAL.W) * 100}%;top:${(DIAL.cy / DIAL.H) * 100}%`}>0°</span>
-      <span class="fig-label c-ochre pd-src-lab" style={`left:${((src.x - 32) / DIAL.W) * 100}%;top:${((src.y - 4) / DIAL.H) * 100}%`}>sound</span>
+      <span class="fig-label muted fig-flat" style={`left:${(dialPoint(90, DIAL.R + 12).x / DIAL.W) * 100}%;top:${(dialPoint(90, DIAL.R + 12).y / DIAL.H) * 100}%`}>90°</span>
+      <span class="fig-label muted fig-flat" style={`left:${((dialPoint(180, DIAL.R).x - 16) / DIAL.W) * 100}%;top:${(DIAL.cy / DIAL.H) * 100}%`}>180°</span>
+      <span class="fig-label muted fig-flat" style={`left:${((dialPoint(0, DIAL.R).x + 12) / DIAL.W) * 100}%;top:${(DIAL.cy / DIAL.H) * 100}%`}>0°</span>
+      <span class="fig-label c-ochre pd-src-lab fig-flat" style={`left:${((src.x - 32) / DIAL.W) * 100}%;top:${((src.y - 4) / DIAL.H) * 100}%`}>sound</span>
     </div>
 
     <div class="fig-view fig-pd-plot">
@@ -122,6 +129,7 @@ const src = dialPoint(SOURCE, DIAL.R + 26);
 
 <style>
   .pd-dial { max-width: 420px; margin: 0 auto 0.4rem; }
+  .pd-hint { position: absolute; right: 0.2rem; top: 0.1rem; z-index: 1; pointer-events: none; }
   /* room on the left for the angle ticks, which sit outside the plot */
   .fig-pd-plot { position: relative; margin-left: 1.4rem; }
   .pd-tick { transform: translate(-100%, -50%); }
@@ -171,11 +179,17 @@ const src = dialPoint(SOURCE, DIAL.R + 26);
       return dots[i];
     };
 
+    // Once WebGL is up the dial is drawn in 3D; until then, and wherever it
+    // can't run, the SVG dial keeps working exactly as before.
+    let three: Awaited<ReturnType<typeof build3d>> = null;
+
     // The replay: the dial and the playhead show the loop at time t.
     const drawHead = () => {
       const i = Math.min(sim.t.length - 1, Math.round((t / DURATION) * (sim.t.length - 1)));
       const a = sim.servo[i], x = sx(t).toFixed(1);
-      arm.setAttribute('transform', `rotate(${(90 - a).toFixed(2)} ${DIAL.cx} ${DIAL.cy})`);
+      // data-3d is dropped if the WebGL context is lost; fall back to the SVG then
+      if (three && root.hasAttribute('data-3d')) three.heading(a);
+      else arm.setAttribute('transform', `rotate(${(90 - a).toFixed(2)} ${DIAL.cx} ${DIAL.cy})`);
       headLine.setAttribute('x1', x); headLine.setAttribute('x2', x);
       headDot.setAttribute('cx', x);
       headDot.setAttribute('cy', sy(Math.max(Y0 - 5, Math.min(Y1 + 5, a))).toFixed(1));
@@ -240,6 +254,127 @@ const src = dialPoint(SOURCE, DIAL.R + 26);
       gateBtns.forEach((x) => x.setAttribute('aria-pressed', String(x === b))); t = 0; hold = 0; schedule();
     }));
     render();
+    build3d(root).then((m) => { if (m) { three = m; drawHead(); } });
+  }
+
+  // The dial as a small tabletop: the servo with the array on its horn, the
+  // 0 to 180 degree scale on the table around it, and the speaker out past
+  // the scale. Same angles as dialPoint: 0 is +x, 90 is +y (ahead), 180 is -x.
+  // Scale: the dial's 148 px radius is 15 cm, so one SVG px is about 1 mm.
+  async function build3d(root: HTMLElement) {
+    const {
+      stage, mat, rod, disc, polyline, Group,
+      Mesh, BoxGeometry, CylinderGeometry, RingGeometry, TorusGeometry, Shape, ExtrudeGeometry,
+    } = await import('./lib/stage3d');
+    type V3 = [number, number, number];
+    const host = root.querySelector<HTMLElement>('.pd-3d')!;
+    const S = stage(host, {
+      aspect: DIAL.W / DIAL.H, yaw: 0, pitch: 38, distance: 0.55, target: [0, 0.07, 0.012],
+      pitchRange: [14, 78],
+    });
+    if (!S) return null;
+    const { scene: world } = S;
+    const R = 0.15, mm = R / DIAL.R;                 // ring radius, and metres per SVG px
+    const rad = (d: number) => (d * Math.PI) / 180;
+    const on = (deg: number, r: number, z = 0): V3 => [r * Math.cos(rad(deg)), r * Math.sin(rad(deg)), z];
+    const box = (x: number, y: number, z: number, m: ReturnType<typeof mat>) => new Mesh(new BoxGeometry(x, y, z), m);
+
+    // The scale on the table: a thin half ring, a tick every 15 degrees,
+    // longer and darker every 45.
+    const arc = new Mesh(new RingGeometry(R - 0.0008, R + 0.0008, 96, 1, 0, Math.PI), mat('ink', { tint: 0.84 }));
+    arc.position.z = 0.0003;
+    world.add(arc);
+    const tickLong = mat('ink', { tint: 0.5 }), tickShort = mat('ink', { tint: 0.72 });
+    for (let a = 0; a <= 180; a += 15) {
+      const major = a % 45 === 0, len = (major ? 11 : 6) * mm;
+      const t = box(len, 0.0016, 0.0008, major ? tickLong : tickShort);
+      t.position.set(...on(a, R - len / 2, 0.0004));
+      t.rotation.z = rad(a);
+      world.add(t);
+    }
+
+    // The servo: a dark case with mounting ears, output shaft toward the
+    // front, so the body runs back toward the viewer as on the real tracker.
+    const caseMat = mat('ink', { tint: 0.14 });
+    const body = box(0.022, 0.042, 0.028, caseMat);
+    body.position.set(0, -0.01, 0.014);
+    const ears = box(0.022, 0.056, 0.0025, caseMat);
+    ears.position.set(0, -0.01, 0.021);
+    const boss = disc(0.0065, 0.004, mat('ink', { tint: 0.28 }), 32);
+    boss.position.z = 0.03;
+    world.add(body, ears, boss);
+
+    // The part that turns, modelled at a heading of 90 (needle along +y):
+    // the horn, the array bar across it with a mic near each end, and the
+    // heading needle.
+    const arm = new Group();
+    const horn = disc(0.0105, 0.003, mat('slate', { tint: 0.55 }), 40);
+    horn.position.z = 0.0335;
+    const bevel = 0.0012, bw = 88 * mm / 2 - bevel, bh = 18 * mm / 2 - bevel, rr = 5 * mm - bevel;
+    const outline = new Shape();
+    outline.moveTo(-bw + rr, -bh);
+    outline.lineTo(bw - rr, -bh); outline.quadraticCurveTo(bw, -bh, bw, -bh + rr);
+    outline.lineTo(bw, bh - rr); outline.quadraticCurveTo(bw, bh, bw - rr, bh);
+    outline.lineTo(-bw + rr, bh); outline.quadraticCurveTo(-bw, bh, -bw, bh - rr);
+    outline.lineTo(-bw, -bh + rr); outline.quadraticCurveTo(-bw, -bh, -bw + rr, -bh);
+    const barH = 0.005, barZ = 0.0362, top = barZ + barH + bevel;
+    const bar = new Mesh(new ExtrudeGeometry(outline, {
+      depth: barH, bevelEnabled: true, bevelThickness: bevel, bevelSize: bevel, bevelSegments: 2, curveSegments: 6,
+    }), mat('teal', { tint: 0.55 }));
+    bar.position.z = barZ;
+    const mics = [-1, 1].map((s) => {
+      const m = disc(0.0045, 0.003, mat('slate'), 32);
+      m.position.set(s * 33 * mm, 0, top + 0.0015);
+      return m;
+    });
+    const screw = disc(0.0028, 0.002, mat('ink'), 24);
+    screw.position.z = top + 0.001;
+    const needle = rod([0, 0.008, barZ + barH / 2], [0, R - 10 * mm, barZ + barH / 2], 0.0017, mat('teal'));
+    arm.add(horn, bar, ...mics, screw, needle);
+    world.add(arm);
+
+    // The speaker at SOURCE, out past the scale and facing the array: a
+    // cabinet, a cone opening toward the centre, two arcs of sound.
+    const RS = 0.19;
+    const ochre = mat('ochre'), ochrePale = mat('ochre', { tint: 0.4 });
+    const spk = new Group();
+    spk.position.set(...on(SOURCE, RS));
+    spk.rotation.z = rad(SOURCE);                    // local +x points away from the array
+    const cab = box(0.014, 0.026, 0.034, ochre);
+    cab.position.set(0.004, 0, 0.017);
+    const cone = new Mesh(new CylinderGeometry(0.0105, 0.004, 0.008, 32), ochrePale);
+    cone.rotation.z = Math.PI / 2;                   // cylinder axis +y onto -x, the mouth faces the array
+    cone.position.set(-0.007, 0, 0.019);
+    spk.add(cab, cone);
+    for (const r of [0.02, 0.029]) {
+      const span = rad(70);
+      const wave = new Mesh(new TorusGeometry(r, 0.0011, 6, 24, span), ochre);
+      wave.rotation.z = Math.PI - span / 2;
+      wave.position.set(-0.003, 0, 0.019);
+      spk.add(wave);
+    }
+    world.add(spk);
+    // Line of sight, on the table, from the centre to the speaker.
+    world.add(polyline([on(SOURCE, 0, 0.0006), on(SOURCE, RS - 0.024, 0.0006)], 'ochre', { dashed: true }));
+
+    // Text stays HTML, pinned to points in the scene each frame.
+    const anchors: Record<string, V3> = {
+      '90': [0, R + 0.014, 0], '180': [-R - 0.018, 0, 0], '0': [R + 0.016, 0, 0],
+      src: on(SOURCE, RS, 0.052),
+    };
+    const labels = [...host.querySelectorAll<HTMLElement>('.pd-l3')];
+    S.beforeRender(() => labels.forEach((l) => {
+      const p = S.toScreen(anchors[l.dataset.a!]);
+      l.style.left = `${p.x}%`; l.style.top = `${p.y}%`;
+    }));
+    S.show();
+
+    return {
+      heading(a: number) {
+        arm.rotation.z = rad(a - 90);
+        S.invalidate();
+      },
+    };
   }
 
   const io = new IntersectionObserver((entries) => {

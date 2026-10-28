@@ -10,7 +10,10 @@ const f = (n: number) => n.toFixed(1);
 <figure class="fig fig-array" data-fig="array" aria-label="Five microphones on a ring plus one raised on a post, with a drone you can move">
   <div class="fig-stage">
     <div class="fig-array-view">
-      <svg class="fig-svg fig-array-svg" viewBox={`${VIEW.X0} 0 ${VIEW.VW} ${VIEW.H}`} preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+      <div class="fig-3d ar-3d">
+        <span class="fig-label warn ar-ghost3" hidden>indistinguishable</span>
+      </div>
+      <svg class="fig-svg fig-array-svg fig-flat" viewBox={`${VIEW.X0} 0 ${VIEW.VW} ${VIEW.H}`} preserveAspectRatio="xMidYMid meet" aria-hidden="true">
         <polyline class="ar-orbit" points={s.orbit} fill="none" stroke="var(--figure-grid)" stroke-dasharray="3 5" />
         <polygon class="ar-ring" points={s.ring} fill="var(--c-slate)" fill-opacity="0.08" stroke="var(--c-slate)" stroke-opacity="0.7" stroke-width="1.4" />
         <g class="ar-spokes">
@@ -41,7 +44,7 @@ const f = (n: number) => n.toFixed(1);
           <rect x="-4.5" y="-4.5" width="9" height="9" rx="1.5" fill="var(--c-teal)" />
         </g>
       </svg>
-      <span class="fig-label warn ar-ghost-label" style={`left:${((s.ghost.x - VIEW.X0) / VIEW.VW) * 100}%;top:${((s.ghost.y + 24) / VIEW.H) * 100}%`} hidden>indistinguishable</span>
+      <span class="fig-label warn ar-ghost-label fig-flat" style={`left:${((s.ghost.x - VIEW.X0) / VIEW.VW) * 100}%;top:${((s.ghost.y + 24) / VIEW.H) * 100}%`} hidden>indistinguishable</span>
       <span class="fig-hint ar-hint">drag to rotate</span>
     </div>
 
@@ -95,7 +98,7 @@ const f = (n: number) => n.toFixed(1);
   .fig-array-view { position: relative; }
   .fig-array-svg { touch-action: pan-y; cursor: grab; user-select: none; -webkit-user-select: none; }
   .fig-array-svg:active { cursor: grabbing; }
-  .ar-hint { position: absolute; right: 0.2rem; top: 0.1rem; }
+  .ar-hint { position: absolute; right: 0.2rem; top: 0.1rem; z-index: 1; pointer-events: none; }
   .fig-array-controls { display: grid; grid-template-columns: 1fr 1fr; gap: 0 1.5rem; margin-top: 0.2rem; }
   @media (max-width: 520px) { .fig-array-controls { grid-template-columns: 1fr; } }
   .ar-bars { display: grid; gap: 0.3rem; margin-top: 0.75rem; }
@@ -110,7 +113,7 @@ const f = (n: number) => n.toFixed(1);
 </style>
 
 <script>
-  import { scene, VIEW, MAX_US, SAMPLE_US } from './lib/array';
+  import { scene, unit, VIEW, MAX_US, SAMPLE_US, MICS, R_RING, POST, DIST } from './lib/array';
   import { player, fillSlider, reduceMotion } from './lib/ui';
 
   const reduce = reduceMotion();
@@ -142,9 +145,26 @@ const f = (n: number) => n.toFixed(1);
       l.setAttribute('x1', a.x.toFixed(1)); l.setAttribute('y1', a.y.toFixed(1));
       l.setAttribute('x2', b.x.toFixed(1)); l.setAttribute('y2', b.y.toFixed(1));
     };
+    // Once WebGL is up the model is drawn in 3D; until then, and wherever it
+    // can't run, the SVG below keeps working exactly as before.
+    let three: Awaited<ReturnType<typeof build3d>> = null;
+
     const render = () => {
       raf = 0;
       const s = scene({ ...st, jitter: st.clock ? undefined : jitter });
+      // data-3d is dropped if the WebGL context is lost; fall back to the SVG then
+      if (three && root.hasAttribute('data-3d')) three.update(s, st);
+      else renderSvg(s);
+      s.bars.forEach((v, i) => {
+        const row = el.rows[i];
+        row.classList.toggle('off', v === null);
+        (row.querySelector('.ar-bar-fill') as HTMLElement).style.width = `${(Math.max(0, v ?? 0) / MAX_US) * 100}%`;
+        (row.querySelector('.ar-bar-val') as HTMLElement).textContent = v === null ? 'off' : `${Math.round(v)} µs`;
+      });
+      el.azOut.textContent = `${Math.round(st.az)}°`; el.elOut.textContent = `${st.el}°`;
+      if (!st.clock) loop();
+    };
+    const renderSvg = (s: ReturnType<typeof scene>) => {
       el.orbit.setAttribute('points', s.orbit);
       el.ring.setAttribute('points', s.ring);
       el.spokes.forEach((l, i) => setLine(l, s.center, s.mics[i]));
@@ -170,14 +190,6 @@ const f = (n: number) => n.toFixed(1);
       el.ghostLabel.hidden = st.raised;
       el.ghostLabel.style.left = `${((s.ghost.x - VIEW.X0) / VIEW.VW) * 100}%`;
       el.ghostLabel.style.top = `${((s.ghost.y + 26) / VIEW.H) * 100}%`;
-      s.bars.forEach((v, i) => {
-        const row = el.rows[i];
-        row.classList.toggle('off', v === null);
-        (row.querySelector('.ar-bar-fill') as HTMLElement).style.width = `${(Math.max(0, v ?? 0) / MAX_US) * 100}%`;
-        (row.querySelector('.ar-bar-val') as HTMLElement).textContent = v === null ? 'off' : `${Math.round(v)} µs`;
-      });
-      el.azOut.textContent = `${Math.round(st.az)}°`; el.elOut.textContent = `${st.el}°`;
-      if (!st.clock) loop();
     };
     const schedule = () => { if (!raf) raf = requestAnimationFrame(render); };
 
@@ -198,6 +210,7 @@ const f = (n: number) => n.toFixed(1);
     // Left alone, the drone circles the array, so the delays keep moving.
     const auto = player(root, (dt) => {
       st.az = (st.az + dt * 16) % 360;
+      three?.spin(dt);
       el.az.value = String(Math.round(st.az) % 360); fillSlider(el.az);
       schedule();
     });
@@ -236,6 +249,106 @@ const f = (n: number) => n.toFixed(1);
     const vio = new IntersectionObserver(([e]) => { visible = e.isIntersecting; if (visible) loop(); });
     vio.observe(root);
     render();
+    build3d(root, st).then((t) => { if (t) { three = t; render(); } });
+  }
+
+  // The model: the ring board with five mics, the raised mic on its post, the
+  // drone, its mirror image under the ground, and the direction the array solves.
+  async function build3d(root: HTMLElement, st: { yaw: number; pitch: number; az: number; el: number; raised: boolean }) {
+    const { stage, mat, rod, placeRod, disc, polyline, setPolyline, Group } = await import('./lib/stage3d');
+    type V3 = [number, number, number];
+    const host = root.querySelector<HTMLElement>('.ar-3d')!;
+    const label = root.querySelector<HTMLElement>('.ar-ghost3')!;
+    const S = stage(host, {
+      aspect: VIEW.VW / VIEW.H, yaw: st.yaw, pitch: st.pitch, distance: 1.6, target: [0, 0, 0.03],
+      onOrbit: (yaw, pitch) => { st.yaw = yaw; st.pitch = pitch; },
+    });
+    if (!S) return null;
+    const { scene: world } = S;
+
+    const board = disc(R_RING + 0.022, 0.01, mat('slate', { tint: 0.7 }), 64);
+    board.position.z = -0.005;
+    world.add(board);
+    MICS.slice(0, 5).forEach((m) => {
+      world.add(polyline([[0, 0, 0.0005], [m[0], m[1], 0.0005]], 'ink', { opacity: 0.2 }));
+      const mic = disc(0.016, 0.018, mat('slate'));
+      mic.position.set(m[0], m[1], 0.009);
+      world.add(mic);
+    });
+    // Ground orbit the drone circles, a dashed ring on the floor.
+    world.add(polyline(Array.from({ length: 97 }, (_, i): V3 => {
+      const a = (i / 96) * 2 * Math.PI; return [DIST * Math.cos(a), DIST * Math.sin(a), 0];
+    }), 'ink', { dashed: true, opacity: 0.3 }));
+
+    // The raised mic fades back when it's switched off, rather than vanishing.
+    const postMat = mat('ochre'), micMat = mat('ochre');
+    postMat.transparent = micMat.transparent = true;
+    world.add(rod([0, 0, 0], [0, 0, POST], 0.0045, postMat));
+    const mic6 = disc(0.017, 0.018, micMat);
+    mic6.position.z = POST;
+    world.add(mic6);
+
+    // A small quadcopter: body, four arms, four rotor discs, spinning props.
+    const quad = (part: 'teal' | 'clay', opacity = 1) => {
+      const g = new Group(), props: InstanceType<typeof Group>[] = [];
+      const m = mat(part, { opacity }), pale = mat(part, { opacity: opacity * 0.55, tint: 0.5 });
+      g.add(disc(0.016, 0.012, m));
+      for (const [x, y] of [[1, 1], [-1, 1], [-1, -1], [1, -1]]) {
+        const tip: V3 = [x * 0.03, y * 0.03, 0];
+        g.add(rod([0, 0, 0], tip, 0.0028, m));
+        const hub = disc(0.004, 0.014, m);
+        hub.position.set(tip[0], tip[1], 0.004);
+        const rotor = disc(0.018, 0.0012, pale);
+        rotor.position.set(tip[0], tip[1], 0.011);
+        const prop = new Group();
+        prop.position.set(tip[0], tip[1], 0.012);
+        prop.rotation.z = (x * y * Math.PI) / 4;
+        prop.add(rod([-0.016, 0, 0], [0.016, 0, 0], 0.0016, m));
+        g.add(hub, rotor, prop);
+        props.push(prop);
+      }
+      world.add(g);
+      return { g, props };
+    };
+    const drone = quad('teal'), ghost = quad('clay', 0.55);
+
+    const drop = polyline([[0, 0, 0], [0, 0, 0]], 'ink', { dashed: true, opacity: 0.4 });
+    const gdrop = polyline([[0, 0, 0], [0, 0, 0]], 'clay', { dashed: true, opacity: 0.8 });
+    const foot = disc(0.005, 0.001, mat('ink', { opacity: 0.4 }));
+    const ray0 = rod([0, 0, 0], [0, 0, 1], 0.0035, mat('teal'));
+    const ray1 = rod([0, 0, 0], [0, 0, 1], 0.0035, mat('clay', { opacity: 0.8 }));
+    world.add(drop, gdrop, foot, ray0, ray1);
+
+    let ghostAt: V3 = [0, 0, 0];
+    S.beforeRender(() => {
+      if (label.hidden) return;
+      const p = S.toScreen([ghostAt[0], ghostAt[1], ghostAt[2] - 0.045]);
+      label.style.left = `${p.x}%`; label.style.top = `${p.y}%`;
+    });
+    S.show();
+
+    return {
+      update(s: ReturnType<typeof scene>, o: typeof st) {
+        const u = unit(o.az, o.el);
+        const at: V3 = [u[0] * DIST, u[1] * DIST, u[2] * DIST];
+        ghostAt = [at[0], at[1], -at[2]];
+        drone.g.position.set(...at);
+        ghost.g.position.set(...ghostAt);
+        ghost.g.visible = gdrop.visible = ray1.visible = !o.raised;
+        foot.position.set(at[0], at[1], 0);
+        setPolyline(drop, [at, [at[0], at[1], 0]]);
+        setPolyline(gdrop, [ghostAt, [at[0], at[1], 0]]);
+        const tip = (d: number[]): V3 => [d[0] * DIST, d[1] * DIST, d[2] * DIST];
+        placeRod(ray0, [0, 0, 0], tip(s.dirs[0]));
+        if (s.dirs[1]) placeRod(ray1, [0, 0, 0], tip(s.dirs[1]));
+        postMat.opacity = micMat.opacity = o.raised ? 1 : 0.25;
+        label.hidden = o.raised;
+        S.invalidate();
+      },
+      spin(dt: number) {
+        for (const p of [...drone.props, ...ghost.props]) p.rotation.z += dt * 38;
+      },
+    };
   }
 
   const io = new IntersectionObserver((entries) => {

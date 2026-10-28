@@ -109,6 +109,17 @@
 .fig-play:focus-visible { outline: 2px solid var(--figure-accent); outline-offset: -3px; border-radius: 10px; }
 .fig-play[hidden], .no-js .fig-play { display: none; }
 
+/* 3D stages (lib/stage3d.ts): a WebGL canvas with a transparent background,
+   so the model sits on the page like the SVG does. The SVG stays in the
+   markup as the no-JS and no-WebGL picture (.fig-flat) and steps aside once
+   the canvas is up (data-3d on the figure). */
+.fig-3d { position: relative; display: none; }
+.fig[data-3d] .fig-3d { display: block; }
+.fig[data-3d] .fig-flat { display: none; }
+.fig-3d canvas { display: block; max-width: 100%; user-select: none; -webkit-user-select: none; }
+.fig-3d canvas.fig-orbit { cursor: grab; touch-action: pan-y; }
+.fig-3d canvas.fig-orbit:active { cursor: grabbing; }
+
 /* Draggable things */
 .fig-drag { cursor: grab; touch-action: none; }
 .fig-drag:active { cursor: grabbing; }
