@@ -80,13 +80,6 @@ const f = (n: number) => n.toFixed(1);
           <button type="button" data-raised="off" aria-pressed="false">off</button>
         </div>
       </div>
-      <div class="fig-group">
-        <span class="fig-seg-label">shared clock</span>
-        <div class="fig-seg" role="group" aria-label="Shared clock">
-          <button type="button" data-clock="on" aria-pressed="true">on</button>
-          <button type="button" data-clock="off" aria-pressed="false">off</button>
-        </div>
-      </div>
     </div>
   </div>
   <figcaption class="fig-caption">
@@ -113,10 +106,8 @@ const f = (n: number) => n.toFixed(1);
 </style>
 
 <script>
-  import { scene, unit, VIEW, MAX_US, SAMPLE_US, MICS, R_RING, POST, DIST } from './lib/array';
-  import { player, fillSlider, reduceMotion } from './lib/ui';
-
-  const reduce = reduceMotion();
+  import { scene, unit, VIEW, MAX_US, MICS, R_RING, POST, DIST } from './lib/array';
+  import { player, fillSlider } from './lib/ui';
 
   function init(root: HTMLElement) {
     if (root.dataset.ready) return;
@@ -137,9 +128,8 @@ const f = (n: number) => n.toFixed(1);
       azOut: q<HTMLOutputElement>('.ar-az-out'), elOut: q<HTMLOutputElement>('.ar-el-out'),
       rows: [...root.querySelectorAll<HTMLElement>('.ar-bar-row')],
     };
-    const st = { yaw: -28, pitch: 22, az: +el.az.value, el: +el.elv.value, raised: true, clock: true };
-    let jitter: number[] | undefined;
-    let raf = 0, jraf = 0, lastJitter = 0, visible = true;
+    const st = { yaw: -28, pitch: 22, az: +el.az.value, el: +el.elv.value, raised: true };
+    let raf = 0;
 
     const setLine = (l: SVGLineElement, a: { x: number; y: number }, b: { x: number; y: number }) => {
       l.setAttribute('x1', a.x.toFixed(1)); l.setAttribute('y1', a.y.toFixed(1));
@@ -151,7 +141,7 @@ const f = (n: number) => n.toFixed(1);
 
     const render = () => {
       raf = 0;
-      const s = scene({ ...st, jitter: st.clock ? undefined : jitter });
+      const s = scene(st);
       // data-3d is dropped if the WebGL context is lost; fall back to the SVG then
       if (three && root.hasAttribute('data-3d')) three.update(s, st);
       else renderSvg(s);
@@ -162,7 +152,6 @@ const f = (n: number) => n.toFixed(1);
         (row.querySelector('.ar-bar-val') as HTMLElement).textContent = v === null ? 'off' : `${Math.round(v)} µs`;
       });
       el.azOut.textContent = `${Math.round(st.az)}°`; el.elOut.textContent = `${st.el}°`;
-      if (!st.clock) loop();
     };
     const renderSvg = (s: ReturnType<typeof scene>) => {
       el.orbit.setAttribute('points', s.orbit);
@@ -193,20 +182,6 @@ const f = (n: number) => n.toFixed(1);
     };
     const schedule = () => { if (!raf) raf = requestAnimationFrame(render); };
 
-    // Unsynchronised capture: each mic drifts by up to +/-1.5 samples, redrawn
-    // every 500 ms. Driven by rAF and paused when hidden or off screen.
-    function newJitter() { jitter = Array.from({ length: 6 }, () => (Math.random() - 0.5) * 3 * SAMPLE_US * 1e-6); }
-    // Separate handle from the input redraw, so a slider drag never waits for
-    // the next jitter tick.
-    function loop() {
-      if (jraf || !visible || document.hidden || st.clock || reduce) return;
-      jraf = requestAnimationFrame((now) => {
-        jraf = 0;
-        if (now - lastJitter > 500) { lastJitter = now; newJitter(); schedule(); }
-        else loop();
-      });
-    }
-
     // Left alone, the drone circles the array, so the delays keep moving.
     const auto = player(root, (dt) => {
       st.az = (st.az + dt * 16) % 360;
@@ -219,12 +194,6 @@ const f = (n: number) => n.toFixed(1);
     root.querySelectorAll<HTMLButtonElement>('[data-raised]').forEach((b, _, all) => b.addEventListener('click', () => {
       st.raised = b.dataset.raised === 'on';
       all.forEach((x) => x.setAttribute('aria-pressed', String(x === b))); schedule();
-    }));
-    root.querySelectorAll<HTMLButtonElement>('[data-clock]').forEach((b, _, all) => b.addEventListener('click', () => {
-      st.clock = b.dataset.clock === 'on';
-      all.forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
-      if (!st.clock) { newJitter(); lastJitter = performance.now(); }
-      schedule();
     }));
 
     // Orbit: horizontal drag spins the view. Vertical drag tilts it with a
@@ -244,10 +213,6 @@ const f = (n: number) => n.toFixed(1);
     const end = () => { drag = null; };
     svg.addEventListener('pointerup', end);
     svg.addEventListener('pointercancel', end);
-    document.addEventListener('visibilitychange', () => { if (!document.hidden) loop(); });
-
-    const vio = new IntersectionObserver(([e]) => { visible = e.isIntersecting; if (visible) loop(); });
-    vio.observe(root);
     render();
     build3d(root, st).then((t) => { if (t) { three = t; render(); } });
   }

@@ -8,7 +8,7 @@ const Y0 = 80, Y1 = 150, E = 40;
 const sx = (t: number) => 34 + (t / DURATION) * (W - 42);
 const sy = (a: number) => 8 + (1 - (a - Y0) / (Y1 - Y0)) * (TOP - 16);
 const ey = (e: number) => TOP + GAP + (1 - (e + E) / (2 * E)) * STRIP;
-const sim = simulate(0.06, 0.005, true);
+const sim = simulate(0.06, 0.005);
 const path = (ys: number[], f: (v: number) => number) =>
   'M' + sim.t.map((t, i) => `${sx(t).toFixed(1)},${f(Math.max(Y0 - 5, Math.min(Y1 + 5, ys[i]))).toFixed(1)}`).join('L');
 const sentPath = (() => {
@@ -109,13 +109,6 @@ const src = dialPoint(SOURCE, DIAL.R + 26);
           <button type="button" data-kp={p.kp} data-kd={p.kd} aria-pressed={i === 0 ? 'true' : 'false'}>{p.label}</button>
         ))}
       </div>
-      <div class="fig-group">
-        <span class="fig-seg-label">command gate</span>
-        <div class="fig-seg" role="group" aria-label="Command gate">
-          <button type="button" data-gate="on" aria-pressed="true">on</button>
-          <button type="button" data-gate="off" aria-pressed="false">off</button>
-        </div>
-      </div>
     </div>
     <div class="pd-foot">
       <PlayButton />
@@ -167,9 +160,8 @@ const src = dialPoint(SOURCE, DIAL.R + 26);
     const kpOut = q<HTMLOutputElement>('.pd-kp-out'), kdOut = q<HTMLOutputElement>('.pd-kd-out');
     const readout = q<HTMLElement>('.pd-readout');
     const presets = [...root.querySelectorAll<HTMLButtonElement>('.pd-presets button')];
-    const gateBtns = [...root.querySelectorAll<HTMLButtonElement>('[data-gate]')];
-    let gate = true, raf = 0, railed = false;
-    let sim = simulate(+kp.value, +kd.value, gate);
+    let raf = 0, railed = false;
+    let sim = simulate(+kp.value, +kd.value);
     let t = DURATION, hold = 0;
 
     // Reuse the estimate dots instead of rebuilding them on every frame.
@@ -198,7 +190,7 @@ const src = dialPoint(SOURCE, DIAL.R + 26);
     const render = () => {
       raf = 0;
       const p = +kp.value, d = +kd.value;
-      const s = (sim = simulate(p, d, gate));
+      const s = (sim = simulate(p, d));
       let path = '';
       for (let i = 0; i < s.t.length; i++)
         path += `${i ? 'L' : 'M'}${sx(s.t[i]).toFixed(1)},${sy(Math.max(Y0 - 5, Math.min(Y1 + 5, s.servo[i]))).toFixed(1)}`;
@@ -249,10 +241,6 @@ const src = dialPoint(SOURCE, DIAL.R + 26);
     kp.addEventListener('input', schedule);
     kd.addEventListener('input', schedule);
     presets.forEach((b) => b.addEventListener('click', () => { kp.value = b.dataset.kp!; kd.value = b.dataset.kd!; t = 0; hold = 0; schedule(); }));
-    gateBtns.forEach((b) => b.addEventListener('click', () => {
-      gate = b.dataset.gate === 'on';
-      gateBtns.forEach((x) => x.setAttribute('aria-pressed', String(x === b))); t = 0; hold = 0; schedule();
-    }));
     render();
     build3d(root).then((m) => { if (m) { three = m; drawHead(); } });
   }

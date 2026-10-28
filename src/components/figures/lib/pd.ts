@@ -49,7 +49,7 @@ export function estimate(angleDeg: number): number | null {
 
 export type Sim = { t: number[]; servo: number[]; est: number[]; sent: number[]; outlier: number[] };
 
-export function simulate(kp: number, kd: number, gate: boolean): Sim {
+export function simulate(kp: number, kd: number): Sim {
   const r = rng(11);
   const SAMPLE = 0.1;
   const kpI = kp, kdI = kd / SAMPLE;          // PID_v2 SetTunings, Ki = 0
@@ -78,16 +78,13 @@ export function simulate(kp: number, kd: number, gate: boolean): Sim {
         if (e !== null) {
           est = e;
           if (isOut) outl = e;
-          if (!gate) { arduinoErr = -Math.trunc(e); sent = Math.trunc(e); }
-          else {
-            buf.push(e);
-            if (buf.length >= 3) {
-              const rec = buf.slice(-3);
-              if (Math.max(...rec) - Math.min(...rec) < 15) {
-                const avg = Math.trunc(rec.reduce((a, b) => a + b, 0) / 3);
-                arduinoErr = -avg; sent = avg; buf = [];
-              } else if (buf.length > 5) buf.shift();
-            }
+          buf.push(e);
+          if (buf.length >= 3) {
+            const rec = buf.slice(-3);
+            if (Math.max(...rec) - Math.min(...rec) < 15) {
+              const avg = Math.trunc(rec.reduce((a, b) => a + b, 0) / 3);
+              arduinoErr = -avg; sent = avg; buf = [];
+            } else if (buf.length > 5) buf.shift();
           }
         }
       }

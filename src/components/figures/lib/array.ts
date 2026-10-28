@@ -7,7 +7,6 @@ export const MICS: [number, number, number][] = [0, 1, 2, 3, 4].map((i) => {
 });
 MICS.push([0, 0, POST]);
 export const MAX_US = 832;    // 2 * 0.15 * sin(72deg) / 343
-export const SAMPLE_US = 1e6 / FS;
 
 export const unit = (azDeg: number, elDeg: number): [number, number, number] => {
   const az = (azDeg * Math.PI) / 180, el = (elDeg * Math.PI) / 180;
@@ -74,11 +73,10 @@ export const DIST = 0.32;   // how far out the drone is drawn, metres
 
 // Everything the SVG needs for one frame, so the server can draw the default
 // view and the client can redraw on every change from the same code.
-export function scene(o: { yaw: number; pitch: number; az: number; el: number; raised: boolean; jitter?: number[] }) {
+export function scene(o: { yaw: number; pitch: number; az: number; el: number; raised: boolean }) {
   const P = projector(o.yaw, o.pitch);
   const u = unit(o.az, o.el);
-  let tau = delays(u);
-  if (o.jitter) tau = tau.map((t, i) => t + o.jitter![i]);
+  const tau = delays(u);
   const t0 = Math.min(...tau.slice(0, o.raised ? 6 : 5));
   const bars = tau.map((t, i) => (i === 5 && !o.raised ? null : (t - t0) * 1e6));
   const ests = solve(tau, o.raised);
