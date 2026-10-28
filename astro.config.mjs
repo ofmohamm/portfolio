@@ -9,6 +9,10 @@ export default defineConfig({
   site: 'https://omarmohammed.co',
   output: 'static',
   integrations: [sitemap()],
+  // Project cards carry data-astro-prefetch="viewport": once the cards scroll
+  // into view their pages (13 to 24 KB each) are fetched, so a click or tap
+  // lands on a page that is already here. Hover alone would miss phones.
+  prefetch: { prefetchAll: false },
   build: {
     // The whole stylesheet is a few KB compressed. Inlining it removes two
     // render-blocking requests from the critical path, which matters more on a

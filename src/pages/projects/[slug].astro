@@ -1,0 +1,172 @@
+---
+// One page per project, so a project can be linked to directly and shows its
+// own title, summary and cover when the link is shared.
+import { getImage } from 'astro:assets';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ProjectArticle from '../../components/ProjectArticle.astro';
+import { loadProjects, type Project } from '../../lib/projects';
+import { stripMd } from '../../lib/inline-md';
+
+export async function getStaticPaths() {
+  const projects = await loadProjects();
+  // Previous and next wrap around, so every page leads somewhere.
+  return projects.map((project, i) => ({
+    params: { slug: project.id },
+    props: {
+      project,
+      prev: projects[(i - 1 + projects.length) % projects.length],
+      next: projects[(i + 1) % projects.length],
+    },
+  }));
+}
+
+interface Props { project: Project; prev: Project; next: Project }
+const { project: p, prev, next } = Astro.props;
+
+const site = Astro.site ?? new URL('https://omarmohammed.co');
+// Link previews (iMessage, LinkedIn, Slack) want a plain 1200px JPEG at an
+// absolute URL.
+const og = p.cover
+  ? new URL((await getImage({ src: p.cover, width: 1200, format: 'jpg' })).src, site).href
+  : undefined;
+---
+
+<BaseLayout title={`${p.name} · Omar Mohammed`} description={stripMd(p.oneLiner ?? '')} image={og}>
+  <div class="project-page">
+    <nav class="project-top" aria-label="Project">
+      <a class="project-back" href="/#projects">
+        <span aria-hidden="true">←</span> All work
+      </a>
+      <button type="button" class="project-copy" data-copy-link>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="14" height="14" x="8" y="8" rx="2" /><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" /></svg>
+        <span class="project-copy-label">Copy link</span>
+      </button>
+    </nav>
+
+    <ProjectArticle project={p} />
+
+    <nav class="project-pager" aria-label="More projects">
+      <a class="pager-link pager-prev" href={prev.href} rel="prev">
+        <span class="pager-dir"><span aria-hidden="true">←</span> Previous</span>
+        <span class="pager-name">{prev.name}</span>
+      </a>
+      <a class="pager-link pager-next" href={next.href} rel="next">
+        <span class="pager-dir">Next <span aria-hidden="true">→</span></span>
+        <span class="pager-name">{next.name}</span>
+      </a>
+    </nav>
+  </div>
+</BaseLayout>
+
+<style>
+  /* Same 760px reading column the project modal had, below the fixed header. */
+  .project-page {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: calc(64px + 2.5rem) var(--gutter) 0;
+  }
+
+  .project-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+
+  .project-back,
+  .project-copy {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    min-height: 44px;
+    font-family: var(--font-sans);
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--color-text-secondary);
+    text-decoration: none;
+    transition: color 0.15s ease;
+  }
+  .project-back:hover,
+  .project-copy:hover { color: var(--color-green-primary); }
+
+  .project-copy {
+    background: none;
+    border: 0;
+    padding: 0;
+    cursor: pointer;
+  }
+  .project-copy[data-copied] { color: var(--color-green-primary); }
+  /* Copying needs JavaScript; without it the button would do nothing. */
+  :global(.no-js) .project-copy { display: none; }
+
+  .project-back:focus-visible,
+  .project-copy:focus-visible,
+  .pager-link:focus-visible {
+    outline: 2px solid var(--color-green-primary);
+    outline-offset: 3px;
+    border-radius: 4px;
+  }
+
+  .project-pager {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    /* No rule of its own: the footer's divider follows right after. */
+    margin-top: 3.5rem;
+  }
+
+  .pager-link {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    text-decoration: none;
+    color: var(--color-text-primary);
+  }
+  .pager-next { text-align: right; align-items: flex-end; }
+
+  .pager-dir {
+    font-family: var(--font-sans);
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--color-text-muted);
+  }
+
+  .pager-name {
+    font-family: var(--font-display);
+    font-weight: 500;
+    font-size: clamp(1.1rem, 2.2vw, 1.35rem);
+    line-height: 1.2;
+    transition: color 0.15s ease;
+  }
+  .pager-link:hover .pager-name { color: var(--color-green-primary); }
+
+  @media (max-width: 640px) {
+    .project-page { padding-top: calc(56px + 1.5rem); }
+    .project-top { margin-bottom: 1.25rem; }
+    .project-pager { gap: 1rem; }
+  }
+</style>
+
+<script>
+  // Copies the page's own URL, without any #fragment.
+  document.querySelectorAll<HTMLButtonElement>('[data-copy-link]').forEach((btn) => {
+    const label = btn.querySelector<HTMLElement>('.project-copy-label')!;
+    let timer = 0;
+    btn.addEventListener('click', async () => {
+      const url = location.origin + location.pathname;
+      try {
+        await navigator.clipboard.writeText(url);
+        label.textContent = 'Copied';
+        btn.dataset.copied = '';
+      } catch {
+        // Clipboard can be blocked (permissions, insecure context). Fall back
+        // to a prompt the reader can copy from by hand.
+        window.prompt('Copy this link', url);
+        return;
+      }
+      clearTimeout(timer);
+      timer = window.setTimeout(() => { label.textContent = 'Copy link'; delete btn.dataset.copied; }, 2000);
+    });
+  });
+</script>

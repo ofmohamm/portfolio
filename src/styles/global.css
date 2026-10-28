@@ -231,43 +231,8 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 /* ============================================================
-   No-JavaScript fallback for the project modals.
-
-   With JS the cards are intercepted and the dialog is opened via
-   showModal(). Without JS they stay plain anchors, so :target shows
-   the dialog instead. No backdrop and no focus trap in that mode, but
-   the content is reachable and readable, which is the point.
-
-   This lives in the global sheet rather than a component <style> because
-   Astro scopes component selectors per-element, and `.no-js` sits on
-   <html>, which carries no scope attribute.
-   ============================================================ */
-.no-js .project-modal:target {
-  display: block;
-  position: fixed;
-  z-index: 1200;
-  inset: 1rem;
-  margin: auto;
-  max-width: 760px;
-  max-height: calc(100vh - 2rem);
-  overflow: auto;
-}
-
-.no-js .modal-close {
-  text-decoration: none;
-}
-
-/* ============================================================
    Mobile fixes
    ============================================================ */
-
-/* While a dialog is open, stop the page behind it from scrolling. Without
-   this, touch scrolling inside the modal chains to the page underneath once
-   the modal hits its end, which feels broken on a phone. */
-body.modal-open {
-  overflow: hidden;
-  touch-action: none;
-}
 
 /* Touch targets. On a coarse pointer, expand the hit area of small controls to
    44px using a pseudo-element, so nothing about the layout or the visual size
@@ -280,8 +245,7 @@ body.modal-open {
   .nav-resume,
   .nav-logo,
   .nav-logo-mobile,
-  .hero-scroll-cue,
-  .modal-close {
+  .hero-scroll-cue {
     position: relative;
   }
 
@@ -291,8 +255,7 @@ body.modal-open {
   .nav-resume::before,
   .nav-logo::before,
   .nav-logo-mobile::before,
-  .hero-scroll-cue::before,
-  .modal-close::before {
+  .hero-scroll-cue::before {
     content: '';
     position: absolute;
     left: 50%;
@@ -301,4 +264,29 @@ body.modal-open {
     height: max(100%, 44px);
     transform: translate(-50%, -50%);
   }
+}
+
+/* ============================================================
+   Page transitions
+
+   Opening a project is a real page load, but browsers that support
+   cross-document view transitions (Chrome, Edge, Safari 18.2+) animate it:
+   the card's cover grows into the project page's cover, and back shrinks it
+   again. The pairing is by view-transition-name (cover-<id>), set inline on
+   both. Everywhere else it is a normal, instant navigation.
+   ============================================================ */
+@view-transition {
+  navigation: auto;
+}
+
+/* The fixed header is the same on both pages; keep it still. */
+.site-header { view-transition-name: site-header; }
+
+::view-transition-group(*) {
+  animation-duration: 0.32s;
+  animation-timing-function: cubic-bezier(0.2, 0, 0, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  @view-transition { navigation: none; }
 }

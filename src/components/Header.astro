@@ -1,8 +1,13 @@
 ---
+// On the homepage these scroll to a section; on a project page they lead back
+// to that section of the homepage.
+const isHome = Astro.url.pathname === '/';
+const base = isHome ? '' : '/';
 const navLinks = [
-  { href: '#projects', label: 'Projects' },
-  { href: '#skills', label: 'Skills' },
+  { href: `${base}#projects`, label: 'Projects' },
+  { href: `${base}#skills`, label: 'Skills' },
 ];
+const logoHref = isHome ? '#hero' : '/';
 
 // The only place the resume link lives, so it stays reachable after scrolling.
 const RESUME_URL = 'https://drive.google.com/file/d/1-0OkidhFCiwY4Qzrx7l75aHpLJc4_KkF/view?usp=sharing';
@@ -16,7 +21,7 @@ import navLogo from '../assets/mo-logo.png';
 <header class="site-header">
   <!-- DESKTOP NAV -->
   <nav class="nav-desktop">
-    <a href="#hero" class="nav-logo" data-scroll-top aria-label="Back to top">
+    <a href={logoHref} class="nav-logo" data-scroll-top={isHome ? '' : undefined} aria-label={isHome ? 'Back to top' : 'Home'}>
       <Image class="nav-logo-mark" src={navLogo} alt="Omar Mohammed" width={88} densities={[1, 2]} format="webp" loading="eager" />
     </a>
 
@@ -34,7 +39,7 @@ import navLogo from '../assets/mo-logo.png';
 
   <!-- MOBILE NAV BAR -->
   <nav class="nav-mobile-bar">
-    <a href="#hero" class="nav-logo-mobile" data-scroll-top aria-label="Back to top">
+    <a href={logoHref} class="nav-logo-mobile" data-scroll-top={isHome ? '' : undefined} aria-label={isHome ? 'Back to top' : 'Home'}>
       <Image class="nav-logo-mark" src={navLogo} alt="Omar Mohammed" width={88} densities={[1, 2]} format="webp" loading="eager" />
     </a>
 

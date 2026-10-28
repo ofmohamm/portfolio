@@ -26,6 +26,7 @@ export const GET: APIRoute = async () => {
   const render = (p: (typeof ordered)[number]) => {
     out.push(`### ${p.data.name}`, '');
     if (p.data.subtitle) out.push(tidy(p.data.subtitle), '');
+    out.push(`Page: https://omarmohammed.co/projects/${p.id}/`, '');
     for (const para of p.data.body) if (typeof para === 'string') out.push(tidy(para), '');
     if (p.data.tech.length) out.push(`Tags: ${p.data.tech.join(', ')}`, '');
     if (p.data.github) out.push(`Source: ${p.data.github}`, '');

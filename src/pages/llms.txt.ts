@@ -24,14 +24,13 @@ export const GET: APIRoute = async () => {
 
   lines.push(`# ${name}`, '');
   lines.push(
-    `> ${positioning}. Single-page portfolio. Each project has its own URL ` +
-      `fragment, and a plain-markdown copy of the whole page is available at ` +
+    `> ${positioning}. Portfolio with one page per project under ` +
+      `${SITE}/projects/, and a plain-markdown copy of the whole site at ` +
       `${SITE}/index.md.`,
     ''
   );
   lines.push(
-    'Project detail lives in dialogs that are addressable by fragment, so a link',
-    'like #modal-privacy-based-tracker opens that project directly. Source for',
+    'Each project page has the full write-up and interactive figures. Source for',
     'each shipped project is on GitHub. Contact is by email or LinkedIn.',
     ''
   );
@@ -51,7 +50,7 @@ export const GET: APIRoute = async () => {
   );
 
   const describe = (p: (typeof ordered)[number]) =>
-    `- [${p.data.name}](${SITE}/#modal-${p.id}): ${oneLine(p.data.oneLiner)}${
+    `- [${p.data.name}](${SITE}/projects/${p.id}/): ${oneLine(p.data.oneLiner)}${
       p.data.subtitle ? ` (${oneLine(p.data.subtitle)})` : ''
     }`;
 
