@@ -9,18 +9,14 @@ import { stripMd } from '../../lib/inline-md';
 
 export async function getStaticPaths() {
   const projects = await loadProjects();
-  // Previous and next wrap around, so every page leads somewhere.
+  // Previous and next follow the homepage order and stop at either end.
   return projects.map((project, i) => ({
     params: { slug: project.id },
-    props: {
-      project,
-      prev: projects[(i - 1 + projects.length) % projects.length],
-      next: projects[(i + 1) % projects.length],
-    },
+    props: { project, prev: projects[i - 1], next: projects[i + 1] },
   }));
 }
 
-interface Props { project: Project; prev: Project; next: Project }
+interface Props { project: Project; prev?: Project; next?: Project }
 const { project: p, prev, next } = Astro.props;
 
 const site = Astro.site ?? new URL('https://omarmohammed.co');
@@ -37,23 +33,23 @@ const og = p.cover
       <a class="project-back" href="/#projects">
         <span aria-hidden="true">←</span> All work
       </a>
-      <button type="button" class="project-copy" data-copy-link>
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="14" height="14" x="8" y="8" rx="2" /><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" /></svg>
-        <span class="project-copy-label">Copy link</span>
-      </button>
     </nav>
 
     <ProjectArticle project={p} />
 
     <nav class="project-pager" aria-label="More projects">
-      <a class="pager-link pager-prev" href={prev.href} rel="prev">
-        <span class="pager-dir"><span aria-hidden="true">←</span> Previous</span>
-        <span class="pager-name">{prev.name}</span>
-      </a>
-      <a class="pager-link pager-next" href={next.href} rel="next">
-        <span class="pager-dir">Next <span aria-hidden="true">→</span></span>
-        <span class="pager-name">{next.name}</span>
-      </a>
+      {prev && (
+        <a class="pager-link pager-prev" href={prev.href} rel="prev">
+          <span class="pager-dir"><span aria-hidden="true">←</span> Previous</span>
+          <span class="pager-name">{prev.name}</span>
+        </a>
+      )}
+      {next && (
+        <a class="pager-link pager-next" href={next.href} rel="next">
+          <span class="pager-dir">Next <span aria-hidden="true">→</span></span>
+          <span class="pager-name">{next.name}</span>
+        </a>
+      )}
     </nav>
   </div>
 </BaseLayout>
@@ -74,8 +70,7 @@ const og = p.cover
     margin-bottom: 2rem;
   }
 
-  .project-back,
-  .project-copy {
+  .project-back {
     display: inline-flex;
     align-items: center;
     gap: 0.4rem;
@@ -87,21 +82,9 @@ const og = p.cover
     text-decoration: none;
     transition: color 0.15s ease;
   }
-  .project-back:hover,
-  .project-copy:hover { color: var(--color-green-primary); }
-
-  .project-copy {
-    background: none;
-    border: 0;
-    padding: 0;
-    cursor: pointer;
-  }
-  .project-copy[data-copied] { color: var(--color-green-primary); }
-  /* Copying needs JavaScript; without it the button would do nothing. */
-  :global(.no-js) .project-copy { display: none; }
+  .project-back:hover { color: var(--color-green-primary); }
 
   .project-back:focus-visible,
-  .project-copy:focus-visible,
   .pager-link:focus-visible {
     outline: 2px solid var(--color-green-primary);
     outline-offset: 3px;
@@ -123,7 +106,9 @@ const og = p.cover
     text-decoration: none;
     color: var(--color-text-primary);
   }
-  .pager-next { text-align: right; align-items: flex-end; }
+  /* Next always sits on the right, even on the first page where there is
+     no Previous beside it. */
+  .pager-next { grid-column: 2; text-align: right; align-items: flex-end; }
 
   .pager-dir {
     font-family: var(--font-sans);
@@ -147,26 +132,3 @@ const og = p.cover
     .project-pager { gap: 1rem; }
   }
 </style>
-
-<script>
-  // Copies the page's own URL, without any #fragment.
-  document.querySelectorAll<HTMLButtonElement>('[data-copy-link]').forEach((btn) => {
-    const label = btn.querySelector<HTMLElement>('.project-copy-label')!;
-    let timer = 0;
-    btn.addEventListener('click', async () => {
-      const url = location.origin + location.pathname;
-      try {
-        await navigator.clipboard.writeText(url);
-        label.textContent = 'Copied';
-        btn.dataset.copied = '';
-      } catch {
-        // Clipboard can be blocked (permissions, insecure context). Fall back
-        // to a prompt the reader can copy from by hand.
-        window.prompt('Copy this link', url);
-        return;
-      }
-      clearTimeout(timer);
-      timer = window.setTimeout(() => { label.textContent = 'Copy link'; delete btn.dataset.copied; }, 2000);
-    });
-  });
-</script>

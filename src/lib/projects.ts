@@ -34,7 +34,9 @@ export async function loadProjects() {
       coverVideo: entry.data.coverVideo,
       body: entry.data.body,
     }))
-    .sort((a, b) => a.order - b.order);
+    // Same order the homepage shows: current work first, then past, each by
+    // `order`. (`order` restarts at 0 within each group.)
+    .sort((a, b) => (a.status === b.status ? 0 : a.status === 'current' ? -1 : 1) || a.order - b.order);
 }
 
 export type Project = Awaited<ReturnType<typeof loadProjects>>[number];
