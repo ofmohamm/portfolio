@@ -125,11 +125,13 @@ const socialIcons = [
                 <div class="card-media" data-media="image">
                   {p.cover && (
                     <!-- The photo alone is named for the page transition, not
-                         the card, so the title and gradient don't stretch. -->
+                         the card, so the title and gradient don't stretch.
+                         A project whose page opens on a video has no matching
+                         photo to grow into, so it just gets the page fade. -->
                     <Picture
                       class="card-video"
-                      style={`view-transition-name: cover-${p.id}`}
-                      data-vt={`cover-${p.id}`}
+                      style={p.coverVideo ? undefined : `view-transition-name: cover-${p.id}`}
+                      data-vt={p.coverVideo ? undefined : `cover-${p.id}`}
                       src={p.cover}
                       alt={`${p.name} preview`}
                       widths={[480, 800, 1200]}
