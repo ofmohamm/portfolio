@@ -63,6 +63,8 @@
     let frame = 0;
     let lastPaint = 0;
     const mouse = { x: 0, y: 0, active: false };
+    // Elliptical clear zone around the hero text, in canvas coordinates.
+    let zone = { cx: 0, cy: 0, rx: 0, ry: 0 };
 
     function resize() {
       w = canvas.clientWidth;
@@ -72,6 +74,20 @@
       canvas.width = Math.round(w * dpr);
       canvas.height = Math.round(h * dpr);
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+      // Keep the dots out from behind the name, tagline and links. Measured from
+      // the real text block so it follows every breakpoint.
+      const text = document.querySelector<HTMLElement>('.hero-inner');
+      if (text) {
+        const c = canvas.getBoundingClientRect();
+        const t = text.getBoundingClientRect();
+        zone = {
+          cx: t.left - c.left + t.width / 2,
+          cy: t.top - c.top + t.height / 2,
+          rx: t.width / 2 + Math.min(80, w * 0.08),
+          ry: t.height / 2 + 56,
+        };
+      }
       return true;
     }
 
@@ -182,6 +198,25 @@
         ctx.arc(d.x, d.y, d.size, 0, Math.PI * 2);
         ctx.fillStyle = `rgba(107, 107, 107, ${d.alpha})`;
         ctx.fill();
+      }
+
+      // Erase the field behind the hero text with a soft-edged ellipse: fully
+      // clear in the middle, fading back to the field at the edge. One fill per
+      // frame, so effectively free.
+      if (zone.rx > 0 && zone.ry > 0) {
+        ctx.save();
+        ctx.globalCompositeOperation = 'destination-out';
+        ctx.translate(zone.cx, zone.cy);
+        ctx.scale(zone.rx, zone.ry);
+        const g = ctx.createRadialGradient(0, 0, 0, 0, 0, 1);
+        g.addColorStop(0, 'rgba(0,0,0,1)');
+        g.addColorStop(0.72, 'rgba(0,0,0,1)');
+        g.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.fillStyle = g;
+        ctx.beginPath();
+        ctx.arc(0, 0, 1, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
       }
 
       frame++;

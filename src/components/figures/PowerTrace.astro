@@ -1,0 +1,232 @@
+---
+import './figure.css';
+import PlayButton from './PlayButton.astro';
+import { bounds, geometry, dataY, measY, TOTAL, stateAt, CHARGE_RATIO } from './lib/power';
+const W = 720, H = 260;
+const g = geometry(W, H);
+const bands = bounds();
+// Rendered on the server in the "datasheet" state, so the figure is correct
+// with JavaScript off. The script adds the toggle, the morph and the playhead.
+const dataLine = g.line(dataY), dataArea = g.area(dataY);
+const stepLine = g.step();
+const measLine = g.line(measY);
+// Hard colour stops at every state boundary, so one path is painted per state.
+const stops = bands.flatMap((b) => [
+  { o: b.x0 / TOTAL, c: b.c }, { o: b.x1 / TOTAL, c: b.c },
+]);
+const HEAD0 = TOTAL * 0.45;
+const s0 = stateAt(HEAD0);
+---
+
+<figure class="fig fig-power" data-fig="power" aria-label="Current draw over one wake event, datasheet model compared with a bench-shaped trace">
+  <div class="fig-stage">
+    <div class="fig-row fig-power-top">
+      <span class="fig-hint">one wake event, sleep to sleep</span>
+      <div class="fig-seg" role="group" aria-label="Trace">
+        <button type="button" data-mode="datasheet" aria-pressed="true">datasheet model</button>
+        <button type="button" data-mode="measured" aria-pressed="false">measured</button>
+      </div>
+    </div>
+    <div class="fig-view fig-power-plot">
+      <span class="fig-power-y">current draw</span>
+      <div class="pw-track fig-drag" tabindex="0" role="slider" aria-label="Point in the wake cycle. Drag, or use the arrow keys."
+           aria-valuemin="0" aria-valuemax="100" aria-valuenow="45" aria-valuetext={s0.label}>
+        <svg class="fig-svg" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+          <defs>
+            <linearGradient id="pw-states" gradientUnits="userSpaceOnUse" x1={g.sx(0)} x2={g.sx(TOTAL)} y1="0" y2="0">
+              {stops.map((s) => <stop offset={s.o} style={`stop-color:var(--c-${s.c})`} />)}
+            </linearGradient>
+          </defs>
+          {bands.map((b) => (
+            <line x1={g.sx(b.x0)} x2={g.sx(b.x0)} y1="6" y2={H - 8} stroke="var(--figure-grid)" />
+          ))}
+          <line x1="8" x2={W - 8} y1={H - 8} y2={H - 8} stroke="var(--figure-muted)" />
+          <!-- datasheet reference, shown dashed once the bench trace is up -->
+          <path class="pw-ref" d={stepLine} fill="none" stroke="var(--figure-ink)" stroke-opacity="0.45" stroke-width="1.5" stroke-dasharray="5 4" />
+          <!-- the live trace; morphs between the two -->
+          <path class="pw-area" d={dataArea} fill="url(#pw-states)" fill-opacity="0.15" />
+          <path class="pw-line" d={dataLine} fill="none" stroke="url(#pw-states)" stroke-width="2.2" stroke-linejoin="round" />
+          <!-- no-JS fallback: show the bench trace too -->
+          <path class="pw-nojs" d={measLine} fill="none" stroke="url(#pw-states)" stroke-width="2" />
+          <g class="pw-head">
+            <line class="pw-head-line" x1={g.sx(HEAD0)} x2={g.sx(HEAD0)} y1="6" y2={H - 8} stroke="var(--figure-ink)" stroke-opacity="0.5" />
+            <circle class="pw-head-dot" cx={g.sx(HEAD0)} cy={g.sy(s0.i)} r="5.5" fill={`var(--c-${s0.c})`} stroke="var(--figure-panel)" stroke-width="2" />
+          </g>
+        </svg>
+        <span class={`fig-label pw-now c-${s0.c}`} style={`left:${(g.sx(HEAD0) / W) * 100}%`}>{s0.label}</span>
+      </div>
+    </div>
+    <div class="fig-power-bands" aria-hidden="true">
+      {bands.map((b, i) => (
+        <span
+          class={`fig-power-band ${i % 2 ? 'low' : 'high'} c-${b.c}`}
+          style={`left:${(((b.x0 + b.x1) / 2) / TOTAL) * 100}%`}
+        >{b.label}</span>
+      ))}
+    </div>
+    <div class="fig-row fig-power-foot">
+      <PlayButton />
+      <span class="fig-hint">time</span>
+    </div>
+    <!-- Without JS both traces are drawn, so both numbers are given. -->
+    <p class="fig-readout pw-charge" aria-live="polite">charge per event: 1.00x (datasheet), {CHARGE_RATIO.toFixed(2)}x (measured)</p>
+  </div>
+  <figcaption class="fig-caption">
+    Shape is representative of a measured wake cycle. Absolute values are confidential and are not shown.
+  </figcaption>
+</figure>
+
+<style>
+  .fig-power-top { margin-top: 0; margin-bottom: 0.3rem; }
+  .fig-power-plot { padding-left: 1.1rem; }
+  .fig-power-y {
+    position: absolute; left: 0; top: 55%; transform: translate(-30%, -50%) rotate(-90deg);
+    font-size: 0.7rem; color: var(--color-text-muted); white-space: nowrap;
+  }
+  .pw-track { position: relative; padding-top: 1.3rem; touch-action: pan-y; }
+  .pw-track:focus-visible { outline: 2px dashed var(--figure-accent); outline-offset: 4px; border-radius: 4px; }
+  .pw-now { top: 0.45rem; font-weight: 600; font-size: 0.78rem; }
+  .fig-power-bands { position: relative; height: 2.4rem; margin-left: 1.1rem; }
+  .fig-power-band {
+    position: absolute; transform: translateX(-50%); font-size: 0.7rem; white-space: nowrap; font-weight: 500;
+  }
+  .fig-power-band.high { top: 0.15rem; }
+  .fig-power-band.low { top: 1.2rem; }
+  .fig-power-band:first-child { transform: translateX(-30%); }
+  .fig-power-band:last-child { transform: translateX(-70%); }
+  .fig-power-foot { margin-top: 0; justify-content: space-between; }
+  .pw-charge { margin: 0.2rem 0 0; text-align: center; }
+  /* On a phone the eight labels can't share one row; the playhead names the
+     state under it instead. */
+  @media (max-width: 560px) {
+    :global(html:not(.no-js)) .fig-power-bands { display: none; }
+  }
+  .pw-ref { opacity: 0; transition: opacity 0.3s ease; }
+  .fig-power[data-state='measured'] .pw-ref { opacity: 1; }
+  .pw-nojs { display: none; }
+  :global(.no-js) .pw-nojs { display: inline; }
+  :global(.no-js) .pw-ref { opacity: 1; }
+  :global(.no-js) .pw-head, :global(.no-js) .pw-now { display: none; }
+</style>
+
+<script>
+  import { geometry, dataY, measY, stateAt, TOTAL, STATES, CHARGE_RATIO } from './lib/power';
+  import { player, reduceMotion } from './lib/ui';
+
+  const W = 720, H = 260;
+  const ease = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2);
+  const SWEEP = 6.5, HOLD = 0.9;          // seconds across the cycle, pause at the end
+
+  function init(root: HTMLElement) {
+    if (root.dataset.ready) return;
+    root.dataset.ready = '1';
+    const g = geometry(W, H);
+    const q = <T extends Element>(s: string) => root.querySelector<T>(s)!;
+    const line = q<SVGPathElement>('.pw-line'), area = q<SVGPathElement>('.pw-area');
+    const headLine = q<SVGLineElement>('.pw-head-line'), headDot = q<SVGCircleElement>('.pw-head-dot');
+    const now = q<HTMLElement>('.pw-now'), track = q<HTMLElement>('.pw-track'), svg = q<SVGSVGElement>('svg');
+    const buttons = [...root.querySelectorAll<HTMLButtonElement>('[data-mode]')];
+    const charge = q<HTMLElement>('.pw-charge');
+    let k = 0, target = 0, from = 0, morphT = 1, head = TOTAL * 0.45, hold = 0;
+    let ys = dataY.slice();
+    const DUR = 0.4;
+
+    const drawTrace = () => {
+      ys = dataY.map((d, i) => d + (measY[i] - d) * k);
+      line.setAttribute('d', g.line(ys));
+      area.setAttribute('d', g.area(ys));
+    };
+    // Set once per toggle, not per frame: it's a live region, and a screen
+    // reader would read out every step of the morph.
+    const setCharge = () => {
+      charge.textContent = target
+        ? `charge per event: ${CHARGE_RATIO.toFixed(2)}x (measured)`
+        : 'charge per event: 1.00x (datasheet)';
+    };
+    setCharge();
+    let lastState = '';
+    const drawHead = () => {
+      const x = g.sx(head), i = Math.round((head / TOTAL) * (ys.length - 1));
+      headLine.setAttribute('x1', x.toFixed(1)); headLine.setAttribute('x2', x.toFixed(1));
+      headDot.setAttribute('cx', x.toFixed(1)); headDot.setAttribute('cy', g.sy(ys[i]).toFixed(1));
+      now.style.left = `${Math.max(9, Math.min(91, (x / W) * 100))}%`;
+      const s = stateAt(head);
+      if (s.label + s.c !== lastState) {
+        lastState = s.label + s.c;
+        now.textContent = s.label; now.className = `fig-label pw-now c-${s.c}`;
+        headDot.setAttribute('fill', `var(--c-${s.c})`);
+        track.setAttribute('aria-valuetext', s.label);
+      }
+      track.setAttribute('aria-valuenow', String(Math.round((head / TOTAL) * 100)));
+    };
+
+    // One clock drives both the morph and the playhead.
+    let morphing = false, raf = 0;
+    const step = (dt: number) => {
+      if (morphing) {
+        morphT = Math.min(1, morphT + dt / DUR);
+        k = from + (target - from) * ease(morphT);
+        drawTrace();
+        if (morphT >= 1) morphing = false;
+      }
+      drawHead();
+    };
+    const auto = player(root, (dt) => {
+      if (hold > 0) hold -= dt;
+      else { head += (dt / SWEEP) * TOTAL; if (head >= TOTAL) { head = TOTAL; hold = HOLD; } }
+      if (hold <= 0 && head >= TOTAL) head = 0;
+      step(dt);
+    });
+    // When the reader is driving, run frames only while a morph is in flight.
+    const kick = () => {
+      if (raf || auto.playing) return;
+      let last = 0;
+      const f = (t: number) => {
+        const dt = last ? Math.min(0.05, (t - last) / 1000) : 0; last = t;
+        step(dt);
+        raf = morphing ? requestAnimationFrame(f) : 0;
+      };
+      raf = requestAnimationFrame(f);
+    };
+
+    const set = (mode: string) => {
+      target = mode === 'measured' ? 1 : 0;
+      root.dataset.state = mode;
+      buttons.forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.mode === mode)));
+      setCharge();
+      if (reduceMotion()) { k = target; morphing = false; drawTrace(); drawHead(); return; }
+      from = k; morphT = 0; morphing = true; kick();
+    };
+    buttons.forEach((b) => b.addEventListener('click', () => set(b.dataset.mode!)));
+
+    // Scrub: drag along the plot, or arrow keys, to park the playhead.
+    const scrubTo = (clientX: number) => {
+      const r = svg.getBoundingClientRect();
+      const x = ((clientX - r.left) / r.width) * W;
+      head = Math.max(0, Math.min(TOTAL, ((x - 8) / (W - 16)) * TOTAL));
+      hold = 0; drawHead();
+    };
+    let scrubbing = false;
+    track.addEventListener('pointerdown', (e) => { auto.interrupt(); scrubbing = true; track.setPointerCapture(e.pointerId); scrubTo(e.clientX); });
+    track.addEventListener('pointermove', (e) => { if (scrubbing) scrubTo(e.clientX); });
+    track.addEventListener('pointerup', () => { scrubbing = false; });
+    track.addEventListener('pointercancel', () => { scrubbing = false; });
+    const starts = STATES.reduce<number[]>((a, s, i) => (a.push(i ? a[i - 1] + STATES[i - 1].w : 0), a), []);
+    track.addEventListener('keydown', (e) => {
+      // Arrows jump state to state, which is what the reader is stepping through.
+      const i = STATES.indexOf(stateAt(head));
+      const j = e.key === 'ArrowRight' || e.key === 'ArrowUp' ? i + 1 : e.key === 'ArrowLeft' || e.key === 'ArrowDown' ? i - 1 : -2;
+      if (j === -2) return;
+      e.preventDefault(); auto.interrupt();
+      const s = STATES[Math.max(0, Math.min(STATES.length - 1, j))];
+      head = starts[STATES.indexOf(s)] + s.w / 2; drawHead();
+    });
+    drawHead();
+  }
+
+  // Do nothing until the figure is actually on screen.
+  const io = new IntersectionObserver((entries) => {
+    for (const e of entries) if (e.isIntersecting) { init(e.target as HTMLElement); io.unobserve(e.target); }
+  });
+  document.querySelectorAll<HTMLElement>('[data-fig="power"]').forEach((el) => io.observe(el));
+</script>

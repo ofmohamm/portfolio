@@ -1,0 +1,413 @@
+---
+import './figure.css';
+import PlayButton from './PlayButton.astro';
+import { simulate, PRESETS, SOURCE, DURATION } from './lib/pd';
+import { DIAL, dialPoint } from './lib/dial';
+const W = 560, TOP = 230, STRIP = 80, GAP = 18, H = TOP + GAP + STRIP;
+const Y0 = 80, Y1 = 150, E = 40;
+const sx = (t: number) => 34 + (t / DURATION) * (W - 42);
+const sy = (a: number) => 8 + (1 - (a - Y0) / (Y1 - Y0)) * (TOP - 16);
+const ey = (e: number) => TOP + GAP + (1 - (e + E) / (2 * E)) * STRIP;
+const sim = simulate(0.06, 0.005);
+const path = (ys: number[], f: (v: number) => number) =>
+  'M' + sim.t.map((t, i) => `${sx(t).toFixed(1)},${f(Math.max(Y0 - 5, Math.min(Y1 + 5, ys[i]))).toFixed(1)}`).join('L');
+const sentPath = (() => {
+  let d = '', last = 0;
+  sim.t.forEach((t, i) => { if (!Number.isNaN(sim.sent[i])) last = sim.sent[i]; d += `${d ? 'L' : 'M'}${sx(t).toFixed(1)},${ey(Math.max(-E, Math.min(E, last))).toFixed(1)}`; });
+  return d;
+})();
+const ticks = [90, 105, 120, 135, 150];
+// The device, top down: drawn at its final heading so the no-JS figure shows
+// where the loop ends up.
+const endAngle = sim.servo[sim.servo.length - 1];
+const p = (a: number, r: number) => { const q = dialPoint(a, r); return `${q.x.toFixed(1)},${q.y.toFixed(1)}`; };
+const dialTicks = Array.from({ length: 13 }, (_, i) => i * 15);
+const src = dialPoint(SOURCE, DIAL.R + 26);
+---
+
+<figure class="fig fig-pd" data-fig="pd" aria-label="The array on its servo turning toward a sound source 30 degrees to the side, and the servo angle over time, with adjustable PD gains">
+  <div class="fig-stage">
+    <div class="fig-view pd-dial">
+      <div class="fig-3d pd-3d">
+        <span class="fig-label muted pd-l3" data-a="90">90°</span>
+        <span class="fig-label muted pd-l3" data-a="180">180°</span>
+        <span class="fig-label muted pd-l3" data-a="0">0°</span>
+        <span class="fig-label c-ochre pd-l3" data-a="src">sound</span>
+        <span class="fig-hint pd-hint">drag to rotate</span>
+      </div>
+      <svg class="fig-svg fig-flat" viewBox={`0 0 ${DIAL.W} ${DIAL.H}`} aria-hidden="true">
+        <path d={`M${p(0, DIAL.R)}A${DIAL.R},${DIAL.R} 0 0 0 ${p(180, DIAL.R)}`} fill="none" stroke="var(--figure-grid)" stroke-width="1.5" />
+        {dialTicks.map((a) => (
+          <line x1={dialPoint(a, DIAL.R).x} y1={dialPoint(a, DIAL.R).y} x2={dialPoint(a, DIAL.R - (a % 45 ? 6 : 11)).x} y2={dialPoint(a, DIAL.R - (a % 45 ? 6 : 11)).y}
+            stroke="var(--figure-ink)" stroke-opacity={a % 45 ? 0.25 : 0.5} stroke-width="1.5" />
+        ))}
+        <!-- line of sight to the sound -->
+        <line x1={DIAL.cx} y1={DIAL.cy} x2={src.x} y2={src.y} stroke="var(--c-ochre)" stroke-width="1.5" stroke-dasharray="6 5" />
+        <!-- a speaker, facing the array -->
+        <g transform={`translate(${src.x.toFixed(1)},${src.y.toFixed(1)}) rotate(${180 - SOURCE})`}>
+          <path d="M-9,-5h5l7,-6v22l-7,-6h-5z" fill="var(--c-ochre)" />
+          <path d="M9,-9a12,12 0 0 1 0,18M13,-14a19,19 0 0 1 0,28" fill="none" stroke="var(--c-ochre)" stroke-width="2" stroke-linecap="round" />
+        </g>
+        <!-- the array on its servo: the bar turns, the needle is its heading -->
+        <g class="pd-arm" transform={`rotate(${(90 - endAngle).toFixed(2)} ${DIAL.cx} ${DIAL.cy})`}>
+          <line x1={DIAL.cx} y1={DIAL.cy} x2={DIAL.cx} y2={DIAL.cy - DIAL.R + 10} stroke="var(--c-teal)" stroke-width="2.5" stroke-linecap="round" />
+          <rect x={DIAL.cx - 44} y={DIAL.cy - 9} width="88" height="18" rx="5" fill="color-mix(in srgb, var(--c-teal) 22%, var(--figure-panel))" stroke="var(--c-teal)" stroke-width="2" />
+          <circle cx={DIAL.cx - 33} cy={DIAL.cy} r="3.5" fill="var(--c-slate)" />
+          <circle cx={DIAL.cx + 33} cy={DIAL.cy} r="3.5" fill="var(--c-slate)" />
+        </g>
+        <circle cx={DIAL.cx} cy={DIAL.cy} r="4" fill="var(--figure-ink)" />
+      </svg>
+      <span class="fig-label muted fig-flat" style={`left:${(dialPoint(90, DIAL.R + 12).x / DIAL.W) * 100}%;top:${(dialPoint(90, DIAL.R + 12).y / DIAL.H) * 100}%`}>90°</span>
+      <span class="fig-label muted fig-flat" style={`left:${((dialPoint(180, DIAL.R).x - 16) / DIAL.W) * 100}%;top:${(DIAL.cy / DIAL.H) * 100}%`}>180°</span>
+      <span class="fig-label muted fig-flat" style={`left:${((dialPoint(0, DIAL.R).x + 12) / DIAL.W) * 100}%;top:${(DIAL.cy / DIAL.H) * 100}%`}>0°</span>
+      <span class="fig-label c-ochre pd-src-lab fig-flat" style={`left:${((src.x - 32) / DIAL.W) * 100}%;top:${((src.y - 4) / DIAL.H) * 100}%`}>sound</span>
+    </div>
+
+    <div class="fig-view fig-pd-plot">
+      <svg class="fig-svg" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+        <defs><clipPath id="pd-clip"><rect x="34" y="0" width={W - 34} height={TOP} /></clipPath></defs>
+        {ticks.map((a) => <line x1="34" x2={W - 8} y1={sy(a)} y2={sy(a)} stroke="var(--figure-grid)" />)}
+        <line x1="34" x2={W - 8} y1={sy(SOURCE)} y2={sy(SOURCE)} stroke="var(--c-ochre)" stroke-width="1.5" stroke-dasharray="6 5" />
+        <g clip-path="url(#pd-clip)">
+          <path class="pd-servo" d={path(sim.servo, sy)} fill="none" stroke="var(--c-teal)" stroke-width="2.2" stroke-linejoin="round" />
+        </g>
+        <line x1="34" x2={W - 8} y1={ey(0)} y2={ey(0)} stroke="var(--figure-grid)" />
+        <g class="pd-est">
+          {sim.t.map((t, i) => Number.isNaN(sim.est[i]) ? null : (
+            <circle cx={sx(t).toFixed(1)} cy={ey(Math.max(-E, Math.min(E, sim.est[i]))).toFixed(1)} r="1.5"
+              fill={Number.isNaN(sim.outlier[i]) ? 'var(--c-slate)' : 'var(--c-clay)'} fill-opacity={Number.isNaN(sim.outlier[i]) ? 0.55 : 1} />
+          ))}
+        </g>
+        <path class="pd-sent" d={sentPath} fill="none" stroke="var(--figure-ink)" stroke-width="1.4" />
+        <g class="pd-head">
+          <line class="pd-head-line" x1={sx(DURATION)} x2={sx(DURATION)} y1="0" y2={H} stroke="var(--figure-ink)" stroke-opacity="0.35" />
+          <circle class="pd-head-dot" cx={sx(DURATION)} cy={sy(endAngle)} r="5" fill="var(--c-teal)" stroke="var(--figure-panel)" stroke-width="2" />
+        </g>
+      </svg>
+      {ticks.map((a) => <span class="fig-label muted pd-tick" style={`left:${(28 / W) * 100}%;top:${(sy(a) / H) * 100}%`}>{a}°</span>)}
+      <span class="fig-label c-ochre pd-lab" style={`left:${(46 / W) * 100}%;top:${((sy(SOURCE) - 10) / H) * 100}%`}>sound source</span>
+      <span class="fig-label pd-lab" style={`left:${(46 / W) * 100}%;top:${((TOP + GAP - 4) / H) * 100}%`}>what the controller is told</span>
+      <span class="fig-label warn pd-rail" style={`left:70%;top:${(12 / H) * 100}%`} hidden>runs into the 180° end stop</span>
+    </div>
+    <div class="fig-pd-x"><span>0 s</span><span>time</span><span>{DURATION} s</span></div>
+
+    <div class="pd-controls">
+      <div class="fig-slider" style="--p:0.2">
+        <label for="pd-kp">Kp</label>
+        <input id="pd-kp" type="range" min="0" max="0.3" step="0.005" value="0.06" />
+        <output for="pd-kp" class="pd-kp-out">0.060</output>
+      </div>
+      <div class="fig-slider" style={`--p:${0.005 / 0.03}`}>
+        <label for="pd-kd">Kd</label>
+        <input id="pd-kd" type="range" min="0" max="0.03" step="0.0005" value="0.005" />
+        <output for="pd-kd" class="pd-kd-out">0.0050</output>
+      </div>
+    </div>
+    <div class="fig-row">
+      <div class="fig-seg pd-presets" role="group" aria-label="Presets">
+        {PRESETS.map((p, i) => (
+          <button type="button" data-kp={p.kp} data-kd={p.kd} aria-pressed={i === 0 ? 'true' : 'false'}>{p.label}</button>
+        ))}
+      </div>
+    </div>
+    <div class="pd-foot">
+      <PlayButton />
+      <p class="fig-readout pd-readout" aria-live="polite"></p>
+    </div>
+  </div>
+  <figcaption class="fig-caption">
+    Simulated with the shipped gains and the real 16 kHz lag quantization. Not recorded telemetry.
+  </figcaption>
+</figure>
+
+<style>
+  .pd-dial { max-width: 420px; margin: 0 auto 0.4rem; }
+  .pd-hint { position: absolute; right: 0.2rem; top: 0.1rem; z-index: 1; pointer-events: none; }
+  /* room on the left for the angle ticks, which sit outside the plot */
+  .fig-pd-plot { position: relative; margin-left: 1.4rem; }
+  .pd-tick { transform: translate(-100%, -50%); }
+  .pd-lab { transform: translate(0, -50%); }
+  .fig-pd-x { display: flex; justify-content: space-between; font-size: 0.7rem; color: var(--color-text-muted); margin-left: calc(1.4rem + 5%); }
+  .pd-controls { display: grid; grid-template-columns: 1fr 1fr; gap: 0 1.5rem; margin-top: 0.3rem; }
+  @media (max-width: 520px) { .pd-controls { grid-template-columns: 1fr; } }
+  .pd-foot { display: flex; align-items: center; gap: 0.3rem; }
+  .pd-readout { margin: 0; color: var(--color-text-muted); min-height: 1.2em; }
+  :global(.no-js) .pd-head { display: none; }
+</style>
+
+<script>
+  import { simulate, score, SOURCE, DURATION } from './lib/pd';
+  import { DIAL } from './lib/dial';
+  import { player, fillSlider } from './lib/ui';
+
+  const W = 560, TOP = 230, STRIP = 80, GAP = 18, H = TOP + GAP + STRIP;
+  const Y0 = 80, Y1 = 150, E = 40;
+  const sx = (t: number) => 34 + (t / DURATION) * (W - 42);
+  const sy = (a: number) => 8 + (1 - (a - Y0) / (Y1 - Y0)) * (TOP - 16);
+  const ey = (e: number) => TOP + GAP + (1 - (e + E) / (2 * E)) * STRIP;
+  const NS = 'http://www.w3.org/2000/svg';
+  const HOLD = 1.2;                     // seconds to rest on the final angle before replaying
+
+  function init(root: HTMLElement) {
+    if (root.dataset.ready) return;
+    root.dataset.ready = '1';
+    const q = <T extends Element>(s: string) => root.querySelector<T>(s)!;
+    const servo = q<SVGPathElement>('.pd-servo'), sent = q<SVGPathElement>('.pd-sent');
+    const estG = q<SVGGElement>('.pd-est'), rail = q<HTMLElement>('.pd-rail');
+    const arm = q<SVGGElement>('.pd-arm');
+    const headLine = q<SVGLineElement>('.pd-head-line'), headDot = q<SVGCircleElement>('.pd-head-dot');
+    const kp = q<HTMLInputElement>('#pd-kp'), kd = q<HTMLInputElement>('#pd-kd');
+    const kpOut = q<HTMLOutputElement>('.pd-kp-out'), kdOut = q<HTMLOutputElement>('.pd-kd-out');
+    const readout = q<HTMLElement>('.pd-readout');
+    const presets = [...root.querySelectorAll<HTMLButtonElement>('.pd-presets button')];
+    let raf = 0, railed = false;
+    let sim = simulate(+kp.value, +kd.value);
+    let t = DURATION, hold = 0;
+
+    // Reuse the estimate dots instead of rebuilding them on every frame.
+    const dots: SVGCircleElement[] = [...estG.querySelectorAll('circle')];
+    const dot = (i: number) => {
+      if (!dots[i]) { const c = document.createElementNS(NS, 'circle'); c.setAttribute('r', '1.5'); estG.appendChild(c); dots[i] = c; }
+      return dots[i];
+    };
+
+    // Once WebGL is up the dial is drawn in 3D; until then, and wherever it
+    // can't run, the SVG dial keeps working exactly as before.
+    let three: Awaited<ReturnType<typeof build3d>> = null;
+
+    // The replay: the dial and the playhead show the loop at time t.
+    const drawHead = () => {
+      const i = Math.min(sim.t.length - 1, Math.round((t / DURATION) * (sim.t.length - 1)));
+      const a = sim.servo[i], x = sx(t).toFixed(1);
+      // data-3d is dropped if the WebGL context is lost; fall back to the SVG then
+      if (three && root.hasAttribute('data-3d')) three.heading(a);
+      else arm.setAttribute('transform', `rotate(${(90 - a).toFixed(2)} ${DIAL.cx} ${DIAL.cy})`);
+      headLine.setAttribute('x1', x); headLine.setAttribute('x2', x);
+      headDot.setAttribute('cx', x);
+      headDot.setAttribute('cy', sy(Math.max(Y0 - 5, Math.min(Y1 + 5, a))).toFixed(1));
+    };
+
+    const render = () => {
+      raf = 0;
+      const p = +kp.value, d = +kd.value;
+      const s = (sim = simulate(p, d));
+      let path = '';
+      for (let i = 0; i < s.t.length; i++)
+        path += `${i ? 'L' : 'M'}${sx(s.t[i]).toFixed(1)},${sy(Math.max(Y0 - 5, Math.min(Y1 + 5, s.servo[i]))).toFixed(1)}`;
+      servo.setAttribute('d', path);
+      let sp = '', last = 0, n = 0;
+      for (let i = 0; i < s.t.length; i++) {
+        if (!Number.isNaN(s.sent[i])) last = s.sent[i];
+        sp += `${i ? 'L' : 'M'}${sx(s.t[i]).toFixed(1)},${ey(Math.max(-E, Math.min(E, last))).toFixed(1)}`;
+        if (!Number.isNaN(s.est[i])) {
+          const c = dot(n++), out = !Number.isNaN(s.outlier[i]);
+          c.setAttribute('cx', sx(s.t[i]).toFixed(1));
+          c.setAttribute('cy', ey(Math.max(-E, Math.min(E, s.est[i]))).toFixed(1));
+          c.setAttribute('fill', out ? 'var(--c-clay)' : 'var(--c-slate)');
+          c.setAttribute('fill-opacity', out ? '1' : '0.55');
+          c.removeAttribute('display');
+        }
+      }
+      for (let i = n; i < dots.length; i++) dots[i].setAttribute('display', 'none');
+      sent.setAttribute('d', sp);
+      kpOut.textContent = p.toFixed(3); kdOut.textContent = d.toFixed(4);
+      fillSlider(kp); fillSlider(kd);
+      const sc = score(s);
+      railed = Math.max(...s.servo) >= 179;
+      rail.hidden = !railed;
+      const c = railed ? 'var(--c-clay)' : 'var(--c-teal)';
+      servo.setAttribute('stroke', c); headDot.setAttribute('fill', c);
+      readout.textContent = railed
+        ? 'never settles: each correction overshoots further than the last'
+        : sc.settle === null
+          ? `still ${Math.abs(Math.round(s.servo[s.servo.length - 1] - SOURCE))}° off after ${DURATION} s`
+          : `settles in ${sc.settle.toFixed(2)} s, overshoot ${Math.max(0, sc.overshoot).toFixed(0)}°`;
+      presets.forEach((b) => b.setAttribute('aria-pressed', String(Math.abs(+b.dataset.kp! - p) < 1e-9 && Math.abs(+b.dataset.kd! - d) < 1e-9)));
+      drawHead();
+    };
+    const schedule = () => { if (!raf) raf = requestAnimationFrame(render); };
+
+    // Real time: three simulated seconds take three seconds, so 0.71 s to
+    // settle looks like 0.71 s. Changing a gain doesn't restart the replay;
+    // the trace updates under the playhead and the next pass shows it.
+    const auto = player(root, (dt) => {
+      if (hold > 0) { hold -= dt; if (hold <= 0) t = 0; }
+      else { t += dt; if (t >= DURATION) { t = DURATION; hold = HOLD; } }
+      drawHead();
+    });
+    // Without motion the dial just shows where the loop ends up.
+    t = auto.playing ? 0 : DURATION;
+
+    kp.addEventListener('input', schedule);
+    kd.addEventListener('input', schedule);
+    presets.forEach((b) => b.addEventListener('click', () => { kp.value = b.dataset.kp!; kd.value = b.dataset.kd!; t = 0; hold = 0; schedule(); }));
+    render();
+    build3d(root).then((m) => { if (m) { three = m; drawHead(); } });
+  }
+
+  // The dial as a small tabletop: the servo with the array on its horn, the
+  // 0 to 180 degree scale on the table around it, and the speaker out past
+  // the scale. Same angles as dialPoint: 0 is +x, 90 is +y (ahead), 180 is -x.
+  // Scale: the dial's 148 px radius is 15 cm, so one SVG px is about 1 mm.
+  async function build3d(root: HTMLElement) {
+    const {
+      stage, mat, rod, disc, polyline, Group,
+      Mesh, BoxGeometry, RingGeometry, Shape, ExtrudeGeometry, LatheGeometry, Vector2, DoubleSide,
+    } = await import('./lib/stage3d');
+    type V3 = [number, number, number];
+    const host = root.querySelector<HTMLElement>('.pd-3d')!;
+    const S = stage(host, {
+      aspect: DIAL.W / DIAL.H, yaw: 0, pitch: 38, distance: 0.55, target: [0, 0.07, 0.012],
+      pitchRange: [14, 78],
+    });
+    if (!S) return null;
+    const { scene: world } = S;
+    const R = 0.15, mm = R / DIAL.R;                 // ring radius, and metres per SVG px
+    const rad = (d: number) => (d * Math.PI) / 180;
+    const on = (deg: number, r: number, z = 0): V3 => [r * Math.cos(rad(deg)), r * Math.sin(rad(deg)), z];
+    const box = (x: number, y: number, z: number, m: ReturnType<typeof mat>) => new Mesh(new BoxGeometry(x, y, z), m);
+
+    // The scale on the table: a thin half ring, a tick every 15 degrees,
+    // longer and darker every 45.
+    const arc = new Mesh(new RingGeometry(R - 0.0008, R + 0.0008, 96, 1, 0, Math.PI), mat('ink', { tint: 0.84 }));
+    arc.position.z = 0.0003;
+    world.add(arc);
+    const tickLong = mat('ink', { tint: 0.5 }), tickShort = mat('ink', { tint: 0.72 });
+    for (let a = 0; a <= 180; a += 15) {
+      const major = a % 45 === 0, len = (major ? 11 : 6) * mm;
+      const t = box(len, 0.0016, 0.0008, major ? tickLong : tickShort);
+      t.position.set(...on(a, R - len / 2, 0.0004));
+      t.rotation.z = rad(a);
+      world.add(t);
+    }
+
+    // The servo: a dark case with mounting ears, output shaft toward the
+    // front, so the body runs back toward the viewer as on the real tracker.
+    const caseMat = mat('ink', { tint: 0.14 });
+    const body = box(0.022, 0.042, 0.028, caseMat);
+    body.position.set(0, -0.01, 0.014);
+    const ears = box(0.022, 0.056, 0.0025, caseMat);
+    ears.position.set(0, -0.01, 0.021);
+    const boss = disc(0.0065, 0.004, mat('ink', { tint: 0.28 }), 32);
+    boss.position.z = 0.03;
+    world.add(body, ears, boss);
+
+    // The part that turns, modelled at a heading of 90 (needle along +y):
+    // the horn, the array bar across it with a mic near each end, and the
+    // heading needle.
+    const arm = new Group();
+    const horn = disc(0.0105, 0.003, mat('slate', { tint: 0.55 }), 40);
+    horn.position.z = 0.0335;
+    const bevel = 0.0012, bw = 88 * mm / 2 - bevel, bh = 18 * mm / 2 - bevel, rr = 5 * mm - bevel;
+    const outline = new Shape();
+    outline.moveTo(-bw + rr, -bh);
+    outline.lineTo(bw - rr, -bh); outline.quadraticCurveTo(bw, -bh, bw, -bh + rr);
+    outline.lineTo(bw, bh - rr); outline.quadraticCurveTo(bw, bh, bw - rr, bh);
+    outline.lineTo(-bw + rr, bh); outline.quadraticCurveTo(-bw, bh, -bw, bh - rr);
+    outline.lineTo(-bw, -bh + rr); outline.quadraticCurveTo(-bw, -bh, -bw + rr, -bh);
+    const barH = 0.005, barZ = 0.0362, top = barZ + barH + bevel;
+    const bar = new Mesh(new ExtrudeGeometry(outline, {
+      depth: barH, bevelEnabled: true, bevelThickness: bevel, bevelSize: bevel, bevelSegments: 2, curveSegments: 6,
+    }), mat('teal', { tint: 0.55 }));
+    bar.position.z = barZ;
+    const mics = [-1, 1].map((s) => {
+      const m = disc(0.0045, 0.003, mat('slate'), 32);
+      m.position.set(s * 33 * mm, 0, top + 0.0015);
+      return m;
+    });
+    const screw = disc(0.0028, 0.002, mat('ink'), 24);
+    screw.position.z = top + 0.001;
+    const needle = rod([0, 0.008, barZ + barH / 2], [0, R - 10 * mm, barZ + barH / 2], 0.0017, mat('teal'));
+    arm.add(horn, bar, ...mics, screw, needle);
+    world.add(arm);
+
+    // The speaker at SOURCE, out past the scale and facing the array: a small
+    // bookshelf monitor. Rounded ochre cabinet; on the baffle a woofer (rubber
+    // surround, cone, dust cap), a dome tweeter above it and a bass port
+    // below. Local +x points away from the array, so the baffle faces -x.
+    const RS = 0.19;
+    const CW = 0.03, CH = 0.05, CD = 0.026, cb = 0.002;   // cabinet width, height, depth, edge bevel
+    const spk = new Group(), SK = 1.25;              // drawn a touch larger than life so the drivers read
+    spk.position.set(...on(SOURCE, RS));
+    spk.rotation.z = rad(SOURCE);
+    spk.scale.setScalar(SK);
+    const rr2 = 0.003, profile = new Shape();       // the cabinet's front outline, x across, y up
+    profile.moveTo(-CW / 2 + rr2, cb);
+    profile.lineTo(CW / 2 - rr2, cb); profile.quadraticCurveTo(CW / 2, cb, CW / 2, cb + rr2);
+    profile.lineTo(CW / 2, CH - cb - rr2); profile.quadraticCurveTo(CW / 2, CH - cb, CW / 2 - rr2, CH - cb);
+    profile.lineTo(-CW / 2 + rr2, CH - cb); profile.quadraticCurveTo(-CW / 2, CH - cb, -CW / 2, CH - cb - rr2);
+    profile.lineTo(-CW / 2, cb + rr2); profile.quadraticCurveTo(-CW / 2, cb, -CW / 2 + rr2, cb);
+    const cabGeo = new ExtrudeGeometry(profile, {
+      depth: CD, bevelEnabled: true, bevelThickness: cb, bevelSize: cb * 0.9, bevelSegments: 3, curveSegments: 8,
+    });
+    cabGeo.rotateX(Math.PI / 2);                     // outline up onto z, extrusion onto -y
+    cabGeo.rotateZ(Math.PI / 2);                     // width onto y, extrusion onto +x: the front is x = 0
+    spk.add(new Mesh(cabGeo, mat('ochre', { tint: 0.12 })));
+    const front = -cb - 0.0002;                      // just proud of the bevelled baffle
+
+    // A driver is a lathe: a profile of (radius, height out of the baffle)
+    // spun around its axis, then turned so the axis points at the array.
+    const lathe = (pts: [number, number][], m: ReturnType<typeof mat>) => {
+      const g = new LatheGeometry(pts.map(([r, h]) => new Vector2(r, h)), 48);
+      g.rotateZ(Math.PI / 2);                        // lathe axis +y onto -x
+      return new Mesh(g, m);
+    };
+    const rubber = mat('ink', { tint: 0.3 }), paper = mat('ink', { tint: 0.12 }), trim = mat('ochre', { tint: 0.45 });
+    // lathe faces wind whichever way the profile runs, so draw both sides
+    for (const m of [rubber, paper, trim]) m.side = DoubleSide;
+    const woofer = new Group(), wz = 0.019, Rw = 0.0105;
+    woofer.add(
+      lathe([[Rw + 0.0016, 0], [Rw + 0.0016, 0.0008], [Rw, 0.0009], [Rw, 0]], trim),          // trim ring
+      lathe([[Rw, 0.0002], [Rw - 0.0007, 0.0013], [Rw - 0.0019, 0.0016], [Rw - 0.003, 0.0008]], rubber),
+      lathe([[Rw - 0.003, 0.0008], [0.0042, -0.0032], [0.0038, -0.0034]], paper),               // cone
+      lathe([[0.0038, -0.0034], [0.0032, -0.0024], [0.002, -0.0017], [0.0001, -0.0014]], rubber), // dust cap
+    );
+    woofer.position.set(front, 0, wz);
+    const tweeter = new Group(), tz = 0.039;
+    tweeter.add(
+      lathe([[0.0062, 0], [0.0062, 0.0007], [0.0042, 0.0009], [0.0042, 0]], trim),
+      lathe([[0.0042, 0.0003], [0.0036, 0.0016], [0.0022, 0.0026], [0.0001, 0.003]], rubber),
+    );
+    tweeter.position.set(front, 0, tz);
+    const port = lathe([[0.003, 0.0004], [0.0024, 0.0004], [0.0024, -0.004], [0.0001, -0.004]], paper);
+    port.position.set(front, 0, 0.0058);
+    spk.add(woofer, tweeter, port);
+
+    // Sound as flat ripples on the table, spreading from the baffle toward
+    // the array, fading as they go.
+    const span = rad(64);
+    [0.016, 0.026, 0.036].forEach((r, i) => {
+      const ripple = new Mesh(new RingGeometry(r - 0.0009, r + 0.0009, 40, 1, Math.PI - span / 2, span),
+        mat('ochre', { opacity: 0.7 - i * 0.2 }));
+      ripple.position.set(front, 0, 0.0005);
+      spk.add(ripple);
+    });
+    world.add(spk);
+    // Line of sight, on the table, from the centre to the speaker.
+    world.add(polyline([on(SOURCE, 0, 0.0006), on(SOURCE, RS - 0.045, 0.0006)], 'ochre', { dashed: true }));
+
+    // Text stays HTML, pinned to points in the scene each frame.
+    const anchors: Record<string, V3> = {
+      '90': [0, R + 0.014, 0], '180': [-R - 0.018, 0, 0], '0': [R + 0.016, 0, 0],
+      src: on(SOURCE, RS + (CD / 2) * SK, CH * SK + 0.012),
+    };
+    const labels = [...host.querySelectorAll<HTMLElement>('.pd-l3')];
+    S.beforeRender(() => labels.forEach((l) => {
+      const p = S.toScreen(anchors[l.dataset.a!]);
+      l.style.left = `${p.x}%`; l.style.top = `${p.y}%`;
+    }));
+    S.show();
+
+    return {
+      heading(a: number) {
+        arm.rotation.z = rad(a - 90);
+        S.invalidate();
+      },
+    };
+  }
+
+  const io = new IntersectionObserver((entries) => {
+    for (const e of entries) if (e.isIntersecting) { init(e.target as HTMLElement); io.unobserve(e.target); }
+  });
+  document.querySelectorAll<HTMLElement>('[data-fig="pd"]').forEach((el) => io.observe(el));
+</script>

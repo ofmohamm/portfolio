@@ -1,0 +1,323 @@
+---
+import './figure.css';
+import PlayButton from './PlayButton.astro';
+import { scene, VIEW, MAX_US } from './lib/array';
+const D0 = { yaw: -28, pitch: 22, az: 35, el: 30, raised: true };
+const s = scene(D0);
+const f = (n: number) => n.toFixed(1);
+---
+
+<figure class="fig fig-array" data-fig="array" aria-label="Five microphones on a ring plus one raised on a post, with a drone you can move">
+  <div class="fig-stage">
+    <div class="fig-array-view">
+      <div class="fig-3d ar-3d">
+        <span class="fig-label warn ar-ghost3" hidden>indistinguishable</span>
+      </div>
+      <svg class="fig-svg fig-array-svg fig-flat" viewBox={`${VIEW.X0} 0 ${VIEW.VW} ${VIEW.H}`} preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+        <polyline class="ar-orbit" points={s.orbit} fill="none" stroke="var(--figure-grid)" stroke-dasharray="3 5" />
+        <polygon class="ar-ring" points={s.ring} fill="var(--c-slate)" fill-opacity="0.08" stroke="var(--c-slate)" stroke-opacity="0.7" stroke-width="1.4" />
+        <g class="ar-spokes">
+          {s.mics.slice(0, 5).map((m) => (
+            <line x1={f(s.center.x)} y1={f(s.center.y)} x2={f(m.x)} y2={f(m.y)} stroke="var(--figure-grid)" />
+          ))}
+        </g>
+        <!-- vertical guides: drone and ghost share one foot point on the ground -->
+        <line class="ar-drop" x1={f(s.drone.x)} y1={f(s.drone.y)} x2={f(s.foot.x)} y2={f(s.foot.y)} stroke="var(--figure-muted)" stroke-dasharray="3 3" />
+        <line class="ar-gdrop" x1={f(s.ghost.x)} y1={f(s.ghost.y)} x2={f(s.foot.x)} y2={f(s.foot.y)} stroke="var(--figure-warn)" stroke-opacity="0" stroke-dasharray="3 3" />
+        <circle class="ar-foot" cx={f(s.foot.x)} cy={f(s.foot.y)} r="2.5" fill="var(--figure-muted)" />
+        <line class="ar-est0" x1={f(s.center.x)} y1={f(s.center.y)} x2={f(s.ests[0].x)} y2={f(s.ests[0].y)} stroke="var(--c-teal)" stroke-width="2" />
+        <line class="ar-est1" x1={f(s.center.x)} y1={f(s.center.y)} x2={f(s.center.x)} y2={f(s.center.y)} stroke="var(--c-clay)" stroke-width="2" stroke-dasharray="5 4" stroke-opacity="0" />
+        <line class="ar-post" x1={f(s.center.x)} y1={f(s.center.y)} x2={f(s.postTop.x)} y2={f(s.postTop.y)} stroke="var(--c-ochre)" stroke-width="2.5" />
+        <g class="ar-mics">
+          {s.mics.map((m) => (
+            <circle class="ar-mic" data-i={m.i} cx={f(m.x)} cy={f(m.y)} r={m.i === 5 ? 7.5 : 6.5}
+              fill={m.i === 5 ? 'var(--c-ochre)' : 'var(--c-slate)'} stroke="var(--figure-panel)" stroke-width="1.5" />
+          ))}
+        </g>
+        <g class="ar-ghost" transform={`translate(${f(s.ghost.x)},${f(s.ghost.y)})`} opacity="0">
+          <path d="M-11,-11L11,11M-11,11L11,-11" stroke="var(--c-clay)" stroke-width="2.5" />
+          {[[-11,-11],[11,11],[-11,11],[11,-11]].map(([x,y]) => <circle cx={x} cy={y} r="5.5" fill="var(--figure-panel)" stroke="var(--c-clay)" stroke-width="1.8" />)}
+        </g>
+        <g class="ar-drone" transform={`translate(${f(s.drone.x)},${f(s.drone.y)})`}>
+          <path d="M-11,-11L11,11M-11,11L11,-11" stroke="var(--c-teal)" stroke-width="2.5" />
+          {[[-11,-11],[11,11],[-11,11],[11,-11]].map(([x,y]) => <circle cx={x} cy={y} r="5.5" fill="color-mix(in srgb, var(--c-teal) 22%, var(--figure-panel))" stroke="var(--c-teal)" stroke-width="1.8" />)}
+          <rect x="-4.5" y="-4.5" width="9" height="9" rx="1.5" fill="var(--c-teal)" />
+        </g>
+      </svg>
+      <span class="fig-label warn ar-ghost-label fig-flat" style={`left:${((s.ghost.x - VIEW.X0) / VIEW.VW) * 100}%;top:${((s.ghost.y + 24) / VIEW.H) * 100}%`} hidden>indistinguishable</span>
+      <span class="fig-hint ar-hint">drag to rotate</span>
+    </div>
+
+    <div class="fig-array-controls">
+      <div class="fig-slider" style={`--p:${D0.az / 359}`}>
+        <label for="ar-az">azimuth</label>
+        <input id="ar-az" type="range" min="0" max="359" step="1" value={D0.az} />
+        <output for="ar-az" class="ar-az-out">{D0.az}°</output>
+      </div>
+      <div class="fig-slider" style={`--p:${(D0.el - 5) / 65}`}>
+        <label for="ar-el">elevation</label>
+        <input id="ar-el" type="range" min="5" max="70" step="1" value={D0.el} />
+        <output for="ar-el" class="ar-el-out">{D0.el}°</output>
+      </div>
+    </div>
+
+    <div class="ar-bars" aria-label="Arrival delay at each microphone">
+      {s.bars.map((v, i) => (
+        <div class="ar-bar-row" data-i={i}>
+          <span class="ar-bar-name">{i === 5 ? 'mic 6, raised' : `mic ${i + 1}`}</span>
+          <span class="ar-bar-track"><span class="ar-bar-fill" style={`width:${((v ?? 0) / MAX_US) * 100}%`}></span></span>
+          <span class="ar-bar-val">{v === null ? 'off' : `${Math.round(v)} µs`}</span>
+        </div>
+      ))}
+    </div>
+
+    <div class="fig-row">
+      <PlayButton />
+      <div class="fig-group">
+        <span class="fig-seg-label">raised mic</span>
+        <div class="fig-seg" role="group" aria-label="Raised microphone">
+          <button type="button" data-raised="on" aria-pressed="true">on</button>
+          <button type="button" data-raised="off" aria-pressed="false">off</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <figcaption class="fig-caption">
+    Ring radius 15 cm, post 15 cm. Widest baseline 28.5 cm, so the longest delay is 832 µs. At 48 kHz one sample is 20.8 µs, about 40 samples across the whole range. The solid line is the direction the array solves for.
+  </figcaption>
+</figure>
+
+<style>
+  .fig-array-view { position: relative; }
+  .fig-array-svg { touch-action: pan-y; cursor: grab; user-select: none; -webkit-user-select: none; }
+  .fig-array-svg:active { cursor: grabbing; }
+  .ar-hint { position: absolute; right: 0.2rem; top: 0.1rem; z-index: 1; pointer-events: none; }
+  .fig-array-controls { display: grid; grid-template-columns: 1fr 1fr; gap: 0 1.5rem; margin-top: 0.2rem; }
+  @media (max-width: 520px) { .fig-array-controls { grid-template-columns: 1fr; } }
+  .ar-bars { display: grid; gap: 0.3rem; margin-top: 0.75rem; }
+  .ar-bar-row { display: grid; grid-template-columns: 6.6rem 1fr 3.6rem; align-items: center; gap: 0.6rem; font-size: 0.72rem; }
+  .ar-bar-name { color: var(--c-slate); white-space: nowrap; }
+  .ar-bar-track { height: 8px; background: color-mix(in srgb, var(--c-slate) 14%, transparent); border-radius: 4px; overflow: hidden; }
+  .ar-bar-fill { display: block; height: 100%; background: var(--c-slate); border-radius: 4px; }
+  .ar-bar-row[data-i='5'] .ar-bar-fill { background: var(--c-ochre); }
+  .ar-bar-row[data-i='5'] .ar-bar-name { color: var(--c-ochre); }
+  .ar-bar-row.off .ar-bar-name, .ar-bar-row.off .ar-bar-val { opacity: 0.5; }
+  .ar-bar-val { font-family: var(--font-mono); text-align: right; font-variant-numeric: tabular-nums; }
+</style>
+
+<script>
+  import { scene, unit, VIEW, MAX_US, MICS, R_RING, POST, DIST } from './lib/array';
+  import { player, fillSlider } from './lib/ui';
+
+  function init(root: HTMLElement) {
+    if (root.dataset.ready) return;
+    root.dataset.ready = '1';
+    const q = <T extends Element>(s: string) => root.querySelector<T>(s)!;
+    const svg = q<SVGSVGElement>('.fig-array-svg');
+    const el = {
+      orbit: q<SVGPolylineElement>('.ar-orbit'), ring: q<SVGPolygonElement>('.ar-ring'),
+      spokes: [...root.querySelectorAll<SVGLineElement>('.ar-spokes line')],
+      drop: q<SVGLineElement>('.ar-drop'), gdrop: q<SVGLineElement>('.ar-gdrop'),
+      foot: q<SVGCircleElement>('.ar-foot'), post: q<SVGLineElement>('.ar-post'),
+      est0: q<SVGLineElement>('.ar-est0'), est1: q<SVGLineElement>('.ar-est1'),
+      mics: [...root.querySelectorAll<SVGCircleElement>('.ar-mic')],
+      micsG: q<SVGGElement>('.ar-mics'),
+      drone: q<SVGGElement>('.ar-drone'), ghost: q<SVGGElement>('.ar-ghost'),
+      ghostLabel: q<HTMLElement>('.ar-ghost-label'),
+      az: q<HTMLInputElement>('#ar-az'), elv: q<HTMLInputElement>('#ar-el'),
+      azOut: q<HTMLOutputElement>('.ar-az-out'), elOut: q<HTMLOutputElement>('.ar-el-out'),
+      rows: [...root.querySelectorAll<HTMLElement>('.ar-bar-row')],
+    };
+    const st = { yaw: -28, pitch: 22, az: +el.az.value, el: +el.elv.value, raised: true };
+    let raf = 0;
+
+    const setLine = (l: SVGLineElement, a: { x: number; y: number }, b: { x: number; y: number }) => {
+      l.setAttribute('x1', a.x.toFixed(1)); l.setAttribute('y1', a.y.toFixed(1));
+      l.setAttribute('x2', b.x.toFixed(1)); l.setAttribute('y2', b.y.toFixed(1));
+    };
+    // Once WebGL is up the model is drawn in 3D; until then, and wherever it
+    // can't run, the SVG below keeps working exactly as before.
+    let three: Awaited<ReturnType<typeof build3d>> = null;
+
+    const render = () => {
+      raf = 0;
+      const s = scene(st);
+      // data-3d is dropped if the WebGL context is lost; fall back to the SVG then
+      if (three && root.hasAttribute('data-3d')) three.update(s, st);
+      else renderSvg(s);
+      s.bars.forEach((v, i) => {
+        const row = el.rows[i];
+        row.classList.toggle('off', v === null);
+        (row.querySelector('.ar-bar-fill') as HTMLElement).style.width = `${(Math.max(0, v ?? 0) / MAX_US) * 100}%`;
+        (row.querySelector('.ar-bar-val') as HTMLElement).textContent = v === null ? 'off' : `${Math.round(v)} µs`;
+      });
+      el.azOut.textContent = `${Math.round(st.az)}°`; el.elOut.textContent = `${st.el}°`;
+    };
+    const renderSvg = (s: ReturnType<typeof scene>) => {
+      el.orbit.setAttribute('points', s.orbit);
+      el.ring.setAttribute('points', s.ring);
+      el.spokes.forEach((l, i) => setLine(l, s.center, s.mics[i]));
+      setLine(el.post, s.center, s.postTop);
+      setLine(el.drop, s.drone, s.foot);
+      setLine(el.gdrop, s.ghost, s.foot);
+      el.foot.setAttribute('cx', s.foot.x.toFixed(1)); el.foot.setAttribute('cy', s.foot.y.toFixed(1));
+      setLine(el.est0, s.center, s.ests[0]);
+      if (s.ests[1]) setLine(el.est1, s.center, s.ests[1]);
+      el.est1.setAttribute('stroke-opacity', st.raised ? '0' : '1');
+      // Draw nearer mics last so the ring reads correctly as it rotates.
+      s.mics.slice().sort((a, b) => b.depth - a.depth).forEach((m) => {
+        const c = el.mics[m.i];
+        c.setAttribute('cx', m.x.toFixed(1)); c.setAttribute('cy', m.y.toFixed(1));
+        el.micsG.appendChild(c);
+      });
+      el.mics[5].setAttribute('opacity', st.raised ? '1' : '0.25');
+      el.post.setAttribute('stroke-opacity', st.raised ? '1' : '0.25');
+      el.drone.setAttribute('transform', `translate(${s.drone.x.toFixed(1)},${s.drone.y.toFixed(1)})`);
+      el.ghost.setAttribute('transform', `translate(${s.ghost.x.toFixed(1)},${s.ghost.y.toFixed(1)})`);
+      el.ghost.setAttribute('opacity', st.raised ? '0' : '1');
+      el.gdrop.setAttribute('stroke-opacity', st.raised ? '0' : '0.8');
+      el.ghostLabel.hidden = st.raised;
+      el.ghostLabel.style.left = `${((s.ghost.x - VIEW.X0) / VIEW.VW) * 100}%`;
+      el.ghostLabel.style.top = `${((s.ghost.y + 26) / VIEW.H) * 100}%`;
+    };
+    const schedule = () => { if (!raf) raf = requestAnimationFrame(render); };
+
+    // Left alone, the drone circles the array, so the delays keep moving.
+    const auto = player(root, (dt) => {
+      st.az = (st.az + dt * 16) % 360;
+      three?.spin(dt);
+      el.az.value = String(Math.round(st.az) % 360); fillSlider(el.az);
+      schedule();
+    });
+    el.az.addEventListener('input', () => { auto.interrupt(); st.az = +el.az.value; fillSlider(el.az); schedule(); });
+    el.elv.addEventListener('input', () => { auto.interrupt(); st.el = +el.elv.value; fillSlider(el.elv); schedule(); });
+    root.querySelectorAll<HTMLButtonElement>('[data-raised]').forEach((b, _, all) => b.addEventListener('click', () => {
+      st.raised = b.dataset.raised === 'on';
+      all.forEach((x) => x.setAttribute('aria-pressed', String(x === b))); schedule();
+    }));
+
+    // Orbit: horizontal drag spins the view. Vertical drag tilts it with a
+    // mouse; on touch the vertical axis is left to the page so it still scrolls.
+    let drag: { x: number; y: number; yaw: number; pitch: number; type: string } | null = null;
+    svg.addEventListener('pointerdown', (e) => {
+      drag = { x: e.clientX, y: e.clientY, yaw: st.yaw, pitch: st.pitch, type: e.pointerType };
+      svg.setPointerCapture(e.pointerId);
+    });
+    svg.addEventListener('pointermove', (e) => {
+      if (!drag) return;
+      const k = 300 / svg.getBoundingClientRect().width;
+      st.yaw = drag.yaw - (e.clientX - drag.x) * 0.6 * k;
+      if (drag.type === 'mouse') st.pitch = Math.max(4, Math.min(80, drag.pitch + (e.clientY - drag.y) * 0.4 * k));
+      schedule();
+    });
+    const end = () => { drag = null; };
+    svg.addEventListener('pointerup', end);
+    svg.addEventListener('pointercancel', end);
+    render();
+    build3d(root, st).then((t) => { if (t) { three = t; render(); } });
+  }
+
+  // The model: the ring board with five mics, the raised mic on its post, the
+  // drone, its mirror image under the ground, and the direction the array solves.
+  async function build3d(root: HTMLElement, st: { yaw: number; pitch: number; az: number; el: number; raised: boolean }) {
+    const { stage, mat, rod, placeRod, disc, polyline, setPolyline, Group } = await import('./lib/stage3d');
+    type V3 = [number, number, number];
+    const host = root.querySelector<HTMLElement>('.ar-3d')!;
+    const label = root.querySelector<HTMLElement>('.ar-ghost3')!;
+    const S = stage(host, {
+      aspect: VIEW.VW / VIEW.H, yaw: st.yaw, pitch: st.pitch, distance: 1.6, target: [0, 0, 0.03],
+      onOrbit: (yaw, pitch) => { st.yaw = yaw; st.pitch = pitch; },
+    });
+    if (!S) return null;
+    const { scene: world } = S;
+
+    const board = disc(R_RING + 0.022, 0.01, mat('slate', { tint: 0.7 }), 64);
+    board.position.z = -0.005;
+    world.add(board);
+    MICS.slice(0, 5).forEach((m) => {
+      world.add(polyline([[0, 0, 0.0005], [m[0], m[1], 0.0005]], 'ink', { opacity: 0.2 }));
+      const mic = disc(0.016, 0.018, mat('slate'));
+      mic.position.set(m[0], m[1], 0.009);
+      world.add(mic);
+    });
+    // Ground orbit the drone circles, a dashed ring on the floor.
+    world.add(polyline(Array.from({ length: 97 }, (_, i): V3 => {
+      const a = (i / 96) * 2 * Math.PI; return [DIST * Math.cos(a), DIST * Math.sin(a), 0];
+    }), 'ink', { dashed: true, opacity: 0.3 }));
+
+    // The raised mic fades back when it's switched off, rather than vanishing.
+    const postMat = mat('ochre'), micMat = mat('ochre');
+    postMat.transparent = micMat.transparent = true;
+    world.add(rod([0, 0, 0], [0, 0, POST], 0.0045, postMat));
+    const mic6 = disc(0.017, 0.018, micMat);
+    mic6.position.z = POST;
+    world.add(mic6);
+
+    // A small quadcopter: body, four arms, four rotor discs, spinning props.
+    const quad = (part: 'teal' | 'clay', opacity = 1) => {
+      const g = new Group(), props: InstanceType<typeof Group>[] = [];
+      const m = mat(part, { opacity }), pale = mat(part, { opacity: opacity * 0.55, tint: 0.5 });
+      g.add(disc(0.016, 0.012, m));
+      for (const [x, y] of [[1, 1], [-1, 1], [-1, -1], [1, -1]]) {
+        const tip: V3 = [x * 0.03, y * 0.03, 0];
+        g.add(rod([0, 0, 0], tip, 0.0028, m));
+        const hub = disc(0.004, 0.014, m);
+        hub.position.set(tip[0], tip[1], 0.004);
+        const rotor = disc(0.018, 0.0012, pale);
+        rotor.position.set(tip[0], tip[1], 0.011);
+        const prop = new Group();
+        prop.position.set(tip[0], tip[1], 0.012);
+        prop.rotation.z = (x * y * Math.PI) / 4;
+        prop.add(rod([-0.016, 0, 0], [0.016, 0, 0], 0.0016, m));
+        g.add(hub, rotor, prop);
+        props.push(prop);
+      }
+      world.add(g);
+      return { g, props };
+    };
+    const drone = quad('teal'), ghost = quad('clay', 0.55);
+
+    const drop = polyline([[0, 0, 0], [0, 0, 0]], 'ink', { dashed: true, opacity: 0.4 });
+    const gdrop = polyline([[0, 0, 0], [0, 0, 0]], 'clay', { dashed: true, opacity: 0.8 });
+    const foot = disc(0.005, 0.001, mat('ink', { opacity: 0.4 }));
+    const ray0 = rod([0, 0, 0], [0, 0, 1], 0.0035, mat('teal'));
+    const ray1 = rod([0, 0, 0], [0, 0, 1], 0.0035, mat('clay', { opacity: 0.8 }));
+    world.add(drop, gdrop, foot, ray0, ray1);
+
+    let ghostAt: V3 = [0, 0, 0];
+    S.beforeRender(() => {
+      if (label.hidden) return;
+      const p = S.toScreen([ghostAt[0], ghostAt[1], ghostAt[2] - 0.045]);
+      label.style.left = `${p.x}%`; label.style.top = `${p.y}%`;
+    });
+    S.show();
+
+    return {
+      update(s: ReturnType<typeof scene>, o: typeof st) {
+        const u = unit(o.az, o.el);
+        const at: V3 = [u[0] * DIST, u[1] * DIST, u[2] * DIST];
+        ghostAt = [at[0], at[1], -at[2]];
+        drone.g.position.set(...at);
+        ghost.g.position.set(...ghostAt);
+        ghost.g.visible = gdrop.visible = ray1.visible = !o.raised;
+        foot.position.set(at[0], at[1], 0);
+        setPolyline(drop, [at, [at[0], at[1], 0]]);
+        setPolyline(gdrop, [ghostAt, [at[0], at[1], 0]]);
+        const tip = (d: number[]): V3 => [d[0] * DIST, d[1] * DIST, d[2] * DIST];
+        placeRod(ray0, [0, 0, 0], tip(s.dirs[0]));
+        if (s.dirs[1]) placeRod(ray1, [0, 0, 0], tip(s.dirs[1]));
+        postMat.opacity = micMat.opacity = o.raised ? 1 : 0.25;
+        label.hidden = o.raised;
+        S.invalidate();
+      },
+      spin(dt: number) {
+        for (const p of [...drone.props, ...ghost.props]) p.rotation.z += dt * 38;
+      },
+    };
+  }
+
+  const io = new IntersectionObserver((entries) => {
+    for (const e of entries) if (e.isIntersecting) { init(e.target as HTMLElement); io.unobserve(e.target); }
+  });
+  document.querySelectorAll<HTMLElement>('[data-fig="array"]').forEach((el) => io.observe(el));
+</script>

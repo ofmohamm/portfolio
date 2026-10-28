@@ -1,0 +1,385 @@
+---
+import './figure.css';
+import PlayButton from './PlayButton.astro';
+import { W, H, FRAME, COLS, ROWS, TILE_W, TILE_H, SENSORS, evaluate, FOX, wander, WANDER0 } from './lib/pir';
+const start = wander(WANDER0);
+const s0 = evaluate(start.x, start.y, true);
+const tiles = [];
+for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) tiles.push({ r, c });
+const coneR = Math.hypot(FRAME.w, FRAME.h) * 0.42;
+const cone = (s: (typeof SENSORS)[number]) => {
+  const dx = s.qx === 0 ? 1 : -1, dy = s.qy === 0 ? 1 : -1;
+  const a0 = Math.atan2(0, dx), a1 = Math.atan2(dy, 0);
+  const p0 = [s.cx + coneR * Math.cos(a0), s.cy + coneR * Math.sin(a0)];
+  const p1 = [s.cx + coneR * Math.cos(a1), s.cy + coneR * Math.sin(a1)];
+  const sweep = dx * dy > 0 ? 1 : 0;
+  return `M${s.cx},${s.cy}L${p0[0].toFixed(1)},${p0[1].toFixed(1)}A${coneR.toFixed(1)},${coneR.toFixed(1)} 0 0 ${sweep} ${p1[0].toFixed(1)},${p1[1].toFixed(1)}Z`;
+};
+---
+
+<figure class="fig fig-pir" data-fig="pir" aria-label="Camera frame split into 24 tiles, with four PIR sensors deciding which tiles the CNN evaluates">
+  <div class="fig-stage">
+    <div class="fig-3d pir-3d">
+      <div class="pir-handle fig-drag" tabindex="0" role="slider" aria-label="Animal position. Drag, or use the arrow keys."
+           aria-valuetext={`tiles evaluated ${s0.count} of 24`}></div>
+    </div>
+    <svg class="fig-svg fig-flat" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMid meet">
+      <defs>
+        <clipPath id="pir-frame-clip"><rect x={FRAME.x} y={FRAME.y} width={FRAME.w} height={FRAME.h} rx="6" /></clipPath>
+      </defs>
+      <g clip-path="url(#pir-frame-clip)">
+        <rect x={FRAME.x} y={FRAME.y} width={FRAME.w} height={FRAME.h} fill="var(--figure-paper)" />
+        {SENSORS.map((s, i) => (
+          <path class="pir-cone" data-i={i} d={cone(s)} fill="var(--c-ochre)" fill-opacity={s0.lit[i] ? 0.13 : 0} />
+        ))}
+        {tiles.map(({ r, c }, i) => (
+          <rect class="pir-tile" data-i={i}
+            x={FRAME.x + c * TILE_W + 2} y={FRAME.y + r * TILE_H + 2}
+            width={TILE_W - 4} height={TILE_H - 4} rx="3"
+            fill="var(--c-teal)" fill-opacity={s0.tiles[i] ? 0.3 : 0.1}
+            stroke="var(--c-teal)" stroke-width="1.5" stroke-opacity={s0.tiles[i] ? 0.9 : 0.1} />
+        ))}
+      </g>
+      <rect x={FRAME.x} y={FRAME.y} width={FRAME.w} height={FRAME.h} rx="6" fill="none" stroke="var(--figure-ink)" stroke-opacity="0.55" stroke-width="1.5" />
+      {SENSORS.map((s, i) => (
+        <g class="pir-sensor" data-i={i} transform={`translate(${s.cx},${s.cy})`}>
+          <circle r="12" fill="var(--figure-panel)" stroke="var(--c-ochre)" stroke-width="2" />
+          <circle class="pir-led" r="6.5" fill={s0.lit[i] ? 'var(--c-ochre)' : 'var(--figure-grid)'} />
+        </g>
+      ))}
+      <g class="pir-fox fig-drag" transform={`translate(${start.x},${start.y})`}
+         tabindex="0" role="slider" aria-label="Animal position. Drag, or use the arrow keys."
+         aria-valuetext={`tiles evaluated ${s0.count} of 24`}>
+        <circle r="46" fill="transparent" />
+        <circle class="fig-focus-ring" r="40" fill="none" />
+        <path class="pir-fox-body" d={FOX} fill="var(--figure-ink)" />
+      </g>
+    </svg>
+    <div class="fig-row">
+      <span class="pir-left"><PlayButton /><span class="fig-readout pir-readout" aria-live="polite">tiles evaluated: {s0.count} of 24</span></span>
+      <div class="fig-group">
+        <span class="fig-seg-label">gating</span>
+        <div class="fig-seg" role="group" aria-label="PIR gating">
+          <button type="button" data-gate="off" aria-pressed="false">off</button>
+          <button type="button" data-gate="on" aria-pressed="true">on</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <figcaption class="fig-caption">
+    Drag the animal around the frame. Illustrative four-sensor layout, not the device's actual PIR arrangement.
+  </figcaption>
+</figure>
+
+<style>
+  .pir-left { display: inline-flex; align-items: center; gap: 0.3rem; }
+  /* In 3D the drag target is an HTML disc kept over the fox each frame. */
+  .pir-handle {
+    position: absolute; left: 50%; top: 50%; z-index: 1; width: 70px; height: 70px;
+    transform: translate(-50%, -50%); border-radius: 50%;
+    user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent;
+  }
+  .pir-handle:focus-visible::after {
+    content: ''; position: absolute; inset: 6px; border-radius: 50%;
+    border: 2px dashed var(--figure-accent);
+  }
+</style>
+
+<script>
+  import { evaluate, clampPos, wander, WANDER0, W, H, FRAME, COLS, ROWS, TILE_W, TILE_H, SENSORS, FOX } from './lib/pir';
+  import { player } from './lib/ui';
+
+  function init(root: HTMLElement) {
+    if (root.dataset.ready) return;
+    root.dataset.ready = '1';
+    const svg = root.querySelector<SVGSVGElement>('svg')!;
+    const fox = root.querySelector<SVGGElement>('.pir-fox')!;
+    const handle = root.querySelector<HTMLElement>('.pir-handle')!;
+    const tiles = [...root.querySelectorAll<SVGRectElement>('.pir-tile')];
+    const cones = [...root.querySelectorAll<SVGPathElement>('.pir-cone')];
+    const leds = [...root.querySelectorAll<SVGCircleElement>('.pir-led')];
+    const readout = root.querySelector<HTMLElement>('.pir-readout')!;
+    const gateBtns = [...root.querySelectorAll<HTMLButtonElement>('[data-gate]')];
+    let pos = wander(WANDER0);
+    const body = root.querySelector<SVGPathElement>('.pir-fox-body')!;
+    let gating = true, raf = 0, last = '', facing = 1;
+    // Once WebGL is up the scene is drawn in 3D; until then, and wherever it
+    // can't run (or the context is lost), the SVG keeps working as before.
+    let three: Awaited<ReturnType<typeof build3d>> = null;
+
+    // Left alone, the animal wanders and turns to face the way it walks.
+    // Once the reader grabs it, it stays where they put it.
+    let phase = WANDER0;
+    const auto = player(root, (dt) => {
+      phase += dt * 0.32;
+      const n = wander(phase);
+      if (Math.abs(n.x - pos.x) > 0.05) facing = n.x > pos.x ? 1 : -1;
+      pos = clampPos(n.x, n.y);
+      render();
+    });
+
+    const render = () => {
+      raf = 0;
+      const in3d = !!three && root.hasAttribute('data-3d');
+      if (in3d) three!.place(pos.x, pos.y, facing);
+      else {
+        fox.setAttribute('transform', `translate(${pos.x.toFixed(1)},${pos.y.toFixed(1)})`);
+        body.setAttribute('transform', facing < 0 ? 'scale(-1,1)' : '');
+      }
+      const s = evaluate(pos.x, pos.y, gating);
+      const key = s.lit.join() + s.tiles.join() + gating + in3d;
+      if (key === last) return;           // nothing changed, skip the DOM writes
+      last = key;
+      if (in3d) three!.update(s, gating);
+      else {
+        s.tiles.forEach((on, i) => {
+          tiles[i].setAttribute('fill-opacity', on ? '0.3' : '0.1');
+          tiles[i].setAttribute('stroke-opacity', on ? '0.9' : '0.1');
+        });
+        s.lit.forEach((on, i) => {
+          cones[i].setAttribute('fill-opacity', on && gating ? '0.13' : '0');
+          leds[i].setAttribute('fill', on ? 'var(--c-ochre)' : 'var(--figure-grid)');
+        });
+      }
+      const text = `tiles evaluated: ${s.count} of 24`;
+      readout.textContent = text;
+      fox.setAttribute('aria-valuetext', text);
+      handle.setAttribute('aria-valuetext', text);
+    };
+    const schedule = () => { if (!raf) raf = requestAnimationFrame(render); };
+
+    const toSvg = (e: PointerEvent) => {
+      const pt = svg.createSVGPoint();
+      pt.x = e.clientX; pt.y = e.clientY;
+      return pt.matrixTransform(svg.getScreenCTM()!.inverse());
+    };
+    // The same grab-and-move for the SVG fox and the 3D handle; only the
+    // pointer-to-frame mapping differs.
+    const draggable = (el: HTMLElement | SVGElement, toFrame: (e: PointerEvent) => { x: number; y: number } | null) => {
+      let grab: { dx: number; dy: number } | null = null;
+      el.addEventListener('pointerdown', (e) => {
+        const p = toFrame(e);
+        if (!p) return;
+        auto.interrupt();
+        grab = { dx: pos.x - p.x, dy: pos.y - p.y };
+        el.setPointerCapture(e.pointerId);
+        e.preventDefault();
+      });
+      el.addEventListener('pointermove', (e) => {
+        if (!grab) return;
+        const p = toFrame(e);
+        if (!p) return;
+        const nx = p.x + grab.dx;
+        if (Math.abs(nx - pos.x) > 1) facing = nx > pos.x ? 1 : -1;
+        pos = clampPos(nx, p.y + grab.dy);
+        schedule();
+      });
+      const end = () => { grab = null; };
+      el.addEventListener('pointerup', end);
+      el.addEventListener('pointercancel', end);
+    };
+    draggable(fox, toSvg);
+    draggable(handle, (e) => three?.toFrame(e.clientX, e.clientY) ?? null);
+
+    const onKey = (e: KeyboardEvent) => {
+      const step = e.shiftKey ? 40 : 10;
+      const d = { ArrowLeft: [-step, 0], ArrowRight: [step, 0], ArrowUp: [0, -step], ArrowDown: [0, step] }[e.key];
+      if (!d) return;
+      e.preventDefault(); auto.interrupt();
+      if (d[0]) facing = d[0] > 0 ? 1 : -1;
+      pos = clampPos(pos.x + d[0], pos.y + d[1]);
+      schedule();
+    };
+    fox.addEventListener('keydown', onKey);
+    handle.addEventListener('keydown', onKey);
+    gateBtns.forEach((b) => b.addEventListener('click', () => {
+      gating = b.dataset.gate === 'on';
+      gateBtns.forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+      last = ''; schedule();
+    }));
+
+    render();
+    build3d(root, handle).then((t) => {
+      if (!t) return;
+      three = t;
+      // the SVG fox just went display:none; keep keyboard focus on the animal
+      if (document.activeElement === fox) handle.focus({ preventScroll: true });
+      render();
+    });
+  }
+
+  // The model: the frame as a pale floor patch, 24 tiles raised off it (the
+  // ones the CNN evaluates stand taller and darker), a PIR sensor on a post at
+  // each corner with its watch volume over its quadrant, and the fox standing
+  // upright on the floor.
+  //
+  // Frame px map to world as x / 100 and -y / 100 about the frame centre, so
+  // the frame is 4.8 x 3.2 units at the origin with its top edge away from the
+  // camera, as in the SVG.
+  async function build3d(root: HTMLElement, handle: HTMLElement) {
+    const {
+      stage, mat, rod, disc, polyline, Group, CylinderGeometry, DoubleSide, ExtrudeGeometry, Mesh, RingGeometry, Shape, TorusGeometry,
+    } = await import('./lib/stage3d');
+    type V3 = [number, number, number];
+    const host = root.querySelector<HTMLElement>('.pir-3d')!;
+    const S = stage(host, {
+      aspect: W / H, yaw: -15, pitch: 52, distance: 9.2, target: [-0.08, -0.2, 0.1], orbit: false,
+    });
+    if (!S) return null;
+    const world = S.scene;
+
+    const CX = FRAME.x + FRAME.w / 2, CY = FRAME.y + FRAME.h / 2;
+    const wx = (px: number) => (px - CX) / 100, wy = (py: number) => (CY - py) / 100;
+
+    const TILE_Z = 0.004;                         // tiles float just clear of the floor
+    const ON_H = 0.03, OFF_H = 0.006;
+    const SENSOR_Z = 0.3;                         // dome centre, top of the post
+    const CONE_R = (Math.hypot(FRAME.w, FRAME.h) * 0.42) / 100;
+    const FOX_G = 16, FOX_Z = TILE_Z + ON_H;      // px line of the feet, and the height it stands at
+    const GRAB_Z = FOX_Z + (FOX_G + 5) / 100;     // middle of the body, where the handle sits
+
+    const rrect = (w: number, h: number, r: number) => {
+      const s = new Shape(), x = -w / 2, y = -h / 2;
+      s.moveTo(x + r, y); s.lineTo(x + w - r, y); s.quadraticCurveTo(x + w, y, x + w, y + r);
+      s.lineTo(x + w, y + h - r); s.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+      s.lineTo(x + r, y + h); s.quadraticCurveTo(x, y + h, x, y + h - r);
+      s.lineTo(x, y + r); s.quadraticCurveTo(x, y, x + r, y);
+      return s;
+    };
+    const outline = (s: InstanceType<typeof Shape>, z: number): V3[] => {
+      const pts = s.getPoints(6).map((p): V3 => [p.x, p.y, z]);
+      return [...pts, pts[0]];
+    };
+
+    // Floor: a thin pale slab, top face at z = 0, with an ink edge.
+    const floorShape = rrect(FRAME.w / 100, FRAME.h / 100, 0.06);
+    const floor = new Mesh(new ExtrudeGeometry(floorShape, { depth: 0.04, bevelEnabled: false }), mat('--figure-paper'));
+    floor.position.z = -0.04;
+    world.add(floor, polyline(outline(floorShape, 0.001), 'ink', { opacity: 0.55 }));
+
+    // Tiles: unit-height slabs scaled to their state, an outline on top.
+    const tileShape = rrect((TILE_W - 4) / 100, (TILE_H - 4) / 100, 0.03);
+    const tileGeo = new ExtrudeGeometry(tileShape, { depth: 1, bevelEnabled: false });
+    // Solid, lightened teal: a see-through tile muddies against the warm floor.
+    const tileOn = mat('teal', { tint: 0.22 }), tileOff = mat('teal', { opacity: 0.1 });
+    const lineOn = polyline(outline(tileShape, 0), 'teal', { opacity: 0.9 }).material;
+    const lineOff = polyline(outline(tileShape, 0), 'teal', { opacity: 0.12 }).material;
+    const tiles: { mesh: InstanceType<typeof Mesh>; edge: ReturnType<typeof polyline> }[] = [];
+    for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
+      const g = new Group();
+      g.position.set(wx(FRAME.x + (c + 0.5) * TILE_W), wy(FRAME.y + (r + 0.5) * TILE_H), TILE_Z);
+      const mesh = new Mesh(tileGeo, tileOn);
+      const edge = polyline(outline(tileShape, 0), 'teal');
+      g.add(mesh, edge);
+      world.add(g);
+      tiles.push({ mesh, edge });
+    }
+
+    // Sensors: a short post, a pale housing ringed in ochre, the LED dome on
+    // top, and the quarter-cone it watches, from the dome down to the floor.
+    const postMat = mat('ink', { tint: 0.55 }), housingMat = mat('--figure-paper'), ringMat = mat('ochre');
+    const ledOn = mat('ochre'), ledOff = mat('--figure-led-off');
+    ledOn.emissive = ledOn.color.clone().multiplyScalar(0.45);
+    const coneMat = mat('ochre', { opacity: 0.07 }), padMat = mat('ochre', { opacity: 0.13 });
+    coneMat.side = DoubleSide;                    // so the volume reads from inside its open flanks too
+    const ringGeo = new TorusGeometry(0.12, 0.016, 12, 48);
+    // The LED dome: a small disc with a deep round bevel, which makes a lens.
+    const domeGeo = new ExtrudeGeometry(new Shape().absarc(0, 0, 0.025, 0, Math.PI * 2, false), {
+      depth: 0.001, curveSegments: 24, bevelEnabled: true, bevelThickness: 0.045, bevelSize: 0.043, bevelSegments: 6,
+    });
+    const coneH = SENSOR_Z - 0.002;
+    const sensors = SENSORS.map((s) => {
+      const x = wx(s.cx), y = wy(s.cy);
+      const dx = s.qx === 0 ? 1 : -1, dy = s.qy === 0 ? -1 : 1;   // into the frame, in world axes
+      world.add(rod([x, y, 0], [x, y, SENSOR_Z - 0.04], 0.02, postMat));
+      const housing = disc(0.12, 0.04, housingMat);
+      housing.position.set(x, y, SENSOR_Z - 0.02);
+      const ring = new Mesh(ringGeo, ringMat);
+      ring.position.set(x, y, SENSOR_Z);
+      const led = new Mesh(domeGeo, ledOff);
+      led.position.set(x, y, SENSOR_Z);
+      world.add(housing, ring, led);
+
+      // Its watch volume: a quarter cone from the dome down to a quarter disc
+      // on the floor (the SVG's cone), over the sensor's own quadrant.
+      const a0 = Math.atan2(dy, dx) - Math.PI / 4;  // world angle where the quadrant starts
+      const shell = new Mesh(new CylinderGeometry(0, CONE_R, coneH, 32, 1, true, a0 + Math.PI / 2, Math.PI / 2), coneMat);
+      shell.rotation.x = Math.PI / 2;               // cylinder axis y becomes world z
+      shell.position.z = 0.002 + coneH / 2;
+      const pad = new Mesh(new RingGeometry(0, CONE_R, 32, 1, a0, Math.PI / 2), padMat);
+      pad.position.z = 0.002;
+      const cone = new Group();
+      cone.position.set(x, y, 0);
+      cone.add(shell, pad);
+      cone.visible = false;
+      world.add(cone);
+      return { led, cone };
+    });
+
+    // The fox: the SVG silhouette extruded a little and stood upright, so its
+    // outline lies in the x-z plane. SVG y grows down, so it's flipped here.
+    const shape = new Shape();
+    const P = (x: number, y: number): [number, number] => [x / 100, (FOX_G - y) / 100];
+    for (const [, cmd, args] of FOX.matchAll(/([MLCZ])([^MLCZ]*)/g)) {
+      const n = args.trim().split(/[\s,]+/).filter(Boolean).map(Number);
+      if (cmd === 'M') shape.moveTo(...P(n[0], n[1]));
+      else if (cmd === 'L') for (let i = 0; i < n.length; i += 2) shape.lineTo(...P(n[i], n[i + 1]));
+      else if (cmd === 'C') for (let i = 0; i < n.length; i += 6)
+        shape.bezierCurveTo(...P(n[i], n[i + 1]), ...P(n[i + 2], n[i + 3]), ...P(n[i + 4], n[i + 5]));
+      else shape.closePath();
+    }
+    const foxGeo = new ExtrudeGeometry(shape, {
+      depth: 0.07, curveSegments: 10, bevelEnabled: true, bevelThickness: 0.008, bevelSize: 0.005, bevelSegments: 2,
+    });
+    foxGeo.translate(0, 0, -0.035);
+    const foxBody = new Mesh(foxGeo, mat('ink'));
+    foxBody.rotation.x = Math.PI / 2;            // shape y becomes world z
+    const animal = new Group();
+    animal.add(foxBody);
+    const shadow = disc(1, 0.001, mat('ink', { opacity: 0.12 }));
+    shadow.scale.set(0.36, 1, 0.1);
+    world.add(animal, shadow);
+
+    let anchor: V3 = [0, 0, GRAB_Z];
+    S.beforeRender(() => {
+      const p = S.toScreen(anchor);
+      handle.style.left = `${p.x}%`; handle.style.top = `${p.y}%`;
+    });
+    S.show();
+
+    return {
+      place(px: number, py: number, facing: number) {
+        const x = wx(px), y = wy(py);
+        animal.position.set(x, y, FOX_Z);
+        animal.rotation.z = facing < 0 ? Math.PI : 0;
+        shadow.position.set(x - 0.03 * facing, y, FOX_Z + 0.001);
+        anchor = [x, y, GRAB_Z];
+        S.invalidate();
+      },
+      update(s: ReturnType<typeof evaluate>, gating: boolean) {
+        s.tiles.forEach((on, i) => {
+          tiles[i].mesh.material = on ? tileOn : tileOff;
+          tiles[i].mesh.scale.z = on ? ON_H : OFF_H;
+          tiles[i].edge.material = on ? lineOn : lineOff;
+          tiles[i].edge.position.z = (on ? ON_H : OFF_H) + 0.0015;
+        });
+        s.lit.forEach((on, i) => {
+          sensors[i].led.material = on ? ledOn : ledOff;
+          sensors[i].cone.visible = on && gating;
+        });
+        S.invalidate();
+      },
+      // Pointer to frame px, picked on the plane through the middle of the fox
+      // so the grab offset stays small and the fox tracks the pointer.
+      toFrame(clientX: number, clientY: number) {
+        const p = S.pick(clientX, clientY, GRAB_Z);
+        return p ? { x: p[0] * 100 + CX, y: CY - p[1] * 100 } : null;
+      },
+    };
+  }
+
+  const io = new IntersectionObserver((entries) => {
+    for (const e of entries) if (e.isIntersecting) { init(e.target as HTMLElement); io.unobserve(e.target); }
+  });
+  document.querySelectorAll<HTMLElement>('[data-fig="pir"]').forEach((el) => io.observe(el));
+</script>
