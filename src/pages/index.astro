@@ -122,10 +122,14 @@ const socialIcons = [
           <div class={`work-grid work-grid--${g.key}`}>
             {g.items.map((p) => (
               <a class="project-card" id={p.id} href={p.href} data-astro-prefetch="viewport" aria-label={`${p.name}, view project`}>
-                <div class="card-media" data-media="image" style={`view-transition-name: cover-${p.id}`}>
+                <div class="card-media" data-media="image">
                   {p.cover && (
+                    <!-- The photo alone is named for the page transition, not
+                         the card, so the title and gradient don't stretch. -->
                     <Picture
                       class="card-video"
+                      style={`view-transition-name: cover-${p.id}`}
+                      data-vt={`cover-${p.id}`}
                       src={p.cover}
                       alt={`${p.name} preview`}
                       widths={[480, 800, 1200]}
@@ -185,6 +189,11 @@ const socialIcons = [
     content-visibility: auto;
     contain-intrinsic-size: auto 600px;
   }
+  /* Except the cards: coming back from a project, the page transition
+     captures the restored homepage in its first frame, before a skipped
+     section has been brought back, and the cover would have no card to
+     land on. */
+  #projects { content-visibility: visible; }
 
   .content-inner {
     max-width: var(--content-max);
