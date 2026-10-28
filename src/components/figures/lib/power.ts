@@ -61,6 +61,11 @@ export function measured(x: number) {
 export const xs = Array.from({ length: N + 1 }, (_, i) => (i / N) * TOTAL);
 export const dataY = xs.map(datasheet);
 export const measY = xs.map(measured);
+
+// Charge per event is the area under current: trapezoid rule on the shared
+// grid. A ratio of two curves we drew, so it discloses nothing absolute.
+const area = (ys: number[]) => ys.slice(1).reduce((a, y, i) => a + (xs[i + 1] - xs[i]) * (y + ys[i]) / 2, 0);
+export const CHARGE_RATIO = area(measY) / area(dataY);
 // Sample both curves on the same grid so one can morph into the other.
 // Add exact boundary points to the datasheet so its jumps are truly vertical.
 export function bounds() {

@@ -20,7 +20,8 @@ import {
 // dynamic `import('three')` takes the whole namespace, which can't be
 // tree-shaken (705 KB versus 480 KB).
 export {
-  BoxGeometry, CylinderGeometry, DoubleSide, ExtrudeGeometry, Group, Mesh, RingGeometry, Shape, TorusGeometry,
+  BoxGeometry, CylinderGeometry, DoubleSide, ExtrudeGeometry, Group, LatheGeometry, Mesh, RingGeometry, Shape,
+  TorusGeometry, Vector2,
 } from 'three';
 
 export type V3 = [number, number, number];
@@ -32,7 +33,7 @@ const css = (name: string) => getComputedStyle(document.documentElement).getProp
 export function color(part: Part | string) {
   if (part === 'ink') return new Color('#2C2C2C');
   if (part.startsWith('#')) return new Color(part);
-  return new Color(css(`--c-${part}`) || '#2C2C2C');
+  return new Color(css(part.startsWith('--') ? part : `--c-${part}`) || '#2C2C2C');
 }
 
 // Matte, like painted plastic. Pass opacity < 1 for ghosts and lenses.

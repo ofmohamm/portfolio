@@ -252,7 +252,7 @@ const src = dialPoint(SOURCE, DIAL.R + 26);
   async function build3d(root: HTMLElement) {
     const {
       stage, mat, rod, disc, polyline, Group,
-      Mesh, BoxGeometry, CylinderGeometry, RingGeometry, TorusGeometry, Shape, ExtrudeGeometry,
+      Mesh, BoxGeometry, RingGeometry, Shape, ExtrudeGeometry, LatheGeometry, Vector2, DoubleSide,
     } = await import('./lib/stage3d');
     type V3 = [number, number, number];
     const host = root.querySelector<HTMLElement>('.pd-3d')!;
@@ -321,34 +321,75 @@ const src = dialPoint(SOURCE, DIAL.R + 26);
     arm.add(horn, bar, ...mics, screw, needle);
     world.add(arm);
 
-    // The speaker at SOURCE, out past the scale and facing the array: a
-    // cabinet, a cone opening toward the centre, two arcs of sound.
+    // The speaker at SOURCE, out past the scale and facing the array: a small
+    // bookshelf monitor. Rounded ochre cabinet; on the baffle a woofer (rubber
+    // surround, cone, dust cap), a dome tweeter above it and a bass port
+    // below. Local +x points away from the array, so the baffle faces -x.
     const RS = 0.19;
-    const ochre = mat('ochre'), ochrePale = mat('ochre', { tint: 0.4 });
-    const spk = new Group();
+    const CW = 0.03, CH = 0.05, CD = 0.026, cb = 0.002;   // cabinet width, height, depth, edge bevel
+    const spk = new Group(), SK = 1.25;              // drawn a touch larger than life so the drivers read
     spk.position.set(...on(SOURCE, RS));
-    spk.rotation.z = rad(SOURCE);                    // local +x points away from the array
-    const cab = box(0.014, 0.026, 0.034, ochre);
-    cab.position.set(0.004, 0, 0.017);
-    const cone = new Mesh(new CylinderGeometry(0.0105, 0.004, 0.008, 32), ochrePale);
-    cone.rotation.z = Math.PI / 2;                   // cylinder axis +y onto -x, the mouth faces the array
-    cone.position.set(-0.007, 0, 0.019);
-    spk.add(cab, cone);
-    for (const r of [0.02, 0.029]) {
-      const span = rad(70);
-      const wave = new Mesh(new TorusGeometry(r, 0.0011, 6, 24, span), ochre);
-      wave.rotation.z = Math.PI - span / 2;
-      wave.position.set(-0.003, 0, 0.019);
-      spk.add(wave);
-    }
+    spk.rotation.z = rad(SOURCE);
+    spk.scale.setScalar(SK);
+    const rr2 = 0.003, profile = new Shape();       // the cabinet's front outline, x across, y up
+    profile.moveTo(-CW / 2 + rr2, cb);
+    profile.lineTo(CW / 2 - rr2, cb); profile.quadraticCurveTo(CW / 2, cb, CW / 2, cb + rr2);
+    profile.lineTo(CW / 2, CH - cb - rr2); profile.quadraticCurveTo(CW / 2, CH - cb, CW / 2 - rr2, CH - cb);
+    profile.lineTo(-CW / 2 + rr2, CH - cb); profile.quadraticCurveTo(-CW / 2, CH - cb, -CW / 2, CH - cb - rr2);
+    profile.lineTo(-CW / 2, cb + rr2); profile.quadraticCurveTo(-CW / 2, cb, -CW / 2 + rr2, cb);
+    const cabGeo = new ExtrudeGeometry(profile, {
+      depth: CD, bevelEnabled: true, bevelThickness: cb, bevelSize: cb * 0.9, bevelSegments: 3, curveSegments: 8,
+    });
+    cabGeo.rotateX(Math.PI / 2);                     // outline up onto z, extrusion onto -y
+    cabGeo.rotateZ(Math.PI / 2);                     // width onto y, extrusion onto +x: the front is x = 0
+    spk.add(new Mesh(cabGeo, mat('ochre', { tint: 0.12 })));
+    const front = -cb - 0.0002;                      // just proud of the bevelled baffle
+
+    // A driver is a lathe: a profile of (radius, height out of the baffle)
+    // spun around its axis, then turned so the axis points at the array.
+    const lathe = (pts: [number, number][], m: ReturnType<typeof mat>) => {
+      const g = new LatheGeometry(pts.map(([r, h]) => new Vector2(r, h)), 48);
+      g.rotateZ(Math.PI / 2);                        // lathe axis +y onto -x
+      return new Mesh(g, m);
+    };
+    const rubber = mat('ink', { tint: 0.3 }), paper = mat('ink', { tint: 0.12 }), trim = mat('ochre', { tint: 0.45 });
+    // lathe faces wind whichever way the profile runs, so draw both sides
+    for (const m of [rubber, paper, trim]) m.side = DoubleSide;
+    const woofer = new Group(), wz = 0.019, Rw = 0.0105;
+    woofer.add(
+      lathe([[Rw + 0.0016, 0], [Rw + 0.0016, 0.0008], [Rw, 0.0009], [Rw, 0]], trim),          // trim ring
+      lathe([[Rw, 0.0002], [Rw - 0.0007, 0.0013], [Rw - 0.0019, 0.0016], [Rw - 0.003, 0.0008]], rubber),
+      lathe([[Rw - 0.003, 0.0008], [0.0042, -0.0032], [0.0038, -0.0034]], paper),               // cone
+      lathe([[0.0038, -0.0034], [0.0032, -0.0024], [0.002, -0.0017], [0.0001, -0.0014]], rubber), // dust cap
+    );
+    woofer.position.set(front, 0, wz);
+    const tweeter = new Group(), tz = 0.039;
+    tweeter.add(
+      lathe([[0.0062, 0], [0.0062, 0.0007], [0.0042, 0.0009], [0.0042, 0]], trim),
+      lathe([[0.0042, 0.0003], [0.0036, 0.0016], [0.0022, 0.0026], [0.0001, 0.003]], rubber),
+    );
+    tweeter.position.set(front, 0, tz);
+    const port = lathe([[0.003, 0.0004], [0.0024, 0.0004], [0.0024, -0.004], [0.0001, -0.004]], paper);
+    port.position.set(front, 0, 0.0058);
+    spk.add(woofer, tweeter, port);
+
+    // Sound as flat ripples on the table, spreading from the baffle toward
+    // the array, fading as they go.
+    const span = rad(64);
+    [0.016, 0.026, 0.036].forEach((r, i) => {
+      const ripple = new Mesh(new RingGeometry(r - 0.0009, r + 0.0009, 40, 1, Math.PI - span / 2, span),
+        mat('ochre', { opacity: 0.7 - i * 0.2 }));
+      ripple.position.set(front, 0, 0.0005);
+      spk.add(ripple);
+    });
     world.add(spk);
     // Line of sight, on the table, from the centre to the speaker.
-    world.add(polyline([on(SOURCE, 0, 0.0006), on(SOURCE, RS - 0.024, 0.0006)], 'ochre', { dashed: true }));
+    world.add(polyline([on(SOURCE, 0, 0.0006), on(SOURCE, RS - 0.045, 0.0006)], 'ochre', { dashed: true }));
 
     // Text stays HTML, pinned to points in the scene each frame.
     const anchors: Record<string, V3> = {
       '90': [0, R + 0.014, 0], '180': [-R - 0.018, 0, 0], '0': [R + 0.016, 0, 0],
-      src: on(SOURCE, RS, 0.052),
+      src: on(SOURCE, RS + (CD / 2) * SK, CH * SK + 0.012),
     };
     const labels = [...host.querySelectorAll<HTMLElement>('.pd-l3')];
     S.beforeRender(() => labels.forEach((l) => {

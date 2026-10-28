@@ -13,6 +13,9 @@
   --c-sage: #56703A;
   --c-slate: #4A5F7E;
   --c-plum: #7A4E6E;
+  /* Surfaces, not parts: the warm paper of a camera frame, an unlit LED. */
+  --figure-paper: #F3EFE6;
+  --figure-led-off: #C9C6BF;
 }
 
 .fig {

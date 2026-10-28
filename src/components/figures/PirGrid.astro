@@ -28,7 +28,7 @@ const cone = (s: (typeof SENSORS)[number]) => {
         <clipPath id="pir-frame-clip"><rect x={FRAME.x} y={FRAME.y} width={FRAME.w} height={FRAME.h} rx="6" /></clipPath>
       </defs>
       <g clip-path="url(#pir-frame-clip)">
-        <rect x={FRAME.x} y={FRAME.y} width={FRAME.w} height={FRAME.h} fill="#F3EFE6" />
+        <rect x={FRAME.x} y={FRAME.y} width={FRAME.w} height={FRAME.h} fill="var(--figure-paper)" />
         {SENSORS.map((s, i) => (
           <path class="pir-cone" data-i={i} d={cone(s)} fill="var(--c-ochre)" fill-opacity={s0.lit[i] ? 0.13 : 0} />
         ))}
@@ -36,7 +36,7 @@ const cone = (s: (typeof SENSORS)[number]) => {
           <rect class="pir-tile" data-i={i}
             x={FRAME.x + c * TILE_W + 2} y={FRAME.y + r * TILE_H + 2}
             width={TILE_W - 4} height={TILE_H - 4} rx="3"
-            fill="var(--c-teal)" fill-opacity={s0.tiles[i] ? 0.3 : 0.04}
+            fill="var(--c-teal)" fill-opacity={s0.tiles[i] ? 0.3 : 0.1}
             stroke="var(--c-teal)" stroke-width="1.5" stroke-opacity={s0.tiles[i] ? 0.9 : 0.1} />
         ))}
       </g>
@@ -133,7 +133,7 @@ const cone = (s: (typeof SENSORS)[number]) => {
       if (in3d) three!.update(s, gating);
       else {
         s.tiles.forEach((on, i) => {
-          tiles[i].setAttribute('fill-opacity', on ? '0.3' : '0.04');
+          tiles[i].setAttribute('fill-opacity', on ? '0.3' : '0.1');
           tiles[i].setAttribute('stroke-opacity', on ? '0.9' : '0.1');
         });
         s.lit.forEach((on, i) => {
@@ -253,7 +253,7 @@ const cone = (s: (typeof SENSORS)[number]) => {
 
     // Floor: a thin pale slab, top face at z = 0, with an ink edge.
     const floorShape = rrect(FRAME.w / 100, FRAME.h / 100, 0.06);
-    const floor = new Mesh(new ExtrudeGeometry(floorShape, { depth: 0.04, bevelEnabled: false }), mat('#F3EFE6'));
+    const floor = new Mesh(new ExtrudeGeometry(floorShape, { depth: 0.04, bevelEnabled: false }), mat('--figure-paper'));
     floor.position.z = -0.04;
     world.add(floor, polyline(outline(floorShape, 0.001), 'ink', { opacity: 0.55 }));
 
@@ -261,7 +261,7 @@ const cone = (s: (typeof SENSORS)[number]) => {
     const tileShape = rrect((TILE_W - 4) / 100, (TILE_H - 4) / 100, 0.03);
     const tileGeo = new ExtrudeGeometry(tileShape, { depth: 1, bevelEnabled: false });
     // Solid, lightened teal: a see-through tile muddies against the warm floor.
-    const tileOn = mat('teal', { tint: 0.22 }), tileOff = mat('teal', { opacity: 0.06 });
+    const tileOn = mat('teal', { tint: 0.22 }), tileOff = mat('teal', { opacity: 0.1 });
     const lineOn = polyline(outline(tileShape, 0), 'teal', { opacity: 0.9 }).material;
     const lineOff = polyline(outline(tileShape, 0), 'teal', { opacity: 0.12 }).material;
     const tiles: { mesh: InstanceType<typeof Mesh>; edge: ReturnType<typeof polyline> }[] = [];
@@ -277,8 +277,8 @@ const cone = (s: (typeof SENSORS)[number]) => {
 
     // Sensors: a short post, a pale housing ringed in ochre, the LED dome on
     // top, and the quarter-cone it watches, from the dome down to the floor.
-    const postMat = mat('ink', { tint: 0.55 }), housingMat = mat('#F3EFE6'), ringMat = mat('ochre');
-    const ledOn = mat('ochre'), ledOff = mat('#C9C6BF');
+    const postMat = mat('ink', { tint: 0.55 }), housingMat = mat('--figure-paper'), ringMat = mat('ochre');
+    const ledOn = mat('ochre'), ledOff = mat('--figure-led-off');
     ledOn.emissive = ledOn.color.clone().multiplyScalar(0.45);
     const coneMat = mat('ochre', { opacity: 0.07 }), padMat = mat('ochre', { opacity: 0.13 });
     coneMat.side = DoubleSide;                    // so the volume reads from inside its open flanks too
