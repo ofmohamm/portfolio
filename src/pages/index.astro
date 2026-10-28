@@ -1,26 +1,17 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import ParticleField from '../components/ParticleField.astro';
-import { Image, Picture } from 'astro:assets';
-import { getCollection, getEntry } from 'astro:content';
-
-// Project cover images live in src/assets so Astro can convert and resize them.
-import watercamPcb from '../assets/projects/watercam-pcb.png';
-import privacyTracker from '../assets/projects/privacy-tracker.jpg';
+import { Picture } from 'astro:assets';
+import { getEntry } from 'astro:content';
+import { loadProjects } from '../lib/projects';
 import heroLogo from '../assets/logo.png';
 
-const covers: Record<string, ImageMetadata> = {
-  'flood-detection-sensor-pcb': watercamPcb,
-  'privacy-based-tracker': privacyTracker,
-};
-
 // Content is YAML on disk, read at build time by Astro's content layer.
-const [heroEntry, featuredEntry, skillsEntry, seoEntry, projectEntries] = await Promise.all([
+const [heroEntry, skillsEntry, seoEntry, projects] = await Promise.all([
   getEntry('site', 'hero'),
-  getEntry('site', 'featured'),
   getEntry('site', 'skills'),
   getEntry('site', 'seo'),
-  getCollection('projects'),
+  loadProjects(),
 ]);
 
 // The hero signature is flat line art with alpha. A palette PNG encodes it far
@@ -30,23 +21,13 @@ const [heroEntry, featuredEntry, skillsEntry, seoEntry, projectEntries] = await 
 const heroImg = heroLogo;
 
 const hero = heroEntry?.data;
-const featuredProject = featuredEntry?.data;
 const seo = seoEntry?.data;
 
-const projects = projectEntries
-  .map((entry) => ({
-    id: entry.id,
-    name: entry.data.name,
-    subtitle: entry.data.subtitle,
-    oneLiner: entry.data.oneLiner,
-    order: entry.data.order,
-    cover: covers[entry.id],
-    tech: entry.data.tech,
-    github: entry.data.github,
-    body: entry.data.body,
-    specs: entry.data.specs.map((sp) => [sp.key, sp.value] as const),
-  }))
-  .sort((a, b) => a.order - b.order);
+// Current work sits above past projects. Empty groups are not rendered.
+const projectGroups = [
+  { key: 'current', label: 'Current', items: projects.filter((p) => p.status === 'current') },
+  { key: 'past', label: 'Previously', items: projects.filter((p) => p.status === 'past') },
+].filter((g) => g.items.length > 0);
 
 const skills = (skillsEntry?.data.groups ?? []).map((g) => ({
   label: g.label,
@@ -71,8 +52,6 @@ const socialIcons = [
     svg: `<rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>`,
   },
 ];
-const RESUME_URL = 'https://drive.google.com/file/d/1-0OkidhFCiwY4Qzrx7l75aHpLJc4_KkF/view?usp=sharing';
-const RESUME_ICON = `<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/>`;
 ---
 
 <BaseLayout
@@ -80,6 +59,12 @@ const RESUME_ICON = `<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 
   title={seo?.title ?? 'Omar Mohammed — FPGA, embedded firmware, PCB design'}
   description={seo?.description ?? 'Hardware design focused EE student at Syracuse. FPGA accelerators (Vivado, SystemVerilog, VHDL), embedded firmware (C/C++, LoRaWAN), and PCB design (KiCad).'}
 >
+  <!-- Links shared before projects had their own pages pointed at
+       /#modal-<id>. Forward them before anything paints. -->
+  <script is:inline>
+    if (location.hash.indexOf('#modal-') === 0) location.replace('/projects/' + encodeURIComponent(location.hash.slice(7)) + '/');
+  </script>
+
   <!-- ============ HERO ============ -->
   <section id="hero" class="snap-section hero">
     <ParticleField />
@@ -105,7 +90,10 @@ const RESUME_ICON = `<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 
       />
 
       <p class="hero-positioning">
-        {(hero?.positioning ?? []).map((line) => <span>{line}</span>)}
+        {(hero?.positioning ?? []).map((line) => (
+          // Glue "@" and "|" to the word before them, so a wrapped line never starts with one.
+          <span>{line.replace(/ ([@|]) /g, '\u00A0$1 ')}</span>
+        ))}
       </p>
 
       <nav class="hero-links" aria-label="Profiles and resume">
@@ -114,10 +102,6 @@ const RESUME_ICON = `<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 
             <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" set:html={s.svg} />
           </a>
         ))}
-        <a class="hero-resume" href={RESUME_URL} target="_blank" rel="noopener noreferrer">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" set:html={RESUME_ICON} />
-          Resume
-        </a>
       </nav>
     </div>
 
@@ -133,47 +117,42 @@ const RESUME_ICON = `<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 
     <div class="content-inner content-inner--wide">
       <h2 class="section-heading">Projects</h2>
 
-      {featuredProject && (
-        <a
-          class="featured-card"
-          id="featured"
-          href="#modal-featured"
-          data-open="featured"
-          aria-label={`${featuredProject.name} — open details`}
-        >
-          {featuredProject.status && <span class="featured-tag">{featuredProject.status}</span>}
-          <h3 class="featured-title">{featuredProject.name}</h3>
-          <p class="featured-one-liner featured-one-liner--clamped">{featuredProject.oneLiner}</p>
-          <p class="project-tech">{featuredProject.tech?.join('  ·  ')}</p>
-          <span class="featured-cue" aria-hidden="true">View details</span>
-        </a>
-      )}
-
-      <div class="work-grid">
-        {projects.map((p) => (
-          <a class="project-card" id={p.id} href={`#modal-${p.id}`} data-open={p.id} aria-label={`${p.name} — open details`}>
-            <div class="card-media" data-media="image">
-              {p.cover && (
-                <Picture
-                  class="card-video"
-                  src={p.cover}
-                  alt={`${p.name} preview`}
-                  widths={[480, 800, 1200]}
-                  sizes="(max-width: 768px) 100vw, 540px"
-                  formats={['avif', 'webp']}
-                  fallbackFormat="webp"
-                  loading="lazy"
-                  decoding="async"
-                />
-              )}
-              <div class="card-overlay">
-                <h3 class="card-name">{p.name}</h3>
-                <span class="card-cue" aria-hidden="true">View details</span>
-              </div>
-            </div>
-          </a>
-        ))}
-      </div>
+      {projectGroups.map((g) => (
+        <div class={`project-group project-group--${g.key}`}>
+          <div class={`work-grid work-grid--${g.key}`}>
+            {g.items.map((p) => (
+              <a class="project-card" id={p.id} href={p.href} data-astro-prefetch="viewport" aria-label={`${p.name}, view project`}>
+                <div class="card-media" data-media="image">
+                  {p.cover && (
+                    <!-- The photo alone is named for the page transition, not
+                         the card, so the title and gradient don't stretch.
+                         A project whose page opens on a video has no matching
+                         photo to grow into, so it just gets the page fade. -->
+                    <Picture
+                      class="card-video"
+                      style={p.coverVideo ? undefined : `view-transition-name: cover-${p.id}`}
+                      data-vt={p.coverVideo ? undefined : `cover-${p.id}`}
+                      src={p.cover}
+                      alt={`${p.name} preview`}
+                      widths={[480, 800, 1200]}
+                      sizes="(max-width: 768px) 100vw, 540px"
+                      formats={['avif', 'webp']}
+                      fallbackFormat="webp"
+                      loading="lazy"
+                      decoding="async"
+                    />
+                  )}
+                  <div class="card-overlay">
+                    {p.org && <span class="card-org">{p.org}{p.status === 'current' && ' · In progress'}</span>}
+                    <h3 class="card-name">{p.name}</h3>
+                    <span class="card-cue" aria-hidden="true">View details</span>
+                  </div>
+                </div>
+              </a>
+            ))}
+          </div>
+        </div>
+      ))}
     </div>
   </section>
 
@@ -188,10 +167,7 @@ const RESUME_ICON = `<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 
             <h3 class="skill-cat">{s.label}</h3>
             <p class="skill-items">
               {s.items.map((i, idx) => (
-                <>
-                  {idx > 0 && <span class="skill-sep" aria-hidden="true">,</span>}
-                  <span class="skill-item">{i}</span>
-                </>
+                <>{idx > 0 && <span class="skill-sep" aria-hidden="true">, </span>}<span class="skill-item">{i}</span></>
               ))}
             </p>
           </div>
@@ -200,94 +176,6 @@ const RESUME_ICON = `<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 
     </div>
   </section>
 
-  <!-- ============ FEATURED PROJECT MODAL ============ -->
-  {featuredProject && (
-    <dialog class="project-modal" id="modal-featured" aria-labelledby="modal-featured-title">
-      <div class="modal-inner">
-        <div class="modal-head">
-          <div class="modal-head-text">
-            <h3 id="modal-featured-title" class="modal-title">{featuredProject.name}</h3>
-            {featuredProject.status && <p class="modal-subtitle">{featuredProject.status}</p>}
-          </div>
-          <a class="modal-close" href="#projects" data-close aria-label="Close (Esc)">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <line x1="18" y1="6" x2="6" y2="18"/>
-              <line x1="6" y1="6" x2="18" y2="18"/>
-            </svg>
-          </a>
-        </div>
-
-        <p class="modal-body">{featuredProject.oneLiner}</p>
-
-        {featuredProject.tech && (
-          <div class="modal-specs">
-            <div class="spec-row">
-              <span class="spec-key">Stack</span>
-              <span class="spec-val">{featuredProject.tech.join(', ')}</span>
-            </div>
-          </div>
-        )}
-
-        {featuredProject.note && <p class="modal-note">{featuredProject.note}</p>}
-      </div>
-    </dialog>
-  )}
-
-  <!-- ============ PROJECT MODALS ============ -->
-  {projects.map((p) => (
-    <dialog class="project-modal" id={`modal-${p.id}`} aria-labelledby={`modal-${p.id}-title`}>
-      <div class="modal-inner">
-        <div class="modal-head">
-          <div class="modal-head-text">
-            <h3 id={`modal-${p.id}-title`} class="modal-title">{p.name}</h3>
-            <p class="modal-subtitle">{p.subtitle}</p>
-          </div>
-          <a class="modal-close" href="#projects" data-close aria-label="Close (Esc)">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <line x1="18" y1="6" x2="6" y2="18"/>
-              <line x1="6" y1="6" x2="18" y2="18"/>
-            </svg>
-          </a>
-        </div>
-
-        {p.cover && (
-          <div class="modal-media">
-            <Picture
-              class="modal-video"
-              src={p.cover}
-              alt={`${p.name}`}
-              widths={[640, 1000, 1400]}
-              sizes="(max-width: 768px) 100vw, 900px"
-              formats={['avif', 'webp']}
-              fallbackFormat="webp"
-              loading="lazy"
-              decoding="async"
-            />
-          </div>
-        )}
-
-        {p.body.map((para) => <p class="modal-body">{para}</p>)}
-
-        <div class="modal-specs">
-          {p.specs.map(([k, v]) => (
-            <div class="spec-row">
-              <span class="spec-key">{k}</span>
-              <span class="spec-val">{v}</span>
-            </div>
-          ))}
-        </div>
-
-        {p.github && (
-          <div class="modal-foot">
-            <a class="cta-primary" href={p.github} target="_blank" rel="noopener noreferrer">
-              View on GitHub
-              <span class="cta-arrow" aria-hidden="true">↗</span>
-            </a>
-          </div>
-        )}
-      </div>
-    </dialog>
-  ))}
 </BaseLayout>
 
 <style>
@@ -303,6 +191,11 @@ const RESUME_ICON = `<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 
     content-visibility: auto;
     contain-intrinsic-size: auto 600px;
   }
+  /* Except the cards: coming back from a project, the page transition
+     captures the restored homepage in its first frame, before a skipped
+     section has been brought back, and the cover would have no card to
+     land on. */
+  #projects { content-visibility: visible; }
 
   .content-inner {
     max-width: var(--content-max);
@@ -379,7 +272,7 @@ const RESUME_ICON = `<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 
     animation: hero-fade 0.8s ease 1.1s forwards;
   }
 
-  .hero-positioning span { display: block; }
+  .hero-positioning span { display: block; text-wrap: balance; }
   .hero-positioning span + span { margin-top: 0.4rem; }
 
   .hero-links {
@@ -400,27 +293,6 @@ const RESUME_ICON = `<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 
   }
   .hero-icon:hover {
     color: var(--color-green-primary);
-    transform: translateY(-2px);
-  }
-
-  .hero-resume {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.4rem;
-    font-family: var(--font-sans);
-    font-size: 0.8rem;
-    font-weight: 500;
-    color: var(--color-text-primary);
-    text-decoration: none;
-    border: 1px solid var(--color-border);
-    border-radius: 6px;
-    padding: 0.34rem 0.72rem;
-    line-height: 1;
-    transition: color 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
-  }
-  .hero-resume:hover {
-    color: var(--color-green-primary);
-    border-color: var(--color-green-primary);
     transform: translateY(-2px);
   }
 
@@ -447,88 +319,6 @@ const RESUME_ICON = `<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 
   }
 
   /* ============ FEATURED CARD ============ */
-  .featured-card {
-    position: relative;
-    display: block;
-    text-decoration: none;
-    color: inherit;
-    cursor: pointer;
-    transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-md);
-    background: var(--color-bg-card);
-    padding: 1.85rem 2rem 1.9rem;
-    margin-bottom: 1.5rem;
-    border-left: 3px solid var(--color-green-primary);
-  }
-
-  .featured-card:hover {
-    border-color: var(--color-text-muted);
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-md);
-  }
-
-  .featured-card:focus-visible {
-    outline: 2px solid var(--color-green-primary);
-    outline-offset: 2px;
-  }
-
-  /* Card shows a preview; the modal carries the full text. Nothing is rewritten,
-     it is only visually truncated here. */
-  .featured-one-liner--clamped {
-    display: -webkit-box;
-    -webkit-line-clamp: 3;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-  }
-
-  .featured-cue {
-    display: inline-block;
-    margin-top: 0.9rem;
-    font-family: var(--font-sans);
-    font-size: 0.82rem;
-    font-weight: 500;
-    color: var(--color-green-primary);
-  }
-
-  .featured-card:hover .featured-cue { text-decoration: underline; }
-
-  .modal-note {
-    margin: 1.1rem 0 0;
-    font-family: var(--font-sans);
-    font-size: 0.85rem;
-    color: var(--color-text-muted);
-    font-style: italic;
-  }
-
-  .featured-tag {
-    display: inline-block;
-    font-family: var(--font-sans);
-    font-size: 0.72rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.13em;
-    color: var(--color-green-primary);
-    margin-bottom: 0.6rem;
-  }
-
-  .featured-title {
-    font-family: var(--font-display);
-    font-weight: 500;
-    font-size: clamp(1.5rem, 2.6vw, 1.95rem);
-    color: var(--color-text-primary);
-    margin: 0 0 0.55rem;
-    line-height: 1.15;
-  }
-
-  .featured-one-liner {
-    font-family: var(--font-sans);
-    font-size: 1rem;
-    color: var(--color-text-secondary);
-    line-height: 1.6;
-    margin: 0 0 1rem;
-    max-width: 68ch;
-  }
 
   .project-tech {
     font-family: var(--font-sans);
@@ -538,6 +328,21 @@ const RESUME_ICON = `<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 
     margin: 0;
     line-height: 1.5;
     letter-spacing: 0.01em;
+  }
+
+  /* ============ PROJECT GROUPS ============ */
+  /* Same gap as inside the grid, so the two groups read as one set of cards. */
+  .project-group + .project-group { margin-top: 1.5rem; }
+
+  .card-org {
+    font-family: var(--font-sans);
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.13em;
+    color: rgba(250, 249, 246, 0.85);
+    margin-bottom: 0.35rem;
+    text-shadow: 0 1px 8px rgba(0, 0, 0, 0.3);
   }
 
   /* ============ PROJECT TILES ============ */
@@ -638,6 +443,30 @@ const RESUME_ICON = `<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 
   .cue-arrow { font-size: 0.9em; }
   .project-card:hover .card-cue { opacity: 1; transform: translateY(0); }
 
+  /* "View details" is hover-revealed only where hover exists. The cue stays in
+     the layout (opacity, not display), so the title never jumps. Touch devices
+     keep it visible because they cannot hover, and keyboard focus reveals it
+     the same way hover does. */
+  @media (hover: hover) and (pointer: fine) {
+    .card-cue {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+    .project-card:hover .card-cue,
+    .project-card:focus-visible .card-cue {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: reduce) {
+    .card-cue,
+    .project-card:hover .card-cue,
+    .project-card:focus-visible .card-cue {
+      transform: none;
+    }
+  }
+
   /* ============ SKILLS (editorial big-type list) ============ */
   .skills-list {
     display: flex;
@@ -670,6 +499,9 @@ const RESUME_ICON = `<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 
   }
 
   .skill-sep { color: var(--color-text-muted); margin-right: 0.15rem; }
+  /* Keep each skill on one line ("Bare-Metal", "Intel Quartus"). Wrapping
+     happens only at the comma between items. */
+  .skill-item { white-space: nowrap; }
 
   /* ============ REVEAL ON SCROLL ============ */
   .reveal {
@@ -678,163 +510,6 @@ const RESUME_ICON = `<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 
     transition: opacity 0.6s ease, transform 0.6s ease;
   }
   .reveal.is-visible { opacity: 1; transform: translateY(0); }
-
-  /* ============ MODAL ============ */
-  .project-modal {
-    border: none;
-    background: transparent;
-    padding: 0;
-    margin: auto;
-    inset: 0;
-    max-width: 760px;
-    width: calc(100vw - 2rem);
-    max-height: calc(100vh - 2rem);
-    border-radius: 10px;
-    color: var(--color-text-primary);
-  }
-  .project-modal::backdrop {
-    background: rgba(20, 22, 20, 0.38);
-    backdrop-filter: blur(2px);
-  }
-  .project-modal[open] { animation: modal-in 0.2s ease; }
-
-  @keyframes modal-in {
-    from { opacity: 0; transform: translateY(8px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-
-  .modal-inner {
-    position: relative;
-    background: var(--color-bg-primary);
-    border: 1px solid var(--color-border);
-    border-top: 4px solid var(--color-green-primary);
-    border-radius: 10px;
-    padding: 1.85rem;
-    max-height: calc(100vh - 2rem);
-    overflow-y: auto;
-  }
-
-  .modal-head {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 1rem;
-    margin-bottom: 1.25rem;
-  }
-  .modal-head-text { flex: 1 1 auto; min-width: 0; }
-
-  .modal-title {
-    font-family: var(--font-display);
-    font-weight: 500;
-    font-size: clamp(1.6rem, 3vw, 2rem);
-    margin: 0 0 0.25rem;
-    line-height: 1.12;
-    letter-spacing: -0.01em;
-  }
-
-  .modal-subtitle {
-    font-family: var(--font-sans);
-    font-size: 0.875rem;
-    color: var(--color-text-muted);
-    margin: 0;
-  }
-
-  .modal-close {
-    flex-shrink: 0;
-    width: 36px;
-    height: 36px;
-    border: 1px solid var(--color-border);
-    background: transparent;
-    border-radius: 8px;
-    color: var(--color-text-secondary);
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0;
-    transition: border-color 0.15s ease, color 0.15s ease;
-  }
-  .modal-close:hover {
-    color: var(--color-text-primary);
-    border-color: var(--color-text-primary);
-  }
-
-  .modal-media {
-    width: 100%;
-    background: var(--color-bg-secondary);
-    border-radius: var(--radius-md);
-    overflow: hidden;
-    margin-bottom: 1.25rem;
-  }
-
-  .modal-video {
-    width: 100%;
-    height: auto;
-    display: block;
-    /* No forced aspect ratio. These renders are 3:2 and 4:3; a fixed 16/9 box
-       with object-fit:cover was cropping 15% and 25% of their height in the one
-       view someone opens specifically to look at them. */
-    object-fit: contain;
-    max-height: 70vh;
-  }
-
-  .modal-body {
-    font-family: var(--font-sans);
-    font-size: 1rem;
-    color: var(--color-text-primary);
-    line-height: 1.7;
-    margin: 0 0 0.9rem;
-  }
-
-  .modal-specs {
-    margin-top: 1rem;
-    border-top: 1px solid var(--color-border);
-    padding-top: 1rem;
-  }
-
-  .spec-row {
-    display: grid;
-    grid-template-columns: 130px 1fr;
-    gap: 1rem;
-    padding: 0.45rem 0;
-    border-bottom: 1px solid var(--color-border);
-    font-family: var(--font-sans);
-    font-size: 0.875rem;
-  }
-  .spec-row:last-child { border-bottom: none; }
-  .spec-key { color: var(--color-text-muted); }
-  .spec-val { color: var(--color-text-primary); }
-
-  .modal-foot {
-    margin-top: 1.5rem;
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    flex-wrap: wrap;
-  }
-
-  .cta-primary {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.4rem;
-    font-family: var(--font-sans);
-    font-size: 0.9375rem;
-    font-weight: 500;
-    color: var(--color-green-primary);
-    background: transparent;
-    border: 1px solid var(--color-green-primary);
-    border-radius: var(--radius-md);
-    padding: 0.55rem 1rem;
-    text-decoration: none;
-    transition: background 0.15s ease, color 0.15s ease;
-  }
-  .cta-primary:hover {
-    background: var(--color-green-primary);
-    color: #FAF9F6;
-  }
-  .cta-arrow { font-size: 0.85em; }
-
-  /* ============ CURSOR RESTORE OVER MODAL ============ */
 
   /* ============ TABLET / MOBILE ============ */
   /* Keep the 2-up grid down through tablets; single column only on phones,
@@ -847,9 +522,6 @@ const RESUME_ICON = `<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 
     .content-section { padding-top: 5rem; }
     .hero-signature { width: min(420px, 86vw); }
     .hero-positioning { font-size: 1rem; }
-    .featured-card { padding: 1.4rem 1.4rem; }
-    .modal-inner { padding: 1.3rem; }
-    .spec-row { grid-template-columns: 1fr; gap: 0; }
   }
 
   @media (max-width: 560px) {
@@ -857,7 +529,6 @@ const RESUME_ICON = `<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .project-modal[open] { animation: none; }
     .scroll-cue-arrow { animation: none; }
     .hero-signature { clip-path: none; animation: none; }
     .hero-positioning, .hero-links { opacity: 1; animation: none; }
@@ -866,120 +537,6 @@ const RESUME_ICON = `<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 
 </style>
 
 <script>
-  function wireModals() {
-    const modals = Array.from(
-      document.querySelectorAll<HTMLDialogElement>('.project-modal')
-    );
-    if (modals.length === 0) return;
-    let restoreFocus: HTMLElement | null = null;
-
-    // The URL hash is the single source of truth for which modal is open, so
-    // deep links, Escape, the close control and the back button all agree.
-    function targetFromHash(): HTMLDialogElement | null {
-      if (!location.hash.startsWith('#modal-')) return null;
-      const el = document.getElementById(location.hash.slice(1));
-      return el && el.classList.contains('project-modal')
-        ? (el as HTMLDialogElement)
-        : null;
-    }
-
-    function show(dlg: HTMLDialogElement) {
-      if (dlg.open) return;
-      restoreFocus = document.activeElement as HTMLElement | null;
-      if (typeof dlg.showModal === 'function') dlg.showModal();
-      else dlg.setAttribute('open', '');
-      document.body.classList.add('modal-open');
-    }
-
-    function hideAll(except: HTMLDialogElement | null) {
-      for (const d of modals) {
-        if (d === except || !d.open) continue;
-        if (typeof d.close === 'function') d.close();
-        else d.removeAttribute('open');
-      }
-      if (!except) {
-        document.body.classList.remove('modal-open');
-        if (restoreFocus && typeof restoreFocus.focus === 'function') {
-          restoreFocus.focus();
-        }
-        restoreFocus = null;
-      }
-    }
-
-    function sync() {
-      const t = targetFromHash();
-      if (t) {
-        hideAll(t);
-        show(t);
-      } else {
-        hideAll(null);
-      }
-    }
-
-    function dismiss() {
-      // If we pushed a history entry, step back so the close control and the
-      // back button leave the same trail. If we arrived by deep link there is
-      // nothing to step back to, so just strip the hash.
-      if (history.state && (history.state as { modal?: string }).modal) {
-        history.back();
-      } else {
-        history.replaceState(null, '', location.pathname + location.search);
-        sync();
-      }
-    }
-
-    document.querySelectorAll<HTMLAnchorElement>('[data-open]').forEach((trigger) => {
-      const id = trigger.getAttribute('data-open');
-      if (!id) return;
-      const dlg = document.getElementById(`modal-${id}`);
-      if (!dlg) return;
-
-      // Modal images are lazy, so the first open used to show an empty panel.
-      // Hover or keyboard focus is a strong enough intent signal to warm the
-      // cache, so by the time the click lands the image is already there.
-      let warmed = false;
-      const warm = () => {
-        if (warmed) return;
-        warmed = true;
-        dlg.querySelectorAll<HTMLImageElement>('img').forEach((img) => {
-          const pre = new Image();
-          if (img.sizes) pre.sizes = img.sizes;
-          if (img.srcset) pre.srcset = img.srcset;
-          if (img.src) pre.src = img.src;
-        });
-      };
-      trigger.addEventListener('pointerenter', warm, { once: true, passive: true });
-      trigger.addEventListener('focus', warm, { once: true });
-
-      trigger.addEventListener('click', (e) => {
-        e.preventDefault();
-        history.pushState({ modal: id }, '', `#modal-${id}`);
-        sync();
-      });
-    });
-
-    for (const dlg of modals) {
-      dlg.querySelectorAll<HTMLElement>('[data-close]').forEach((btn) => {
-        btn.addEventListener('click', (e) => {
-          e.preventDefault();
-          dismiss();
-        });
-      });
-      // Take over Escape so the hash stays in step with what is on screen.
-      dlg.addEventListener('cancel', (e) => {
-        e.preventDefault();
-        dismiss();
-      });
-      dlg.addEventListener('click', (e) => {
-        const inner = dlg.querySelector('.modal-inner');
-        if (inner && !inner.contains(e.target as Node)) dismiss();
-      });
-    }
-
-    window.addEventListener('popstate', sync);
-    sync(); // honour a deep link on first load
-  }
-
   function wireReveal() {
     if (!('IntersectionObserver' in window)) {
       document.querySelectorAll('.reveal').forEach((el) => el.classList.add('is-visible'));
@@ -999,10 +556,6 @@ const RESUME_ICON = `<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 
     document.querySelectorAll('.reveal').forEach((el) => observer.observe(el));
   }
 
-  wireModals();
   wireReveal();
-  document.addEventListener('astro:page-load', () => {
-    wireModals();
-    wireReveal();
-  });
+  document.addEventListener('astro:page-load', wireReveal);
 </script>

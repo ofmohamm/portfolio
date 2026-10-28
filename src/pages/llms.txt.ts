@@ -8,9 +8,8 @@ import { getCollection, getEntry } from 'astro:content';
 const SITE = 'https://omarmohammed.co';
 
 export const GET: APIRoute = async () => {
-  const [hero, featured, skills, projects] = await Promise.all([
+  const [hero, skills, projects] = await Promise.all([
     getEntry('site', 'hero'),
-    getEntry('site', 'featured'),
     getEntry('site', 'skills'),
     getCollection('projects'),
   ]);
@@ -25,14 +24,13 @@ export const GET: APIRoute = async () => {
 
   lines.push(`# ${name}`, '');
   lines.push(
-    `> ${positioning}. Single-page portfolio. Each project has its own URL ` +
-      `fragment, and a plain-markdown copy of the whole page is available at ` +
+    `> ${positioning}. Portfolio with one page per project under ` +
+      `${SITE}/projects/, and a plain-markdown copy of the whole site at ` +
       `${SITE}/index.md.`,
     ''
   );
   lines.push(
-    'Project detail lives in dialogs that are addressable by fragment, so a link',
-    'like #modal-privacy-based-tracker opens that project directly. Source for',
+    'Each project page has the full write-up and interactive figures. Source for',
     'each shipped project is on GitHub. Contact is by email or LinkedIn.',
     ''
   );
@@ -51,22 +49,24 @@ export const GET: APIRoute = async () => {
     ''
   );
 
-  lines.push('## Projects', '');
-  if (featured) {
-    lines.push(
-      `- [${featured.data.name}](${SITE}/#modal-featured): ${oneLine(featured.data.oneLiner)}${
-        featured.data.status ? ` Status: ${featured.data.status}.` : ''
-      }`
-    );
+  const describe = (p: (typeof ordered)[number]) =>
+    `- [${p.data.name}](${SITE}/projects/${p.id}/): ${oneLine(p.data.oneLiner)}${
+      p.data.subtitle ? ` (${oneLine(p.data.subtitle)})` : ''
+    }`;
+
+  const current = ordered.filter((p) => p.data.status === 'current');
+  const past = ordered.filter((p) => p.data.status === 'past');
+
+  if (current.length) {
+    lines.push('## Current work', '');
+    for (const p of current) lines.push(describe(p));
+    lines.push('');
   }
-  for (const p of ordered) {
-    lines.push(
-      `- [${p.data.name}](${SITE}/#modal-${p.id}): ${oneLine(p.data.oneLiner)}${
-        p.data.subtitle ? ` (${oneLine(p.data.subtitle)})` : ''
-      }`
-    );
+  if (past.length) {
+    lines.push('## Previous projects', '');
+    for (const p of past) lines.push(describe(p));
+    lines.push('');
   }
-  lines.push('');
 
   lines.push('## Source code', '');
   for (const p of ordered) {

@@ -1,8 +1,17 @@
 ---
+// On the homepage these scroll to a section; on a project page they lead back
+// to that section of the homepage.
+const isHome = Astro.url.pathname === '/';
+const base = isHome ? '' : '/';
 const navLinks = [
-  { href: '#projects', label: 'Projects' },
-  { href: '#skills', label: 'Skills' },
+  { href: `${base}#projects`, label: 'Projects' },
+  { href: `${base}#skills`, label: 'Skills' },
 ];
+const logoHref = isHome ? '#hero' : '/';
+
+// The only place the resume link lives, so it stays reachable after scrolling.
+const RESUME_URL = 'https://drive.google.com/file/d/1-0OkidhFCiwY4Qzrx7l75aHpLJc4_KkF/view?usp=sharing';
+const RESUME_ICON = `<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/>`;
 
 import { Image } from 'astro:assets';
 import navLogo from '../assets/mo-logo.png';
@@ -12,7 +21,7 @@ import navLogo from '../assets/mo-logo.png';
 <header class="site-header">
   <!-- DESKTOP NAV -->
   <nav class="nav-desktop">
-    <a href="#hero" class="nav-logo" data-scroll-top aria-label="Back to top">
+    <a href={logoHref} class="nav-logo" data-scroll-top={isHome ? '' : undefined} aria-label={isHome ? 'Back to top' : 'Home'}>
       <Image class="nav-logo-mark" src={navLogo} alt="Omar Mohammed" width={88} densities={[1, 2]} format="webp" loading="eager" />
     </a>
 
@@ -22,12 +31,15 @@ import navLogo from '../assets/mo-logo.png';
       ))}
     </div>
 
-    <div class="nav-right-spacer" aria-hidden="true"></div>
+    <a class="nav-resume" href={RESUME_URL} target="_blank" rel="noopener noreferrer">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={RESUME_ICON} />
+      Resume
+    </a>
   </nav>
 
   <!-- MOBILE NAV BAR -->
   <nav class="nav-mobile-bar">
-    <a href="#hero" class="nav-logo-mobile" data-scroll-top aria-label="Back to top">
+    <a href={logoHref} class="nav-logo-mobile" data-scroll-top={isHome ? '' : undefined} aria-label={isHome ? 'Back to top' : 'Home'}>
       <Image class="nav-logo-mark" src={navLogo} alt="Omar Mohammed" width={88} densities={[1, 2]} format="webp" loading="eager" />
     </a>
 
@@ -35,6 +47,10 @@ import navLogo from '../assets/mo-logo.png';
       {navLinks.map((link) => (
         <a href={link.href} class="nav-link nav-link-mobile">{link.label}</a>
       ))}
+      <a class="nav-resume nav-resume-mobile" href={RESUME_URL} target="_blank" rel="noopener noreferrer">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={RESUME_ICON} />
+        Resume
+      </a>
     </div>
   </nav>
 </header>
@@ -122,7 +138,31 @@ import navLogo from '../assets/mo-logo.png';
     background: currentColor;
   }
 
-  .nav-right-spacer { display: none; }
+  /* Resume sits opposite the logo on desktop, mirroring its position. */
+  .nav-resume {
+    position: absolute;
+    right: 1.5rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-family: var(--font-sans);
+    font-size: 0.8rem;
+    font-weight: 500;
+    line-height: 1;
+    color: var(--color-text-primary);
+    text-decoration: none;
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    padding: 0.4rem 0.75rem;
+    transition: color 0.15s ease, border-color 0.15s ease;
+  }
+  .nav-resume:hover {
+    color: var(--color-green-primary);
+    border-color: var(--color-green-primary);
+  }
+  @media (min-width: 1024px) {
+    .nav-resume { right: 3rem; }
+  }
 
   /* MOBILE */
   .nav-mobile-bar { display: none; }
@@ -155,6 +195,12 @@ import navLogo from '../assets/mo-logo.png';
     .nav-link-mobile {
       font-size: 0.8rem;
       padding: 0.25rem 0;
+    }
+
+    .nav-resume-mobile {
+      position: static;
+      font-size: 0.75rem;
+      padding: 0.35rem 0.6rem;
     }
   }
 </style>

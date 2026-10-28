@@ -1,0 +1,202 @@
+---
+// One project's write-up: title, cover, source link and body with its figures.
+// This is what the homepage modal used to hold; it now renders on the
+// project's own page, with the same type, spacing and colours.
+import { Picture, getImage } from 'astro:assets';
+import { inlineMd } from '../lib/inline-md';
+import type { Project } from '../lib/projects';
+import PowerTrace from './figures/PowerTrace.astro';
+import PirGrid from './figures/PirGrid.astro';
+import MicArray from './figures/MicArray.astro';
+import PdLoop from './figures/PdLoop.astro';
+import pcbPoster from '../assets/projects/pcb-rotate-poster.jpg';
+
+interface Props { project: Project }
+const { project: p } = Astro.props;
+
+// Interactive figures, referenced by name from a project's body in YAML.
+const FIGURES: Record<string, any> = {
+  'power-trace': PowerTrace,
+  'pir-grid': PirGrid,
+  'mic-array': MicArray,
+  'pd-loop': PdLoop,
+};
+const videoPoster = p.coverVideo ? (await getImage({ src: pcbPoster, width: 1280, format: 'webp' })).src : undefined;
+// Same name as the photo on the homepage card, so one morphs into the other.
+// Here the whole frame is named, not just the photo, so its placeholder
+// background travels with the photo instead of peeking out behind it.
+const vt = `cover-${p.id}`;
+---
+
+<article class="project">
+  <header class="project-head">
+    <h1 class="project-title">{p.name}</h1>
+    <p class="project-subtitle">
+      {(p.subtitle ?? '').split(' · ').map((part, i) => (
+        <>{i > 0 && ' · '}<span class="nowrap">{part}</span></>
+      ))}
+    </p>
+  </header>
+
+  {p.coverVideo ? (
+    <!-- Not named for the page transition: the video's first frame is a
+         different render from the card photo, so morphing between them would
+         show two boards at once. -->
+    <div class="project-media">
+      <!-- Nothing downloads until the video is on screen; see the
+           play-when-visible script below. -->
+      <video class="project-video" data-play-visible muted loop playsinline preload="none"
+        poster={videoPoster} width="1280" height="720" aria-label={`${p.name}, rotating 3D render`}>
+        <source src={p.coverVideo.webm} type='video/webm; codecs="av01.0.05M.08"' />
+        <source src={p.coverVideo.mp4} type="video/mp4" />
+      </video>
+    </div>
+  ) : p.cover && (
+    <!-- Same widths and formats as the homepage card, so the cover the card
+         already loaded is reused from cache and the transition lands on a
+         ready image instead of an empty box. -->
+    <div class="project-media" style={`view-transition-name: ${vt}`} data-vt={vt}>
+      <Picture
+        class={p.status === 'current' ? 'project-video project-video--crop' : 'project-video'}
+        src={p.cover}
+        alt={p.name}
+        widths={[480, 800, 1200]}
+        sizes="(max-width: 768px) 100vw, 760px"
+        formats={['avif', 'webp']}
+        fallbackFormat="webp"
+        loading="eager"
+        fetchpriority="high"
+        decoding="async"
+      />
+    </div>
+  )}
+
+  {(p.github || p.cta) && (
+    <div class="project-actions">
+      <a class="cta-primary" href={p.github ?? p.cta!.url} target="_blank" rel="noopener noreferrer">
+        {p.github ? 'View on GitHub' : p.cta!.label}
+        <span class="cta-arrow" aria-hidden="true">↗</span>
+      </a>
+    </div>
+  )}
+
+  {p.body.map((block) => {
+    if (typeof block === 'string') return <p class="project-body" set:html={inlineMd(block)} />;
+    const Figure = FIGURES[block.figure];
+    return Figure ? <Figure /> : null;
+  })}
+</article>
+
+<style>
+  .project-head { margin-bottom: 1.25rem; }
+
+  .project-title {
+    font-family: var(--font-display);
+    font-weight: 500;
+    font-size: clamp(1.9rem, 4vw, 2.5rem);
+    margin: 0 0 0.3rem;
+    line-height: 1.1;
+    letter-spacing: -0.01em;
+    color: var(--color-text-primary);
+  }
+
+  .project-subtitle {
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    color: var(--color-text-muted);
+    margin: 0;
+  }
+  .project-subtitle .nowrap { white-space: nowrap; }
+
+  .project-media {
+    width: 100%;
+    background: var(--color-bg-secondary);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    margin-bottom: 1.25rem;
+  }
+
+  .project-video {
+    width: 100%;
+    height: auto;
+    display: block;
+    /* No forced aspect ratio. These renders are 3:2 and 4:3; a fixed 16/9 box
+       with object-fit:cover would crop the one view someone opens
+       specifically to look at them. */
+    object-fit: contain;
+    max-height: 70vh;
+  }
+
+  /* Current-work photos are portrait or wide; crop them to 5:4 so the page
+     never shows a coloured panel beside the image. */
+  .project-video--crop {
+    aspect-ratio: 5 / 4;
+    object-fit: cover;
+    max-height: none;
+  }
+
+  /* Source link sits right under the image, so it is visible before the
+     write-up. */
+  .project-actions {
+    margin: -0.25rem 0 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+
+  .cta-primary {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-family: var(--font-sans);
+    font-size: 0.9375rem;
+    font-weight: 500;
+    color: var(--color-green-primary);
+    background: transparent;
+    border: 1px solid var(--color-green-primary);
+    border-radius: var(--radius-md);
+    padding: 0.55rem 1rem;
+    text-decoration: none;
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+  .cta-primary:hover {
+    background: var(--color-green-primary);
+    color: #FAF9F6;
+  }
+  .cta-arrow { font-size: 0.85em; }
+
+  .project-body {
+    font-family: var(--font-sans);
+    font-size: 1rem;
+    color: var(--color-text-primary);
+    line-height: 1.7;
+    margin: 0 0 0.9rem;
+  }
+  .project-body :global(strong) { font-weight: 600; }
+  .project-body :global(code) {
+    font-family: var(--font-mono); font-size: 0.86em;
+    background: var(--color-bg-secondary); border-radius: 4px; padding: 0.08em 0.35em;
+  }
+  .project-body :global(a) { color: var(--color-green-primary); text-decoration: none; border-bottom: 1px solid currentColor; }
+  .project-body :global(a:hover) { color: var(--color-green-hover); }
+</style>
+
+<script>
+  // The looping cover video plays only while it is on screen, and never under
+  // reduced motion. preload="none" means nothing is fetched until first play.
+  function wireVideos() {
+    const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const vids = document.querySelectorAll<HTMLVideoElement>('video[data-play-visible]');
+    if (reduce) { vids.forEach((v) => { v.controls = true; }); return; }
+    const io = new IntersectionObserver((entries) => {
+      for (const e of entries) {
+        const v = e.target as HTMLVideoElement;
+        if (e.isIntersecting && !document.hidden) v.play().catch(() => {});
+        else v.pause();
+      }
+    }, { threshold: 0.25 });
+    vids.forEach((v) => io.observe(v));
+  }
+  wireVideos();
+</script>

@@ -19,7 +19,7 @@ interface Props {
 const {
   title,
   preloadImage,
-  description = "Hardware design focused EE student at Syracuse University. FPGA accelerators (Vivado, SystemVerilog, VHDL), embedded firmware (C/C++, LoRaWAN), and PCB design (KiCad).",
+  description = "Electrical engineering student at Syracuse University working in firmware engineering and embedded systems. Edge AI, embedded ML, PCB design, C/C++.",
   image = "/og-image.png"
 } = Astro.props;
 
@@ -33,6 +33,13 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || 'https://omarmoha
     <!-- Drops the no-js class immediately so CSS can target the no-JS case.
          Inline and ~60 bytes; no network cost. -->
     <script is:inline>document.documentElement.classList.remove('no-js')</script>
+    <!-- Page transitions: morph only the one project photo that pairs with
+         where the reader is going (or coming from), and only if it is on
+         screen. Otherwise other cards' photos would fade out as loose layers,
+         and going back from the bottom of a long page would fly the cover in
+         from far above the viewport. Landing back on a card, its title fades
+         in as the photo arrives rather than snapping on afterwards. -->
+    <script is:inline>(function(){function fit(e,url){if(!e.viewTransition)return;var path=url?new URL(url).pathname:null;var els=document.querySelectorAll('[data-vt]');for(var i=0;i<els.length;i++){var el=els[i],r=el.getBoundingClientRect(),id=el.getAttribute('data-vt').slice(6);var pairs=!path||path==='/'||path.indexOf('/projects/'+id+'/')===0;var keep=pairs&&r.width>0&&r.bottom>0&&r.top<innerHeight;el.style.viewTransitionName=keep?'cover-'+id:'none';var card=keep&&e.type==='pagereveal'&&el.closest('.project-card');if(card){card.classList.remove('vt-landing');void card.offsetWidth;card.classList.add('vt-landing');setTimeout(function(){card.classList.remove('vt-landing')},900)}}}addEventListener('pageswap',function(e){fit(e,e.activation&&e.activation.entry&&e.activation.entry.url)});addEventListener('pagereveal',function(e){var a=window.navigation&&navigation.activation;fit(e,a&&a.from&&a.from.url)})})()</script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content={description} />
     <meta name="generator" content={Astro.generator} />
@@ -87,8 +94,8 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || 'https://omarmoha
       "@type": "Person",
       "name": "Omar Mohammed",
       "jobTitle": "Electrical Engineering Student",
-      "description": "Hardware design focused EE student. FPGA accelerators, embedded firmware, PCB design.",
-      "knowsAbout": ["Digital Design", "Firmware Development", "Embedded Systems", "FPGA", "RTL", "SystemVerilog", "VHDL", "PCB Design", "KiCad", "LoRaWAN", "C", "C++", "Microcontrollers"],
+      "description": "Electrical engineering student focused on firmware engineering and embedded systems.",
+      "knowsAbout": ["Firmware Development", "Embedded Systems", "Edge AI", "Machine Learning", "Power Measurement", "Register-Level Programming", "Bare-Metal Firmware", "STM32", "ATSAMD21", "VHDL", "RTL Design", "PCB Design", "KiCad", "C", "C++", "Python", "MATLAB"],
       "affiliation": {
         "@type": "CollegeOrUniversity",
         "name": "Syracuse University",
@@ -99,6 +106,10 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || 'https://omarmoha
         "addressLocality": "Syracuse",
         "addressRegion": "NY",
         "addressCountry": "US"
+      },
+      "worksFor": {
+        "@type": "Organization",
+        "name": "Flox Intelligence"
       },
       "url": "https://omarmohammed.co",
       "sameAs": [
