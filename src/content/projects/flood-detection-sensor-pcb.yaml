@@ -6,7 +6,7 @@ oneLiner: >-
 status: past
 order: 0
 mediaType: image
-# The modal shows the rotating KiCad render; the card keeps the still.
+# The project page shows the rotating KiCad render.
 coverVideo:
   webm: /videos/pcb-rotate.webm
   mp4: /videos/pcb-rotate.mp4
@@ -17,30 +17,23 @@ tech:
 github: https://github.com/ofmohamm/SU-WaterCam-PCB
 body:
   - >-
-    A sensor node on a lab bench and a sensor node in a storm drain are
-    different machines. The lab's units worked: a compute module, a FLIR Lepton
-    thermal camera, a BNO055 IMU, a LoRaWAN radio, and power management, wired
-    together on breakout boards with jumper leads. That assembly survives being
-    carried across a room. It doesn't survive a season outdoors, where vibration
-    walks connectors loose one millimeter at a time and water finds every gap
-    you didn't design.
+    The CHaRTS lab needed flood monitoring nodes that could sit outdoors on a
+    battery, with no network and no technician nearby. The existing units
+    worked on a bench, but they were assembled from breakout boards and jumper
+    wiring, which does not hold up in the field.
   - >-
-    So the stack goes onto one board, inside a waterproof enclosure. I designed
-    it.
+    I designed a custom 2-layer PCB that put the stack on one board: a FLIR
+    Lepton thermal camera, a BNO055 IMU, an mDot LoRaWAN radio and Witty Pi 4
+    power management, inside a waterproof enclosure. Traces are 0.25 mm for
+    signal and 0.5 mm for power.
   - >-
-    **Why LoRaWAN over cellular.** Cellular is the obvious pick, right up until
-    you look at where these nodes go. Deployment sites have no reliable
-    coverage, and every node runs on a battery that has to last the whole
-    deployment. LoRaWAN costs a small fraction of the power per packet and needs
-    no carrier plan at all.
-  - >-
-    You pay for that in bandwidth, and the bill is steep: enough for telemetry,
-    nowhere near enough for imagery. Which is why thermal data gets reduced on
-    the node before anything is transmitted. The radio choice reaches back and
-    changes what the firmware has to do, which is usually how radio choices
-    work.
+    We used LoRaWAN rather than cellular because the deployment sites have no
+    reliable coverage and each node runs on a battery that has to last the
+    deployment. LoRaWAN costs far less power per packet and needs no carrier
+    plan. The tradeoff is bandwidth, which is enough for telemetry and not for
+    imagery, so thermal data is reduced on the node before it is transmitted.
   - >-
     This was my first board. I taught myself KiCad and went from schematic to
     fabrication-ready Gerbers in a few weeks, including footprint verification
-    and a DFM pass before release to fab, mentored by Dr. Elizabeth Carter and
-    Manu Shergill.
+    and a DFM pass before release to fab. Dr. Elizabeth Carter and Manu
+    Shergill mentored me through it.

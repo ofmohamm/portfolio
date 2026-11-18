@@ -1,0 +1,13 @@
+# Understory
+
+*An algorithmic philosophy for the canopy a black panther sleeps in.*
+
+Understory treats a forest canopy as a negotiation between two forces that never finish arguing: light pulling every living tip upward and outward, and weight pulling every limb back toward the ground. Nothing is placed. A single heavy limb crosses the frame, the one structure the composition is anchored to, and everything else is grown from it or let down onto it. Branches are the record of that negotiation, and the work is the record of the branches.
+
+Growth is recursive and seeded. Each branch is a tapered curve that bends with a slow noise field, then leans a fraction of the way toward the light before it splits. Children inherit most of the parent's length and two thirds of its girth, with spread angles drawn from a narrow band, so a whole crown reads as one species rather than a scatter of sticks. Limbs that hang from the upper edge obey gravity instead of light and droop, giving the frame a ceiling as well as a floor. Every constant in the system, from the taper ratio to the angle of lean, should feel like it was tuned over countless iterations by someone at the top of the craft, because a branching system shows every careless number immediately.
+
+Leaves are where the light becomes visible. They sit alternately along each twig with a slight phyllotactic drift, and their size and colour follow the same noise field that bends the wood, so sunlit regions grow larger, paler leaves and shaded ones stay small and deep. Behind everything, soft pools of warm light gather wherever the field runs high, the way sun pools on a forest floor. The palette is a narrow band of moss, fern and new-leaf greens over warm paper, with bark in a muted brown. The restraint is deliberate, a meticulously balanced palette rather than a decorative one.
+
+The conceptual seed is the one thing the algorithm refuses to grow: a clearing on the main limb, a stretch of bark where no shoot is allowed to rise and no twig is allowed to drop. Something is resting there. The branches part around the space the way a real canopy accommodates whatever lives in it, and the viewer feels the absence before they understand it. The panther is drawn by hand; the forest around it is the algorithm's.
+
+Every seed produces a different tree and the same quiet. Density, reach, leaf size, light and droop are exposed as parameters, but the defaults are the work: the product of painstaking calibration, chosen so that the canopy frames its sleeper without ever crowding it. A master-level generative system is judged by how good its unremarkable seeds look, and Understory should look composed on every one of them.

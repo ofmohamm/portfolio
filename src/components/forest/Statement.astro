@@ -1,0 +1,105 @@
+---
+// The statement piece: the Understory canopy (seeded p5 drawing) with the
+// panther resting on its main limb. The panther is placed from the same
+// geometry the canopy uses, so it always sits on the bark.
+//   layout="hero"  full-bleed across the screen, limb edge to edge
+//   layout="side"  compact piece for the top-right margin
+import Panther from './Panther.astro';
+import { LAYOUTS, pantherAnchor } from './canopy.js';
+
+interface Props { layout?: 'hero' | 'side' }
+const { layout = 'hero' } = Astro.props;
+const L = LAYOUTS[layout];
+const a = pantherAnchor(layout);
+const s = L.pw / 300;
+const pct = (v: number, of: number) => `${((v / of) * 100).toFixed(3)}%`;
+const style = [
+  `left:${pct(a.x - 165 * s, L.W)}`,
+  `top:${pct(a.y - 132 * s, L.H)}`,
+  `width:${pct(L.pw, L.W)}`,
+  `transform:rotate(${a.angle.toFixed(4)}rad)`,
+].join(';');
+---
+<figure class={`statement statement--${layout}`} data-statement data-layout={layout}
+  style={`--ax:${(a.x / L.W).toFixed(4)};--ratio:${L.W} / ${L.H}`}>
+  <div class="stage">
+    <div class="canopy" aria-hidden="true"></div>
+    <div class="pwrap" style={style}><Panther /></div>
+  </div>
+</figure>
+
+<style>
+  .statement { --zoom: 1; position: relative; margin: 0; overflow: hidden; pointer-events: none; }
+  .stage { position: relative; width: calc(100% * var(--zoom)); aspect-ratio: var(--ratio); }
+
+  /* Hero: full-bleed from one edge of the screen to the other. */
+  .statement--hero { width: 100vw; margin-left: calc(50% - 50vw); }
+  /* Narrow screens: zoom so the panther stays a good size; the limb still
+     runs off both edges. */
+  @media (max-width: 1000px) { .statement--hero { --zoom: 1.5; } }
+  @media (max-width: 600px)  { .statement--hero { --zoom: 2.3; } }
+  .statement--hero .stage { margin-left: calc(50% - var(--ax) * 100% * var(--zoom)); }
+
+  .statement--side { width: 100%; }
+  /* Dissolve the canvas edges into the paper so neither piece reads as a
+     cut-out box. The hero's sides are the screen edges, so it fades top and
+     bottom; the side piece's right edge is the screen, so it fades on the
+     other three. */
+  .statement--side .canopy {
+    -webkit-mask-image: linear-gradient(to right, transparent 0, #000 22%), linear-gradient(to bottom, transparent 0, #000 14%, #000 72%, transparent 100%);
+    -webkit-mask-composite: source-in;
+            mask-image: linear-gradient(to right, transparent 0, #000 22%), linear-gradient(to bottom, transparent 0, #000 14%, #000 72%, transparent 100%);
+            mask-composite: intersect;
+  }
+  .statement--hero .canopy {
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 16%, #000 76%, transparent 100%);
+            mask-image: linear-gradient(to bottom, transparent 0, #000 16%, #000 76%, transparent 100%);
+  }
+
+  .canopy, .canopy :global(canvas) { position: absolute; inset: 0; width: 100% !important; height: 100% !important; display: block; }
+  .pwrap { position: absolute; transform-origin: 55% 62.857%; pointer-events: auto; }
+</style>
+
+<script>
+  import { LAYOUTS, drawCanopy } from './canopy.js';
+
+  const P5_URL = 'https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.7.0/p5.min.js';
+  let p5Promise: Promise<any> | null = null;
+  const loadP5 = () => (p5Promise ||= new Promise((res, rej) => {
+    if ((window as any).p5) return res((window as any).p5);
+    const s = document.createElement('script');
+    s.src = P5_URL; s.onload = () => res((window as any).p5); s.onerror = rej;
+    document.head.appendChild(s);
+  }));
+
+  async function mount(fig: HTMLElement) {
+    if (fig.dataset.ready || !fig.offsetParent) return;   // only the visible placement draws
+    fig.dataset.ready = '1';
+    const layout = (fig.dataset.layout || 'hero') as keyof typeof LAYOUTS;
+    const { W, H } = LAYOUTS[layout];
+    const host = fig.querySelector<HTMLElement>('.canopy')!;
+    const P5 = await loadP5();
+    new P5((p: any) => {
+      p.setup = () => {
+        p.pixelDensity(Math.min(2, window.devicePixelRatio || 1));
+        p.createCanvas(W, H).parent(host);
+        p.noLoop();
+      };
+      p.draw = () => drawCanopy(p, { habitat: 'kabini' }, layout);
+    });
+  }
+  document.querySelectorAll<HTMLElement>('[data-statement]').forEach(mount);
+
+  // Curious panther: pupils follow the cursor (and do nothing when shut).
+  const MAX = 2.4;
+  window.addEventListener('pointermove', (e) => {
+    document.querySelectorAll<SVGGElement>('[data-statement] .eye').forEach((eye) => {
+      const pupil = eye.querySelector<SVGEllipseElement>('.pupil')!;
+      const r = eye.getBoundingClientRect();
+      if (!r.width) return;
+      const dx = e.clientX - (r.left + r.width / 2), dy = e.clientY - (r.top + r.height / 2);
+      const d = Math.hypot(dx, dy) || 1, k = Math.min(1, d / 220) * MAX;
+      pupil.setAttribute('transform', `translate(${((dx / d) * k).toFixed(2)} ${((dy / d) * k * 0.7).toFixed(2)})`);
+    });
+  }, { passive: true });
+</script>

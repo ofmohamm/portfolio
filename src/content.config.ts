@@ -55,6 +55,8 @@ const site = defineCollection({
       .optional(),
     title: z.string().optional(),
     description: z.string().optional(),
+    // outbound link for a card (zarf.yaml)
+    url: z.string().url().optional(),
   }),
 });
 

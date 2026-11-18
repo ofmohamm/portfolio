@@ -1,974 +1,160 @@
 ---
-import BaseLayout from '../layouts/BaseLayout.astro';
-import ParticleField from '../components/ParticleField.astro';
-import { Image, Picture, getImage } from 'astro:assets';
-import { inlineMd } from '../lib/inline-md';
-import PowerTrace from '../components/figures/PowerTrace.astro';
-import PirGrid from '../components/figures/PirGrid.astro';
-import MicArray from '../components/figures/MicArray.astro';
-import PdLoop from '../components/figures/PdLoop.astro';
-import pcbPoster from '../assets/projects/pcb-rotate-poster.jpg';
-
-// Interactive figures, referenced by name from a project's body in YAML.
-const FIGURES: Record<string, any> = {
-  'power-trace': PowerTrace,
-  'pir-grid': PirGrid,
-  'mic-array': MicArray,
-  'pd-loop': PdLoop,
-};
-const videoPoster = (await getImage({ src: pcbPoster, width: 1280, format: 'webp' })).src;
+import ForestLayout from '../layouts/ForestLayout.astro';
+import Statement from '../components/forest/Statement.astro';
+import LeafMark from '../components/forest/LeafMark.astro';
 import { getCollection, getEntry } from 'astro:content';
 
-// Project cover images live in src/assets so Astro can convert and resize them.
-import watercamPcb from '../assets/projects/watercam-pcb.png';
-import privacyTracker from '../assets/projects/privacy-tracker.jpg';
-import floxEdgeCamera from '../assets/projects/flox-edge-camera.webp';
-import acousticDrone from '../assets/projects/acoustic-drone-detection.jpg';
-import heroLogo from '../assets/logo.png';
-
-const covers: Record<string, ImageMetadata> = {
-  'flood-detection-sensor-pcb': watercamPcb,
-  'privacy-based-tracker': privacyTracker,
-  'flox-edge-modeling': floxEdgeCamera,
-  'acoustic-drone-detection': acousticDrone,
-};
-
-// Content is YAML on disk, read at build time by Astro's content layer.
-const [heroEntry, skillsEntry, seoEntry, projectEntries] = await Promise.all([
+// Content is YAML on disk (src/content), read at build time.
+const [hero, seo, skills, zarf, projectEntries] = await Promise.all([
   getEntry('site', 'hero'),
-  getEntry('site', 'skills'),
   getEntry('site', 'seo'),
+  getEntry('site', 'skills'),
+  getEntry('site', 'zarf'),
   getCollection('projects'),
 ]);
 
-// The hero signature is flat line art with alpha. A palette PNG encodes it far
-// smaller than lossy WebP (12kB vs 37kB), so the source is pre-quantized and
-// served as-is. One fixed asset also means the <head> preload and the <img>
-// request resolve to the same file, with no double download.
-const heroImg = heroLogo;
-
-const hero = heroEntry?.data;
-const seo = seoEntry?.data;
-
+const year = (s?: string) => s?.match(/\d{4}/)?.[0] ?? '';
+// Current work first, then past; each in its own order.
 const projects = projectEntries
-  .map((entry) => ({
-    id: entry.id,
-    name: entry.data.name,
-    subtitle: entry.data.subtitle,
-    oneLiner: entry.data.oneLiner,
-    order: entry.data.order,
-    status: entry.data.status,
-    org: entry.data.org,
-    team: entry.data.team,
-    cover: covers[entry.id],
-    tech: entry.data.tech,
-    github: entry.data.github,
-    cta: entry.data.cta,
-    coverVideo: entry.data.coverVideo,
-    body: entry.data.body,
-    specs: entry.data.specs.map((sp) => [sp.key, sp.value] as const),
+  .map((e) => ({
+    id: e.id,
+    name: e.data.name,
+    year: year(e.data.subtitle),
+    current: e.data.status === 'current',
+    label: e.data.org ? `${e.data.org}${e.data.status === 'current' ? ' · In progress' : ''}` : '',
+    order: e.data.order,
   }))
-  .sort((a, b) => a.order - b.order);
+  .sort((a, b) => Number(b.current) - Number(a.current) || a.order - b.order);
 
-// Current work sits above past projects. Empty groups are not rendered.
-const projectGroups = [
-  { key: 'current', label: 'Current', items: projects.filter((p) => p.status === 'current') },
-  { key: 'past', label: 'Previously', items: projects.filter((p) => p.status === 'past') },
-].filter((g) => g.items.length > 0);
-
-const skills = (skillsEntry?.data.groups ?? []).map((g) => ({
-  label: g.label,
-  items: g.items,
-}));
-
-// Profiles as consistent thin line icons (matching the monoline logo).
-const socialIcons = [
-  {
-    href: 'https://github.com/ofmohamm',
-    label: 'GitHub',
-    svg: `<path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.4 5.4 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/><path d="M9 18c-4.51 2-5-2-7-2"/>`,
-  },
-  {
-    href: 'https://linkedin.com/in/ofmohammed',
-    label: 'LinkedIn',
-    svg: `<path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect width="4" height="12" x="2" y="9"/><circle cx="4" cy="4" r="2"/>`,
-  },
-  {
-    href: 'mailto:mail.omarmohammed@gmail.com',
-    label: 'Email',
-    svg: `<rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>`,
-  },
-];
+// Keep "@", "|" and "&" glued to the word before them so a wrapped line never starts with one.
+const glue = (s: string) => s.replace(/ ([@|&]) /g, ' $1 ');
+const [hello, ...rest] = (hero?.data.positioning ?? []);
 ---
 
-<BaseLayout
-  preloadImage={heroImg.src}
-  title={seo?.title ?? 'Omar Mohammed — FPGA, embedded firmware, PCB design'}
-  description={seo?.description ?? 'Hardware design focused EE student at Syracuse. FPGA accelerators (Vivado, SystemVerilog, VHDL), embedded firmware (C/C++, LoRaWAN), and PCB design (KiCad).'}
->
-  <!-- ============ HERO ============ -->
-  <section id="hero" class="snap-section hero">
-    <ParticleField />
+<ForestLayout title={seo?.data.title ?? 'Omar Mohammed'} description={seo?.data.description}>
+  <div class="hero-art"><Statement layout="hero" /></div>
 
-    <div class="hero-inner">
-      <!--
-        The signature is the visual H1. The name is carried as real text for
-        crawlers and screen readers, and the image is marked decorative so the
-        name is not announced twice.
-      -->
-      <h1 class="hero-h1">
-        <span class="sr-only">{`${hero?.firstName ?? 'Omar'} ${hero?.lastName ?? 'Mohammed'}`}</span>
-      </h1>
-      <img
-        class="hero-signature"
-        src={heroImg.src}
-        alt=""
-        aria-hidden="true"
-        width={heroImg.width}
-        height={heroImg.height}
-        fetchpriority="high"
-        decoding="async"
-      />
+  <h1 class="hello">{glue(hello ?? '')}</h1>
+  {rest.map((line) => <p class="intro">{glue(line)}</p>)}
 
-      <p class="hero-positioning">
-        {(hero?.positioning ?? []).map((line) => (
-          // Glue "@" and "|" to the word before them, so a wrapped line never starts with one.
-          <span>{line.replace(/ ([@|]) /g, '\u00A0$1 ')}</span>
-        ))}
-      </p>
-
-      <nav class="hero-links" aria-label="Profiles and resume">
-        {socialIcons.map((s) => (
-          <a class="hero-icon" href={s.href} target="_blank" rel="noopener noreferrer" aria-label={s.label}>
-            <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" set:html={s.svg} />
-          </a>
-        ))}
-      </nav>
-    </div>
-
-    <a href="#projects" class="hero-scroll-cue" aria-label="Scroll to projects">
-      <svg class="scroll-cue-arrow" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <polyline points="6 9 12 15 18 9"></polyline>
-      </svg>
+  {zarf && (
+    <a class="venture" href={zarf.data.url} target="_blank" rel="noopener noreferrer">
+      <span class="venture-logo" aria-hidden="true">Z</span>
+      <span class="venture-text">
+        <span class="venture-name">{zarf.data.name} <span class="tag">{zarf.data.status}</span></span>
+        <span class="venture-line">{zarf.data.oneLiner}</span>
+      </span>
+      <span class="venture-arrow" aria-hidden="true">↗</span>
     </a>
-  </section>
+  )}
 
-  <!-- ============ PROJECTS ============ -->
-  <section id="projects" class="content-section content-section--wide reveal">
-    <div class="content-inner content-inner--wide">
-      <h2 class="section-heading">Projects</h2>
-
-      {projectGroups.map((g) => (
-        <div class={`project-group project-group--${g.key}`}>
-          <div class={`work-grid work-grid--${g.key}`}>
-            {g.items.map((p) => (
-              <a class="project-card" id={p.id} href={`#modal-${p.id}`} data-open={p.id} aria-label={`${p.name} — open details`}>
-                <div class="card-media" data-media="image">
-                  {p.cover && (
-                    <Picture
-                      class="card-video"
-                      src={p.cover}
-                      alt={`${p.name} preview`}
-                      widths={[480, 800, 1200]}
-                      sizes="(max-width: 768px) 100vw, 540px"
-                      formats={['avif', 'webp']}
-                      fallbackFormat="webp"
-                      loading="lazy"
-                      decoding="async"
-                    />
-                  )}
-                  <div class="card-overlay">
-                    {p.org && <span class="card-org">{p.org}{p.status === 'current' && ' · In progress'}</span>}
-                    <h3 class="card-name">{p.name}</h3>
-                    <span class="card-cue" aria-hidden="true">View details</span>
-                  </div>
-                </div>
-              </a>
-            ))}
-          </div>
-        </div>
+  <section id="projects">
+    <h2><LeafMark />Projects</h2>
+    <ul class="rows">
+      {projects.map((p) => (
+        <li>
+          <a class="row" href={`/work/${p.id}/`}>
+            <span class="year">{p.year}</span>
+            <span class="row-main">
+              <span class="row-title">{p.name}</span>
+              {p.label && <span class="tag">{p.label}</span>}
+            </span>
+            <span class="cue">View details</span>
+          </a>
+        </li>
       ))}
-    </div>
+    </ul>
   </section>
 
-  <!-- ============ SKILLS ============ -->
-  <section id="skills" class="content-section content-section--wide reveal">
-    <div class="content-inner content-inner--wide">
-      <h2 class="section-heading">Skills</h2>
-
-      <div class="skills-list">
-        {skills.map((s) => (
-          <div class="skill-group">
-            <h3 class="skill-cat">{s.label}</h3>
-            <p class="skill-items">
-              {s.items.map((i, idx) => (
-                <>{idx > 0 && <span class="skill-sep" aria-hidden="true">, </span>}<span class="skill-item">{i}</span></>
-              ))}
-            </p>
-          </div>
-        ))}
-      </div>
-    </div>
+  <section id="skills">
+    <h2><LeafMark />Skills</h2>
+    <dl class="skills">
+      {(skills?.data.groups ?? []).map((g) => (
+        <>
+          <dt>{g.label}</dt>
+          <dd>{g.items.join(', ')}</dd>
+        </>
+      ))}
+    </dl>
   </section>
-
-  <!-- ============ PROJECT MODALS ============ -->
-  {projects.map((p) => (
-    <dialog class="project-modal" id={`modal-${p.id}`} aria-labelledby={`modal-${p.id}-title`}>
-      <div class="modal-inner">
-        <div class="modal-close-bar">
-            <a class="modal-close" href="#projects" data-close aria-label="Close (Esc)">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <line x1="18" y1="6" x2="6" y2="18"/>
-                <line x1="6" y1="6" x2="18" y2="18"/>
-              </svg>
-            </a>
-        </div>
-        <div class="modal-head">
-          <div class="modal-head-text">
-            <h3 id={`modal-${p.id}-title`} class="modal-title">{p.name}</h3>
-            <p class="modal-subtitle">
-              {(p.subtitle ?? '').split(' · ').map((part, i) => (
-                <>{i > 0 && ' · '}<span class="nowrap">{part}</span></>
-              ))}
-            </p>
-          </div>
-        </div>
-
-        {p.coverVideo ? (
-          <div class="modal-media">
-            <!-- Nothing downloads until the modal is opened and the video is on
-                 screen; see the play-when-visible script below. -->
-            <video class="modal-video" data-play-visible muted loop playsinline preload="none"
-              poster={videoPoster} width="1280" height="720" aria-label={`${p.name}, rotating 3D render`}>
-              <source src={p.coverVideo.webm} type='video/webm; codecs="av01.0.05M.08"' />
-              <source src={p.coverVideo.mp4} type="video/mp4" />
-            </video>
-          </div>
-        ) : p.cover && (
-          <div class="modal-media">
-            <Picture
-              class={p.status === 'current' ? 'modal-video modal-video--crop' : 'modal-video'}
-              src={p.cover}
-              alt={`${p.name}`}
-              widths={[640, 1000, 1400]}
-              sizes="(max-width: 768px) 100vw, 900px"
-              formats={['avif', 'webp']}
-              fallbackFormat="webp"
-              loading="lazy"
-              decoding="async"
-            />
-          </div>
-        )}
-
-        {(p.github || p.cta) && (
-          <div class="modal-actions">
-            <a class="cta-primary" href={p.github ?? p.cta!.url} target="_blank" rel="noopener noreferrer">
-              {p.github ? 'View on GitHub' : p.cta!.label}
-              <span class="cta-arrow" aria-hidden="true">↗</span>
-            </a>
-          </div>
-        )}
-
-        {p.body.map((block) => {
-          if (typeof block === 'string') return <p class="modal-body" set:html={inlineMd(block)} />;
-          const Figure = FIGURES[block.figure];
-          return Figure ? <Figure /> : null;
-        })}
-
-      </div>
-    </dialog>
-  ))}
-</BaseLayout>
+</ForestLayout>
 
 <style>
-  :root {
-    --content-max: 920px;
-    --content-wide: 1100px;
-  }
+  .hero-art { margin: -64px 0 20px; }
+  @media (max-width: 600px) { .hero-art { margin-top: -24px; } }
 
-  .content-section {
-    padding: 7rem var(--gutter) 0;
-    /* Skip layout and paint for these until they are near the viewport. The
-       contain-intrinsic-size keeps the scrollbar honest before they render. */
-    content-visibility: auto;
-    contain-intrinsic-size: auto 600px;
-  }
-
-  .content-inner {
-    max-width: var(--content-max);
-    margin: 0 auto;
-  }
-
-  .content-inner--wide {
-    max-width: var(--content-wide);
-  }
-
-  /* ============ SECTION HEADINGS (Fraunces, prominent) ============ */
-  .section-heading {
-    font-family: var(--font-display);
+  .hello {
+    font-size: clamp(1.9rem, 5vw, 2.5rem);
+    line-height: 1.15;
+    font-style: italic;
     font-weight: 500;
-    font-size: clamp(2rem, 4vw, 2.75rem);
-    letter-spacing: -0.01em;
-    color: var(--color-text-primary);
-    margin: 0 0 2.25rem;
-    line-height: 1.05;
+    text-wrap: balance;
+  }
+  .intro { margin-top: 14px; max-width: 34em; color: var(--ink); text-wrap: pretty; }
+
+  /* ---- Zarf Health: the one boxed thing on the page, the whole card is the link */
+  .venture {
+    display: flex; align-items: center; gap: 16px;
+    margin-top: 32px; padding: 16px 18px;
+    border: 1px solid color-mix(in srgb, var(--forest) 22%, transparent);
+    border-radius: 12px;
+    background: color-mix(in srgb, var(--forest) 4%, var(--paper));
+    color: var(--ink); text-decoration: none;
+    transition: border-color .15s ease, background-color .15s ease, transform .15s ease;
+  }
+  .venture:hover { border-color: var(--forest); background: color-mix(in srgb, var(--forest) 7%, var(--paper)); }
+  .venture-logo {
+    flex: none; width: 48px; height: 48px; border-radius: 10px; display: grid; place-items: center;
+    background: var(--forest); color: var(--paper); font-style: italic; font-weight: 700; font-size: 1.5rem;
+  }
+  .venture-text { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+  .venture-name { font-weight: 700; }
+  .venture-line { color: var(--gray); line-height: 1.45; }
+  .venture-arrow { flex: none; color: var(--forest); font-size: 1.2rem; transition: transform .15s ease; }
+  .venture:hover .venture-arrow { transform: translate(2px, -2px); }
+
+  .tag {
+    font-size: .68em; font-weight: 600; letter-spacing: .1em; text-transform: uppercase;
+    color: var(--gray); white-space: nowrap;
+  }
+  .venture-name .tag { margin-left: 6px; }
+  @media (max-width: 520px) {
+    .venture { align-items: flex-start; gap: 12px; padding: 14px; }
+    .venture-logo { width: 40px; height: 40px; font-size: 1.25rem; }
+    .venture-name .tag { display: block; margin: 2px 0 4px; }
   }
 
-  /* ============ HERO ============ */
-  .hero {
-    position: relative;
-    /* Cap the hero so it doesn't stretch on very tall / zoomed-out viewports,
-       which would leave a large empty band between the centered content and
-       the projects section below. */
-    min-height: min(100vh, 860px);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    overflow: hidden;
-    padding: 6rem var(--gutter) 6rem;
+  /* ---- Projects: year, then title; the whole row is the link */
+  .rows { list-style: none; margin: 0; padding: 0; }
+  .rows li + li { margin-top: 6px; }
+  .row {
+    display: grid; grid-template-columns: 3.25rem 1fr auto; column-gap: 1rem; align-items: baseline;
+    padding: 8px 0; color: var(--ink); text-decoration: none;
   }
-
-  .hero-inner {
-    position: relative;
-    z-index: 2;
-    max-width: var(--content-max);
-    margin: 0 auto;
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
+  .year { color: var(--gray); font-variant-numeric: tabular-nums lining-nums; }
+  .row-main { display: flex; flex-wrap: wrap; align-items: baseline; column-gap: 10px; }
+  .row-title {
+    color: var(--forest); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px;
+    text-decoration-color: color-mix(in srgb, var(--forest) 35%, transparent);
   }
-
-  .hero-h1 {
-    margin: 0;
-    padding: 0;
-    line-height: 0;
-  }
-
-  .hero-signature {
-    width: min(560px, 84vw);
-    height: auto;
-    display: block;
-    margin-bottom: 2rem;
-    clip-path: inset(0 100% 0 0);
-    animation: sign-draw 1.4s cubic-bezier(0.65, 0, 0.35, 1) 0.25s forwards;
-  }
-
-  @keyframes sign-draw {
-    to { clip-path: inset(0 0 0 0); }
-  }
-
-  .hero-positioning {
-    font-family: var(--font-sans);
-    font-size: clamp(1rem, 1.6vw, 1.15rem);
-    line-height: 1.55;
-    color: var(--color-text-secondary);
-    margin: 0;
-    opacity: 0;
-    animation: hero-fade 0.8s ease 1.1s forwards;
-  }
-
-  .hero-positioning span { display: block; text-wrap: balance; }
-  .hero-positioning span + span { margin-top: 0.4rem; }
-
-  .hero-links {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: center;
-    gap: 1.5rem;
-    margin-top: 2rem;
-    opacity: 0;
-    animation: hero-fade 0.8s ease 1.3s forwards;
-  }
-
-  .hero-icon {
-    color: var(--color-text-primary);
-    display: inline-flex;
-    transition: color 0.15s ease, transform 0.15s ease;
-  }
-  .hero-icon:hover {
-    color: var(--color-green-primary);
-    transform: translateY(-2px);
-  }
-
-  @keyframes hero-fade {
-    from { opacity: 0; transform: translateY(6px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-
-  .hero-scroll-cue {
-    position: absolute;
-    bottom: 1.75rem;
-    left: 50%;
-    transform: translateX(-50%);
-    color: var(--color-text-muted);
-    z-index: 2;
-    transition: color 0.2s ease;
-  }
-  .hero-scroll-cue:hover { color: var(--color-green-primary); }
-  .scroll-cue-arrow { animation: scroll-bounce 1.8s ease-in-out infinite; display: block; }
-
-  @keyframes scroll-bounce {
-    0%, 100% { transform: translateY(0); opacity: 0.55; }
-    50% { transform: translateY(5px); opacity: 1; }
-  }
-
-  /* ============ FEATURED CARD ============ */
-
-  .project-tech {
-    font-family: var(--font-sans);
-    font-size: 0.82rem;
-    font-weight: 500;
-    color: var(--color-text-muted);
-    margin: 0;
-    line-height: 1.5;
-    letter-spacing: 0.01em;
-  }
-
-  /* ============ PROJECT GROUPS ============ */
-  /* Same gap as inside the grid, so the two groups read as one set of cards. */
-  .project-group + .project-group { margin-top: 1.5rem; }
-
-  .card-org {
-    font-family: var(--font-sans);
-    font-size: 0.8rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.13em;
-    color: rgba(250, 249, 246, 0.85);
-    margin-bottom: 0.35rem;
-    text-shadow: 0 1px 8px rgba(0, 0, 0, 0.3);
-  }
-
-  /* ============ PROJECT TILES ============ */
-  .work-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 1.5rem;
-  }
-
-  .project-card {
-    position: relative;
-    display: block;
-    width: 100%;
-    padding: 0;
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-md);
-    background: var(--color-bg-secondary);
-    overflow: hidden;
-    cursor: pointer;
-    font: inherit;
-    color: inherit;
-    text-align: left;
-    transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
-  }
-  .project-card:hover {
-    border-color: var(--color-text-muted);
-    transform: translateY(-3px);
-    box-shadow: var(--shadow-md);
-  }
-  .project-card:focus-visible {
-    outline: 2px solid var(--color-green-primary);
-    outline-offset: 2px;
-  }
-
-  .card-media {
-    position: relative;
-    width: 100%;
-    aspect-ratio: 4 / 3;
-    overflow: hidden;
-    background: var(--color-bg-secondary);
-  }
-
-  .card-video {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-  }
-
-  /* model-viewer fills the tile uniformly (same area as the video tiles) */
-  .card-media :global(.viewer-container),
-  .card-media :global(.pcb-viewer) {
-    width: 100%;
-    height: 100%;
-  }
-  .card-media :global(.pcb-viewer) {
-    border: none;
-    border-radius: 0;
-    background: var(--color-bg-secondary);
-  }
-
-  /* Name overlay + click affordance */
-  .card-overlay {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-end;
-    align-items: flex-start;
-    padding: 1.2rem 1.35rem;
-    background: linear-gradient(to top, rgba(20, 26, 27, 0.72) 0%, rgba(20, 26, 27, 0.25) 38%, transparent 65%);
-    pointer-events: none;
-  }
-
-  .card-name {
-    font-family: var(--font-display);
-    font-weight: 500;
-    font-size: clamp(1.3rem, 2.4vw, 1.7rem);
-    line-height: 1.12;
-    color: #FAF9F6;
-    margin: 0;
-    text-shadow: 0 1px 12px rgba(0, 0, 0, 0.25);
-  }
-
-  .card-cue {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.25rem;
-    margin-top: 0.55rem;
-    font-family: var(--font-sans);
-    font-size: 0.82rem;
-    font-weight: 500;
-    color: rgba(250, 249, 246, 0.9);
-    opacity: 0.85;
-    transform: translateY(2px);
-    transition: opacity 0.2s ease, transform 0.2s ease;
-  }
-  .cue-arrow { font-size: 0.9em; }
-  .project-card:hover .card-cue { opacity: 1; transform: translateY(0); }
-
-  /* "View details" is hover-revealed only where hover exists. The cue stays in
-     the layout (opacity, not display), so the title never jumps. Touch devices
-     keep it visible because they cannot hover, and keyboard focus reveals it
-     the same way hover does. */
+  .row:hover .row-title { text-decoration-color: currentColor; }
+  .cue { color: var(--gray); font-size: .8em; white-space: nowrap; }
+  /* "View details" appears on hover where hover exists; always visible on phones. */
   @media (hover: hover) and (pointer: fine) {
-    .card-cue {
-      opacity: 0;
-      transform: translateY(6px);
-    }
-    .project-card:hover .card-cue,
-    .project-card:focus-visible .card-cue {
-      opacity: 1;
-      transform: translateY(0);
-    }
+    .cue { opacity: 0; transform: translateX(-4px); transition: opacity .15s ease, transform .15s ease; }
+    .row:hover .cue, .row:focus-visible .cue { opacity: 1; transform: none; }
+  }
+  @media (max-width: 520px) {
+    .row { grid-template-columns: 3rem 1fr; }
+    .cue { grid-column: 2; }
   }
 
-  @media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: reduce) {
-    .card-cue,
-    .project-card:hover .card-cue,
-    .project-card:focus-visible .card-cue {
-      transform: none;
-    }
-  }
-
-  /* ============ SKILLS (editorial big-type list) ============ */
-  .skills-list {
-    display: flex;
-    flex-direction: column;
-    gap: 2.25rem;
-  }
-
-  .skill-group {
-    display: grid;
-    grid-template-columns: minmax(180px, 0.7fr) 2fr;
-    gap: 1.5rem 2.5rem;
-    align-items: baseline;
-  }
-
-  .skill-cat {
-    font-family: var(--font-display);
-    font-weight: 500;
-    font-size: clamp(1.25rem, 2.2vw, 1.6rem);
-    line-height: 1.1;
-    color: var(--color-text-primary);
-    margin: 0;
-  }
-
-  .skill-items {
-    font-family: var(--font-sans);
-    font-size: clamp(1rem, 1.5vw, 1.1rem);
-    line-height: 1.85;
-    color: var(--color-text-secondary);
-    margin: 0;
-  }
-
-  .skill-sep { color: var(--color-text-muted); margin-right: 0.15rem; }
-  /* Keep each skill on one line ("Bare-Metal", "Intel Quartus"). Wrapping
-     happens only at the comma between items. */
-  .skill-item { white-space: nowrap; }
-
-  /* ============ REVEAL ON SCROLL ============ */
-  .reveal {
-    opacity: 0;
-    transform: translateY(16px);
-    transition: opacity 0.6s ease, transform 0.6s ease;
-  }
-  .reveal.is-visible { opacity: 1; transform: translateY(0); }
-
-  /* ============ MODAL ============ */
-  .project-modal {
-    border: none;
-    background: transparent;
-    padding: 0;
-    margin: auto;
-    inset: 0;
-    max-width: 760px;
-    width: calc(100vw - 2rem);
-    max-height: calc(100vh - 2rem);
-    border-radius: 10px;
-    color: var(--color-text-primary);
-  }
-  .project-modal::backdrop {
-    background: rgba(20, 22, 20, 0.38);
-    backdrop-filter: blur(2px);
-  }
-  .project-modal[open] { animation: modal-in 0.2s ease; }
-
-  @keyframes modal-in {
-    from { opacity: 0; transform: translateY(8px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-
-  .modal-inner {
-    position: relative;
-    background: var(--color-bg-primary);
-    border: 1px solid var(--color-border);
-    border-top: 4px solid var(--color-green-primary);
-    border-radius: 10px;
-    padding: 1.85rem;
-    max-height: calc(100vh - 2rem);
-    overflow-y: auto;
-  }
-
-  .modal-head {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 1rem;
-    margin-bottom: 1.25rem;
-  }
-  .modal-head-text { flex: 1 1 auto; min-width: 0; padding-right: 3rem; }
-
-  .modal-title {
-    font-family: var(--font-display);
-    font-weight: 500;
-    font-size: clamp(1.6rem, 3vw, 2rem);
-    margin: 0 0 0.25rem;
-    line-height: 1.12;
-    letter-spacing: -0.01em;
-  }
-
-  .modal-subtitle .nowrap { white-space: nowrap; }
-
-  .modal-subtitle {
-    font-family: var(--font-sans);
-    font-size: 0.875rem;
-    color: var(--color-text-muted);
-    margin: 0;
-  }
-
-  /* Zero-height sticky bar: the close button stays pinned to the top-right
-     while a long modal scrolls underneath it, without taking any space. */
-  .modal-close-bar {
-    position: sticky;
-    top: 0;
-    height: 0;
-    display: flex;
-    justify-content: flex-end;
-    z-index: 3;
-  }
-
-  .modal-close {
-    flex-shrink: 0;
-    width: 36px;
-    height: 36px;
-    border: 1px solid var(--color-border);
-    /* Solid so text scrolling underneath does not show through. */
-    background: var(--color-bg-primary);
-    border-radius: 8px;
-    color: var(--color-text-secondary);
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0;
-    transition: border-color 0.15s ease, color 0.15s ease;
-  }
-  .modal-close:hover {
-    color: var(--color-text-primary);
-    border-color: var(--color-text-primary);
-  }
-
-  .modal-media {
-    width: 100%;
-    background: var(--color-bg-secondary);
-    border-radius: var(--radius-md);
-    overflow: hidden;
-    margin-bottom: 1.25rem;
-  }
-
-  .modal-video {
-    width: 100%;
-    height: auto;
-    display: block;
-    /* No forced aspect ratio. These renders are 3:2 and 4:3; a fixed 16/9 box
-       with object-fit:cover was cropping 15% and 25% of their height in the one
-       view someone opens specifically to look at them. */
-    object-fit: contain;
-    max-height: 70vh;
-  }
-
-  /* Current-work photos are portrait or wide; crop them to the card's 5:4 so the
-     modal never shows a coloured panel beside the image. */
-  .modal-video--crop {
-    aspect-ratio: 5 / 4;
-    object-fit: cover;
-    max-height: none;
-  }
-
-  .modal-body :global(strong) { font-weight: 600; }
-  .modal-body :global(code) {
-    font-family: var(--font-mono); font-size: 0.86em;
-    background: var(--color-bg-secondary); border-radius: 4px; padding: 0.08em 0.35em;
-  }
-  .modal-body :global(a) { color: var(--color-green-primary); text-decoration: none; border-bottom: 1px solid currentColor; }
-  .modal-body :global(a:hover) { color: var(--color-green-hover); }
-
-  .modal-body {
-    font-family: var(--font-sans);
-    font-size: 1rem;
-    color: var(--color-text-primary);
-    line-height: 1.7;
-    margin: 0 0 0.9rem;
-  }
-
-  /* Source link sits right under the image, so it is visible as soon as the
-     modal opens instead of after scrolling past the write-up. */
-  .modal-actions {
-    margin: -0.25rem 0 1.25rem;
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    flex-wrap: wrap;
-  }
-
-  .modal-foot {
-    margin-top: 1.5rem;
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    flex-wrap: wrap;
-  }
-
-  .cta-primary {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.4rem;
-    font-family: var(--font-sans);
-    font-size: 0.9375rem;
-    font-weight: 500;
-    color: var(--color-green-primary);
-    background: transparent;
-    border: 1px solid var(--color-green-primary);
-    border-radius: var(--radius-md);
-    padding: 0.55rem 1rem;
-    text-decoration: none;
-    transition: background 0.15s ease, color 0.15s ease;
-  }
-  .cta-primary:hover {
-    background: var(--color-green-primary);
-    color: #FAF9F6;
-  }
-  .cta-arrow { font-size: 0.85em; }
-
-  /* ============ CURSOR RESTORE OVER MODAL ============ */
-
-  /* ============ TABLET / MOBILE ============ */
-  /* Keep the 2-up grid down through tablets; single column only on phones,
-     so portrait tablets don't get oversized full-width 4:3 tiles. */
-  @media (max-width: 640px) {
-    .work-grid { grid-template-columns: 1fr; }
-  }
-
-  @media (max-width: 640px) {
-    .content-section { padding-top: 5rem; }
-    .hero-signature { width: min(420px, 86vw); }
-    .hero-positioning { font-size: 1rem; }
-    .modal-inner { padding: 1.3rem; }
-  }
-
+  /* ---- Skills: label, then the list */
+  .skills { display: grid; grid-template-columns: 11rem 1fr; gap: 12px 1rem; margin: 0; }
+  .skills dt { font-weight: 700; }
+  .skills dd { margin: 0; color: var(--gray); }
   @media (max-width: 560px) {
-    .skill-group { grid-template-columns: 1fr; gap: 0.5rem; }
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .project-modal[open] { animation: none; }
-    .scroll-cue-arrow { animation: none; }
-    .hero-signature { clip-path: none; animation: none; }
-    .hero-positioning, .hero-links { opacity: 1; animation: none; }
-    .reveal { opacity: 1; transform: none; transition: none; }
+    .skills { grid-template-columns: 1fr; gap: 0; }
+    .skills dd + dt { margin-top: 12px; }
   }
 </style>
-
-<script>
-  function wireModals() {
-    const modals = Array.from(
-      document.querySelectorAll<HTMLDialogElement>('.project-modal')
-    );
-    if (modals.length === 0) return;
-    let restoreFocus: HTMLElement | null = null;
-
-    // The URL hash is the single source of truth for which modal is open, so
-    // deep links, Escape, the close control and the back button all agree.
-    function targetFromHash(): HTMLDialogElement | null {
-      if (!location.hash.startsWith('#modal-')) return null;
-      const el = document.getElementById(location.hash.slice(1));
-      return el && el.classList.contains('project-modal')
-        ? (el as HTMLDialogElement)
-        : null;
-    }
-
-    function show(dlg: HTMLDialogElement) {
-      if (dlg.open) return;
-      restoreFocus = document.activeElement as HTMLElement | null;
-      if (typeof dlg.showModal === 'function') dlg.showModal();
-      else dlg.setAttribute('open', '');
-      document.body.classList.add('modal-open');
-    }
-
-    function hideAll(except: HTMLDialogElement | null) {
-      for (const d of modals) {
-        if (d === except || !d.open) continue;
-        if (typeof d.close === 'function') d.close();
-        else d.removeAttribute('open');
-      }
-      if (!except) {
-        document.body.classList.remove('modal-open');
-        if (restoreFocus && typeof restoreFocus.focus === 'function') {
-          restoreFocus.focus();
-        }
-        restoreFocus = null;
-      }
-    }
-
-    function sync() {
-      const t = targetFromHash();
-      if (t) {
-        hideAll(t);
-        show(t);
-      } else {
-        hideAll(null);
-      }
-    }
-
-    function dismiss() {
-      // If we pushed a history entry, step back so the close control and the
-      // back button leave the same trail. If we arrived by deep link there is
-      // nothing to step back to, so just strip the hash.
-      if (history.state && (history.state as { modal?: string }).modal) {
-        history.back();
-      } else {
-        history.replaceState(null, '', location.pathname + location.search);
-        sync();
-      }
-    }
-
-    document.querySelectorAll<HTMLAnchorElement>('[data-open]').forEach((trigger) => {
-      const id = trigger.getAttribute('data-open');
-      if (!id) return;
-      const dlg = document.getElementById(`modal-${id}`);
-      if (!dlg) return;
-
-      // Modal images are lazy, so the first open used to show an empty panel.
-      // Hover or keyboard focus is a strong enough intent signal to warm the
-      // cache, so by the time the click lands the image is already there.
-      let warmed = false;
-      const warm = () => {
-        if (warmed) return;
-        warmed = true;
-        dlg.querySelectorAll<HTMLImageElement>('img').forEach((img) => {
-          const pre = new Image();
-          if (img.sizes) pre.sizes = img.sizes;
-          if (img.srcset) pre.srcset = img.srcset;
-          if (img.src) pre.src = img.src;
-        });
-      };
-      trigger.addEventListener('pointerenter', warm, { once: true, passive: true });
-      trigger.addEventListener('focus', warm, { once: true });
-
-      trigger.addEventListener('click', (e) => {
-        e.preventDefault();
-        history.pushState({ modal: id }, '', `#modal-${id}`);
-        sync();
-      });
-    });
-
-    for (const dlg of modals) {
-      dlg.querySelectorAll<HTMLElement>('[data-close]').forEach((btn) => {
-        btn.addEventListener('click', (e) => {
-          e.preventDefault();
-          dismiss();
-        });
-      });
-      // Take over Escape so the hash stays in step with what is on screen.
-      dlg.addEventListener('cancel', (e) => {
-        e.preventDefault();
-        dismiss();
-      });
-      dlg.addEventListener('click', (e) => {
-        const inner = dlg.querySelector('.modal-inner');
-        if (inner && !inner.contains(e.target as Node)) dismiss();
-      });
-    }
-
-    window.addEventListener('popstate', sync);
-    sync(); // honour a deep link on first load
-  }
-
-  function wireReveal() {
-    if (!('IntersectionObserver' in window)) {
-      document.querySelectorAll('.reveal').forEach((el) => el.classList.add('is-visible'));
-      return;
-    }
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            entry.target.classList.add('is-visible');
-            observer.unobserve(entry.target);
-          }
-        });
-      },
-      { threshold: 0.12, rootMargin: '0px 0px -10% 0px' }
-    );
-    document.querySelectorAll('.reveal').forEach((el) => observer.observe(el));
-  }
-
-  // Looping videos play only while actually visible (i.e. their modal is open
-  // and they are on screen), and never under reduced motion. preload="none" in
-  // the markup means nothing is fetched until the first play.
-  function wireVideos() {
-    const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const vids = document.querySelectorAll<HTMLVideoElement>('video[data-play-visible]');
-    if (reduce) { vids.forEach((v) => { v.controls = true; }); return; }
-    const io = new IntersectionObserver((entries) => {
-      for (const e of entries) {
-        const v = e.target as HTMLVideoElement;
-        if (e.isIntersecting && !document.hidden) v.play().catch(() => {});
-        else v.pause();
-      }
-    }, { threshold: 0.25 });
-    vids.forEach((v) => io.observe(v));
-  }
-
-  wireModals();
-  wireReveal();
-  wireVideos();
-  document.addEventListener('astro:page-load', () => {
-    wireModals();
-    wireReveal();
-  });
-</script>

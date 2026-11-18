@@ -7,10 +7,11 @@ import { getCollection, getEntry } from 'astro:content';
 // (a URL without a filename gets /index.md). Generated from the same content
 // the HTML page renders.
 export const GET: APIRoute = async () => {
-  const [hero, skills, seo, projects] = await Promise.all([
+  const [hero, skills, seo, zarf, projects] = await Promise.all([
     getEntry('site', 'hero'),
     getEntry('site', 'skills'),
     getEntry('site', 'seo'),
+    getEntry('site', 'zarf'),
     getCollection('projects'),
   ]);
 
@@ -24,7 +25,7 @@ export const GET: APIRoute = async () => {
   if (seo?.data.description) out.push(tidy(seo.data.description), '');
 
   const render = (p: (typeof ordered)[number]) => {
-    out.push(`### ${p.data.name}`, '');
+    out.push(`### ${p.data.name}`, '', `Page: https://omarmohammed.co/work/${p.id}/`, '');
     if (p.data.subtitle) out.push(tidy(p.data.subtitle), '');
     for (const para of p.data.body) if (typeof para === 'string') out.push(tidy(para), '');
     if (p.data.tech.length) out.push(`Tags: ${p.data.tech.join(', ')}`, '');
@@ -34,7 +35,11 @@ export const GET: APIRoute = async () => {
 
   const current = ordered.filter((p) => p.data.status === 'current');
   const past = ordered.filter((p) => p.data.status === 'past');
-  if (current.length) { out.push('## Current work', ''); current.forEach(render); }
+  if (current.length || zarf) {
+    out.push('## Current work', '');
+    if (zarf) out.push(`### ${zarf.data.name}`, '', tidy(zarf.data.oneLiner), '', `Site: ${zarf.data.url}`, '');
+    current.forEach(render);
+  }
   if (past.length) { out.push('## Previous projects', ''); past.forEach(render); }
 
   out.push('## Skills', '');

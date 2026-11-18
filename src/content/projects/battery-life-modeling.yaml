@@ -1,0 +1,19 @@
+name: Low-Power Systems Researcher
+org: Flox Intelligence
+status: current
+subtitle: Low-Power Systems Researcher · Flox Intelligence · Sept 2026 · In progress
+oneLiner: >-
+  Modeling and improving the battery performance of Flox Edge, an AI sensor
+  that deters wildlife from critical infrastructure.
+order: 0
+mediaType: image
+tech:
+  - Power measurement
+  - Battery modeling
+  - Edge AI
+  - Embedded firmware
+body:
+  - >-
+    I work in Dr. Qinru Qiu's lab alongside the engineering team at Flox
+    Intelligence to model and improve the battery performance of Flox Edge, an
+    AI sensor that deters wildlife from critical infrastructure.

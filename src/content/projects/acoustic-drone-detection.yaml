@@ -3,8 +3,8 @@ org: HII
 status: current
 subtitle: Senior Design · Huntington Ingalls Industries · 2026 to 2027
 oneLiner: >-
-  Detecting, classifying, and locating drones by rotor sound on a
-  six-microphone array, with models sized to a real-time latency budget.
+  Detecting a drone by its rotor noise, classifying it by size, and placing it
+  in one of four quadrants around a six-microphone array.
 order: 1
 mediaType: image
 tech:
@@ -23,71 +23,90 @@ team:
     url: https://www.linkedin.com/in/ryanw-/
 body:
   - >-
-    A drone announces itself long before you can see it. Four rotors spinning at
-    a few thousand rpm push air, and the air pushes back at frequencies a cheap
-    microphone picks up from across a field. Radar needs line of sight. RF
-    tracking needs the drone to be transmitting. Sound needs the drone to be
-    flying, which is the one thing it can't stop doing. HII brought us this
-    problem because small commercial drones have become a real concern around
-    fixed sites and vessels, and a microphone costs a fraction of a radar while
-    giving away nothing about its own position.
+    HII brought us this problem because small commercial drones have become a
+    concern around fixed sites and vessels. Rotor noise gives a passive way to
+    find them. A microphone doesn't need line of sight the way a camera or radar
+    does. It doesn't need the drone to be transmitting the way RF detection
+    does. It also gives away nothing about its own position, and it's cheap.
+    Our system listens for a drone, classifies it by size, and reports which of
+    four quadrants around the array it's in.
   - >-
-    Start with one microphone. It tells you a drone is somewhere nearby, which
-    is useful and nowhere near enough.
+    With one microphone you can tell a drone is nearby, but you can't tell where
+    it is.
   - >-
-    Add a second. Sound reaches the nearer microphone first, and that delay
-    tells you which direction it came from. But the answer is only an angle off
-    the line joining the two mics, so rotating the pair rotates the answer with
-    it.
+    Two microphones give a direction. Sound reaches the nearer one first, and
+    that delay gives the angle off the line joining them. A source at the
+    mirrored angle on the other side of that line produces the same delay, so
+    the pair can't tell which side the drone is on.
   - >-
-    So we use [five]{.slate}, evenly spaced around a 15 cm ring. The delays between pairs
-    now resolve a direction anywhere in the horizontal plane. The ring has a
-    blind spot built into its geometry, though. A sound arriving from [30° above]{.teal}
-    and the same sound arriving from [30° below]{.clay} hit all five microphones at
-    exactly the same moments. A flat array can't tell them apart.
+    We use [five microphones]{.slate}, 72° apart on a ring with a 15 cm radius.
+    Comparing delays across pairs gives a direction anywhere in the horizontal
+    plane. A flat ring still has one ambiguity. A sound from 30° above the ring
+    and the same sound from 30° below reach all five microphones at the same
+    moments.
   - >-
-    So a [sixth microphone]{.ochre} sits on a post, 15 cm above the ring. Breaking the
-    symmetry breaks the ambiguity, and it costs one extra channel.
+    A [sixth microphone]{.ochre} sits on a center post 15 cm above the ring. It
+    removes that ambiguity and gives the array its elevation estimate.
   - figure: mic-array
   - >-
-    Here's the detail that's easy to miss and fatal to get wrong. The widest
-    baseline across the ring is 28.5 cm, so the longest delay we ever need to
-    measure is about 830 µs. At a 48 kHz sampling rate, one sample is 20.8 µs.
-    The whole measurement lives inside roughly forty samples. If each microphone
-    ran on its own clock, the drift between them would swamp the signal we're
-    trying to read. So a Teensy 4.1 drives all six on one shared bit clock and
-    captures every channel on the same edge. Any difference in arrival time is
-    then the sound's path and nothing else.
+    All six microphones have to be sampled on the same clock. The widest
+    baseline is 28.5 cm, between two ring microphones 144° apart, so the longest
+    delay we measure is about 832 µs. At 48 kHz one sample is 20.8 µs, which
+    puts every delay we care about inside about 40 samples. A timing offset of a
+    few samples between channels would be a large share of that range. The
+    microphones are INMP441s, which output digital audio over I2S, and two can
+    share one data line. A Teensy 4.1 reads all three data lines on one shared
+    bit clock, so all six channels are sampled on the same edge. We still have
+    to confirm the Teensy can capture all six at 48 kHz without dropping
+    samples. If it can't, the fallback is four microphones on two data lines,
+    which is still enough for quadrants.
   - >-
-    The audio streams to an NVIDIA Jetson over USB. There, a lightweight
-    detector runs continuously, because listening is cheap and the expensive
-    work should only happen when there's something to look at. Once it hears a
-    rotor, a classifier identifies the drone and GCC-PHAT compares arrival times
-    across microphone pairs to produce a direction. A live dashboard shows the
-    result.
+    The Teensy streams the audio to an NVIDIA Jetson Orin Nano Super over USB.
+    The Jetson filters it to the band where rotor noise is strongest, splits it
+    into 1 s windows, and turns each window into a spectrogram. A lightweight
+    detector runs on every window. When it hears a rotor, a classifier assigns
+    a size class and GCC-PHAT estimates the delays between microphone pairs. The
+    delays become a direction, and the direction becomes a quadrant. A web
+    dashboard shows the quadrant, class and confidence next to the ground-truth
+    quadrant.
   - >-
-    **My focus is the models.** I train the detection and classification
-    networks and tune them for inference speed, targeting 0.5 to 1.5 s from a
-    rotor becoming audible to a result on the screen. The display is live, so a
-    slow model reports where the drone was instead of where it is.
+    My part is the detection and classification models. The first baseline uses
+    the public Al-Emadi drone audio dataset, with MFCC features going into a
+    random forest. After that comes a small CNN on log-mel spectrograms,
+    measured against the baseline. I split the data by recording session, not
+    by clip. Clips cut from the same recording would otherwise land in both
+    train and test and inflate the accuracy. The detector runs nonstop on the
+    Jetson alongside localization, so I'm sizing the models to fit that budget.
+    The target is 0.5 to 1.5 s from a rotor becoming audible to a result on
+    screen.
   - >-
-    The hard part is the data. Labeled drone audio is scarce, and a model
-    trained on clean public recordings won't survive a room with an HVAC unit
-    running in it. We combine public datasets with our own recordings captured
-    on this exact array, then augment with background noise, gain variation,
-    and pitch shifts that stand in for the rotor speeds and distances we
-    couldn't record ourselves.
+    Data is the hardest part. Labeled drone audio is scarce, and most public
+    recordings are cleaner than our test room, which has HVAC and fans running.
+    We combine public datasets with recordings captured on this array,
+    including non-drone sounds from the rooms we test in. Then we augment them.
+    We mix in background noise, change the gain to stand in for distance, and
+    pitch-shift to stand in for rotor speeds we didn't record. Augmentation
+    widens the dataset, but it can't replace real recordings.
   - >-
-    Stretch goals. Beyond the baseline of placing a drone in the correct
-    quadrant, we are going after localization within ±15° in both azimuth and
-    elevation, and drone type classification at 80% accuracy or better. The
-    classification case rests on physics: different drone sizes spin different
-    rotors at different speeds, which leaves a distinct harmonic signature. The
-    array geometry already supports the finer localization, so it is a software
-    extension rather than a redesign.
+    The core goal is picking the correct quadrant. The test runs indoors, with
+    a stationary drone or rotor within 2 m of the array and one decision per
+    run. Our stretch goals are localization within ±15° in azimuth and
+    elevation, and size classification at 80% accuracy or better. The array
+    geometry already supports the finer localization, so it's a software
+    change. In the best case, one sample of delay works out to about 1.4° in
+    azimuth and 2.7° in elevation. Reverberation will make real accuracy worse
+    than that. Classification works because different drone sizes use
+    different rotors spinning at different speeds, which shows up as different
+    blade-pass frequencies and harmonics. The small and medium drones in our
+    budget are close in blade-pass frequency, though. If the model can't
+    separate them, we'll merge them into one class and keep detection as the
+    main goal.
   - >-
-    Array hardware, capture firmware, localization pipeline, and dashboard are
-    owned by [Owens Liu](https://www.linkedin.com/in/owens-liu/),
-    [Logan Lewellen](https://www.linkedin.com/in/logan-lewellen-a0a1a6293/), and
-    [Ryan Weiss](https://www.linkedin.com/in/ryanw-/).
-  - Demo date is April 10, 2027.
+    [Owens Liu](https://www.linkedin.com/in/owens-liu/), [Logan
+    Lewellen](https://www.linkedin.com/in/logan-lewellen-a0a1a6293/) and [Ryan
+    Weiss](https://www.linkedin.com/in/ryanw-/) own the array hardware, capture
+    firmware, localization pipeline and dashboard.
+  - >-
+    At the demo on April 10, 2027, a drone is placed in one of the four
+    quadrants without the audience knowing which. The system makes its call
+    live, and the dashboard shows it next to the right answer.
