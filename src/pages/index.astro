@@ -139,6 +139,7 @@ const [beforeKey, afterKey] = belief.includes(KEY) ? belief.split(KEY) : [belief
   }
   .zarf-mark img { display: block; height: 24px; width: auto; }
   .project-head:has(.zarf-mark) { align-items: center; }
+  @media (max-width: 520px) { .project-head:has(.zarf-mark) { align-items: flex-start; } }
   .zarf-mark:hover { border-bottom-color: var(--forest); opacity: .82; }
   .project-title--plain { color: var(--ink); }
   .project .tag { margin-top: 2px; }
