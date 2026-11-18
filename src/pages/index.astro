@@ -26,7 +26,7 @@ const projects = projectEntries
       // Ongoing work reads "Present" rather than a range.
       when: d.status === 'current' ? 'Present' : (d.when ?? ''),
       current: d.status === 'current',
-      label: d.org ? `${d.org}${d.status === 'current' ? ' · In progress' : ''}` : '',
+      label: d.org ?? '',
       line: d.page ? (d.oneLiner ?? '') : firstPara,
       href: d.page ? `/work/${e.id}/` : null,
       order: d.order,
@@ -60,7 +60,7 @@ const [hello, ...rest] = (hero?.data.positioning ?? []);
               </a>
               <span class="when">Present</span>
             </div>
-            <div class="tag">Co-founder · {zarf.data.status}</div>
+            <div class="tag">Co-founder</div>
             <p class="project-line">{zarf.data.oneLiner}</p>
           </li>
         )}
