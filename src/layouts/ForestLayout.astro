@@ -1,7 +1,7 @@
 ---
 // Site layout: one narrow column, one typeface (Alegreya), four colours,
 // links always in reach in the top bar, ferns at the foot of every page.
-import Ferns from '../components/forest/Ferns.astro';
+import Bamboo from '../components/forest/Bamboo.astro';
 
 interface Props {
   title: string;
@@ -96,15 +96,10 @@ const year = new Date().getFullYear();
 
   <footer class="foot">
     <div class="foot-in">
-      <p class="foot-line">Always looking to connect with builders, founders, and creators. If you are working on something in hardware, firmware, or silicon, I would love to hear about it.</p>
-      <nav class="foot-links" aria-label="Profiles">
-        {PROFILES.map((p) => (
-          <a class="ico" href={p.href} aria-label={p.label} target={p.href.startsWith('http') ? '_blank' : undefined} rel="noopener noreferrer" set:html={svg(p.icon, 20)} />
-        ))}
-      </nav>
-      <p class="gray small">&copy; {year} Omar Mohammed</p>
+      <p class="foot-line">Always looking to connect with builders, founders, and creators. If you are working on something cool, I would love to hear about it.</p>
+      <p class="gray small foot-copy">&copy; {year} Omar Mohammed</p>
     </div>
-    <div class="ferns"><Ferns /></div>
+    <div class="bamboo"><Bamboo /></div>
   </footer>
 </body>
 </html>
@@ -211,17 +206,17 @@ const year = new Date().getFullYear();
   .mark { color: var(--forest); flex: none; }
   code { font: .86em var(--font-mono); }
 
-  /* ---- Footer: the note, profiles, then the forest floor -------------------- */
+  /* ---- Footer: the note, then a stand of bamboo (Kabini) -------------------- */
   .foot { margin-top: 120px; position: relative; }
   .foot-in { position: relative; z-index: 1; max-width: var(--col); margin: 0 auto; padding: 0 24px; }
-  .foot-links { display: flex; gap: 4px; margin: 14px 0 12px -10px; }
-  .foot-links a { color: var(--ink); }
-  .foot-links a:hover { color: var(--forest); }
-  .ferns { margin-top: -10px; height: 170px; overflow: hidden; pointer-events: none; }
-  .ferns svg { display: block; width: 100%; height: 170px; }
-  @media (max-width: 600px) { .ferns, .ferns svg { height: 120px; } }
+  .foot-copy { margin-top: 12px; }
+  .bamboo { margin-top: 4px; height: 210px; overflow: hidden; pointer-events: none; }
+  .bamboo svg { display: block; width: 100%; height: 210px; }
+  @media (max-width: 600px) { .bamboo, .bamboo svg { height: 150px; } }
 
-  .frond { animation: frond 9s ease-in-out infinite alternate; }
-  @keyframes frond { from { transform: rotate(-1.6deg); } to { transform: rotate(1.8deg); } }
-  @media (prefers-reduced-motion: reduce) { .frond { animation: none; } }
+  .culm { animation: culm 10s ease-in-out infinite alternate; }
+  .spray { animation: spray 6s ease-in-out infinite alternate; }
+  @keyframes culm { from { transform: rotate(-0.8deg); } to { transform: rotate(1deg); } }
+  @keyframes spray { from { transform: rotate(-4deg); } to { transform: rotate(3.5deg); } }
+  @media (prefers-reduced-motion: reduce) { .culm, .spray { animation: none; } }
 </style>
