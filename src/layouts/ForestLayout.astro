@@ -1,7 +1,9 @@
 ---
 // Site layout: one narrow column, one typeface (Alegreya), four colours,
-// links always in reach in the top bar, ferns at the foot of every page.
+// links always in reach in the top bar, bamboo at the foot of every page.
+import { Image } from 'astro:assets';
 import Bamboo from '../components/forest/Bamboo.astro';
+import moLogo from '../assets/mo-logo.png';
 
 interface Props {
   title: string;
@@ -78,7 +80,9 @@ const year = new Date().getFullYear();
 
   <header class="bar">
     <div class="bar-in">
-      <a class="brand" href="/">Omar Mohammed</a>
+      <a class="brand" href="/" aria-label="Omar Mohammed, home">
+        <Image class="brand-mark" src={moLogo} alt="" width={88} densities={[1, 2]} format="webp" loading="eager" />
+      </a>
       <nav class="bar-links" aria-label="Site and profiles">
         <a class="bar-text" href="/#projects">Projects</a>
         <a class="bar-text" href="/#skills">Skills</a>
@@ -153,8 +157,9 @@ const year = new Date().getFullYear();
     max-width: 1100px; margin: 0 auto; padding: 0 24px; height: 60px;
     display: flex; align-items: center; justify-content: space-between; gap: 16px;
   }
-  .brand { font-style: italic; font-weight: 500; font-size: 1.12em; color: var(--ink); text-decoration: none; white-space: nowrap; }
-  .brand:hover { color: var(--forest); }
+  .brand { display: inline-flex; align-items: center; padding: 8px 4px; margin-left: -4px; transition: opacity .15s ease; }
+  .brand-mark { display: block; height: 24px; width: auto; }
+  .brand:hover { opacity: .7; }
   .bar-links { display: flex; align-items: center; gap: 4px; }
   .bar-links a { color: var(--ink); text-decoration: none; }
   .bar-links a:hover { color: var(--forest); }
@@ -169,14 +174,14 @@ const year = new Date().getFullYear();
   .ico:hover { background: color-mix(in srgb, var(--forest) 8%, transparent); }
   @media (max-width: 620px) {
     .bar-text { display: none; }
-    .brand { font-size: 1.02em; }
+    .brand-mark { height: 22px; }
     .ico { width: 36px; height: 36px; }
     .resume { padding: 6px 10px; margin: 0 2px; }
   }
   @media (max-width: 420px) {
     .bar-in { padding: 0 14px; gap: 8px; }
     .bar-links { gap: 0; }
-    .brand { font-size: .95em; }
+    .brand-mark { height: 20px; }
     .resume svg { display: none; }
     .ico { width: 34px; height: 34px; }
   }

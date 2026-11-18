@@ -47,25 +47,23 @@ const [hello, ...rest] = (hero?.data.positioning ?? []);
   <h1 class="hello">{glue(hello ?? '')}</h1>
   {rest.map((line) => <p class="intro">{glue(line)}</p>)}
 
-  {zarf && (
-    <a class="venture" href={zarf.data.url} target="_blank" rel="noopener noreferrer">
-      <span class="venture-logo" aria-hidden="true">Z</span>
-      <span class="venture-text">
-        <span class="venture-head">
-          <span class="venture-name">{zarf.data.name}</span>
-          <span class="tag">{zarf.data.status}</span>
-          <span class="when">Present</span>
-        </span>
-        <span class="venture-line">{zarf.data.oneLiner}</span>
-      </span>
-      <span class="venture-arrow" aria-hidden="true">↗</span>
-    </a>
-  )}
-
   {groups.map((g) => (
     <section id={g.id}>
       <h2><LeafMark />{g.label}</h2>
       <ul class="projects">
+        {zarf && (
+          <li class="project">
+            <div class="project-head">
+              <a class="project-title zarf-mark" href={zarf.data.url} target="_blank" rel="noopener noreferrer"
+                aria-label={`${zarf.data.name} (opens zarfhealth.com)`}>
+                <img src="/images/zarf-wordmark.svg" alt="" width="60" height="24" />
+              </a>
+              <span class="when">Present</span>
+            </div>
+            <div class="tag">Co-founder · {zarf.data.status}</div>
+            <p class="project-line">{zarf.data.oneLiner}</p>
+          </li>
+        )}
         {g.items.map((p) => (
           <li class="project">
             <div class="project-head">
@@ -114,39 +112,21 @@ const [hello, ...rest] = (hero?.data.positioning ?? []);
   }
   .when { color: var(--gray); font-size: .85em; white-space: nowrap; font-variant-numeric: lining-nums; }
 
-  /* ---- Zarf Health: the one boxed thing on the page, the whole card is the link */
-  .venture {
-    display: flex; align-items: center; gap: 16px;
-    margin-top: 32px; padding: 16px 18px;
-    border: 1px solid color-mix(in srgb, var(--forest) 22%, transparent);
-    border-radius: 12px;
-    background: color-mix(in srgb, var(--forest) 4%, var(--paper));
-    color: var(--ink); text-decoration: none;
-    transition: border-color .15s ease, background-color .15s ease;
-  }
-  .venture:hover { border-color: var(--forest); background: color-mix(in srgb, var(--forest) 7%, var(--paper)); }
-  .venture-logo {
-    flex: none; width: 48px; height: 48px; border-radius: 10px; display: grid; place-items: center;
-    background: var(--forest); color: var(--paper); font-style: italic; font-weight: 700; font-size: 1.5rem;
-  }
-  .venture-text { flex: 1; min-width: 0; display: flex; flex-direction: column; }
-  .venture-head { display: flex; flex-wrap: wrap; align-items: baseline; column-gap: 10px; }
-  .venture-name { font-weight: 700; }
-  .venture-head .when { margin-left: auto; }
-  .venture-line { color: var(--gray); line-height: 1.45; }
-  .venture-arrow { flex: none; color: var(--forest); font-size: 1.2rem; transition: transform .15s ease; }
-  .venture:hover .venture-arrow { transform: translate(2px, -2px); }
-  @media (max-width: 520px) {
-    .venture { align-items: flex-start; gap: 12px; padding: 14px; }
-    .venture-logo { width: 40px; height: 40px; font-size: 1.25rem; }
-    .venture-head .when { margin-left: 0; flex-basis: 100%; }
-  }
-
   /* ---- Projects: title and months, label, one or two lines */
   .projects { list-style: none; margin: 0; padding: 0; }
   .project + .project { margin-top: 30px; }
   .project-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; column-gap: 16px; }
   .project-title { font-weight: 700; }
+  /* Zarf's title is its wordmark. It gets the same forest underline as every
+     other clickable title, so it reads as a link without an icon. */
+  .zarf-mark {
+    display: inline-block; padding-bottom: 5px; text-decoration: none;
+    border-bottom: 1px solid color-mix(in srgb, var(--forest) 35%, transparent);
+    transition: border-color .15s ease, opacity .15s ease;
+  }
+  .zarf-mark img { display: block; height: 24px; width: auto; }
+  .project-head:has(.zarf-mark) { align-items: center; }
+  .zarf-mark:hover { border-bottom-color: var(--forest); opacity: .82; }
   .project-title--plain { color: var(--ink); }
   .project .tag { margin-top: 2px; }
   .project-line { margin-top: 6px; color: var(--ink); text-wrap: pretty; }
