@@ -25,7 +25,9 @@ export const GET: APIRoute = async () => {
   if (seo?.data.description) out.push(tidy(seo.data.description), '');
 
   const render = (p: (typeof ordered)[number]) => {
-    out.push(`### ${p.data.name}`, '', `Page: https://omarmohammed.co/work/${p.id}/`, '');
+    out.push(`### ${p.data.name}`, '');
+    if (p.data.when) out.push(p.data.when, '');
+    if (p.data.page) out.push(`Page: https://omarmohammed.co/work/${p.id}/`, '');
     if (p.data.subtitle) out.push(tidy(p.data.subtitle), '');
     for (const para of p.data.body) if (typeof para === 'string') out.push(tidy(para), '');
     if (p.data.tech.length) out.push(`Tags: ${p.data.tech.join(', ')}`, '');

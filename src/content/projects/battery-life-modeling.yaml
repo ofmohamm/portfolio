@@ -6,6 +6,9 @@ oneLiner: >-
   Modeling and improving the battery performance of Flox Edge, an AI sensor
   that deters wildlife from critical infrastructure.
 order: 0
+when: Sep 2026 – Present
+# The write-up is short enough to live on the main page.
+page: false
 mediaType: image
 tech:
   - Power measurement

@@ -4,7 +4,8 @@ oneLiner: >-
   A battery-powered urban flood monitor on a custom 2-layer PCB. Thermal
   imaging, IMU, and telemetry over LoRaWAN.
 status: past
-order: 0
+order: 1
+when: May – Dec 2025
 mediaType: image
 # The project page shows the rotating KiCad render.
 coverVideo:

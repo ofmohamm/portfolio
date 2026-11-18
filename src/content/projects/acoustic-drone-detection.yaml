@@ -6,6 +6,7 @@ oneLiner: >-
   Detecting a drone by its rotor noise, classifying it by size, and placing it
   in one of four quadrants around a six-microphone array.
 order: 1
+when: Aug 2026 – Apr 2027
 mediaType: image
 tech:
   - Machine learning

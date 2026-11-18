@@ -51,7 +51,7 @@ export const GET: APIRoute = async () => {
   );
 
   const describe = (p: (typeof ordered)[number]) =>
-    `- [${p.data.name}](${SITE}/work/${p.id}/): ${oneLine(p.data.oneLiner)}${
+    `- [${p.data.name}](${p.data.page ? `${SITE}/work/${p.id}/` : `${SITE}/#projects`}): ${oneLine(p.data.oneLiner)}${
       p.data.subtitle ? ` (${oneLine(p.data.subtitle)})` : ''
     }`;
 

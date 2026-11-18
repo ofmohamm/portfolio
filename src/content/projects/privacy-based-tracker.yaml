@@ -1,10 +1,11 @@
 name: Privacy Based Tracker
-subtitle: Personal project · 2025
+subtitle: Personal project · 2026
 oneLiner: >-
   A Kinect-audio tracker that finds and follows a sound source without
   recording or transmitting any audio.
 status: past
-order: 1
+order: 0
+when: Mar – Apr 2026
 mediaType: image
 tech:
   - C

@@ -10,7 +10,6 @@ import PdLoop from '../../components/figures/PdLoop.astro';
 
 import watercamPcb from '../../assets/projects/watercam-pcb.png';
 import privacyTracker from '../../assets/projects/privacy-tracker.jpg';
-import floxEdgeCamera from '../../assets/projects/flox-edge-camera.webp';
 import acousticDrone from '../../assets/projects/acoustic-drone-detection.jpg';
 import pcbPoster from '../../assets/projects/pcb-rotate-poster.jpg';
 
@@ -25,13 +24,12 @@ const FIGURES: Record<string, any> = {
 const COVERS: Record<string, ImageMetadata> = {
   'flood-detection-sensor-pcb': watercamPcb,
   'privacy-based-tracker': privacyTracker,
-  'battery-life-modeling': floxEdgeCamera,
   'acoustic-drone-detection': acousticDrone,
 };
 
 export async function getStaticPaths() {
   const projects = await getCollection('projects');
-  return projects.map((entry) => ({ params: { id: entry.id }, props: { entry } }));
+  return projects.filter((e) => e.data.page).map((entry) => ({ params: { id: entry.id }, props: { entry } }));
 }
 
 const { entry } = Astro.props;

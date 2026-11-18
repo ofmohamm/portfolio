@@ -30,6 +30,10 @@ const projects = defineCollection({
     // Looping video shown in the modal instead of the still image.
     coverVideo: z.object({ webm: z.string(), mp4: z.string() }).optional(),
     specs: z.array(z.object({ key: z.string(), value: z.string() })).default([]),
+    // months shown on the main page, e.g. "Aug 2026 – Apr 2027"
+    when: z.string().optional(),
+    // false: the main-page entry is the whole project, no page under /work/
+    page: z.boolean().default(true),
     team: z.array(z.object({ name: z.string(), url: z.string().url() })).default([]),
   }),
 });
@@ -55,8 +59,9 @@ const site = defineCollection({
       .optional(),
     title: z.string().optional(),
     description: z.string().optional(),
-    // outbound link for a card (zarf.yaml)
+    // outbound link and months for a card (zarf.yaml)
     url: z.string().url().optional(),
+    when: z.string().optional(),
   }),
 });
 

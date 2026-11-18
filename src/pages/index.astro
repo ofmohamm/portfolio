@@ -3,6 +3,7 @@ import ForestLayout from '../layouts/ForestLayout.astro';
 import Statement from '../components/forest/Statement.astro';
 import LeafMark from '../components/forest/LeafMark.astro';
 import { getCollection, getEntry } from 'astro:content';
+import { inlineMd } from '../lib/inline-md';
 
 // Content is YAML on disk (src/content), read at build time.
 const [hero, seo, skills, zarf, projectEntries] = await Promise.all([
@@ -13,18 +14,29 @@ const [hero, seo, skills, zarf, projectEntries] = await Promise.all([
   getCollection('projects'),
 ]);
 
-const year = (s?: string) => s?.match(/\d{4}/)?.[0] ?? '';
-// Current work first, then past; each in its own order.
+// One or two lines per project on this page. A project without its own page
+// (page: false) shows its whole write-up here instead of the one-liner.
 const projects = projectEntries
-  .map((e) => ({
-    id: e.id,
-    name: e.data.name,
-    year: year(e.data.subtitle),
-    current: e.data.status === 'current',
-    label: e.data.org ? `${e.data.org}${e.data.status === 'current' ? ' · In progress' : ''}` : '',
-    order: e.data.order,
-  }))
-  .sort((a, b) => Number(b.current) - Number(a.current) || a.order - b.order);
+  .map((e) => {
+    const d = e.data;
+    const firstPara = d.body.find((b): b is string => typeof b === 'string') ?? '';
+    return {
+      id: e.id,
+      name: d.name,
+      when: d.when ?? '',
+      current: d.status === 'current',
+      label: d.org ? `${d.org}${d.status === 'current' ? ' · In progress' : ''}` : '',
+      line: d.page ? (d.oneLiner ?? '') : firstPara,
+      href: d.page ? `/work/${e.id}/` : null,
+      order: d.order,
+    };
+  })
+  .sort((a, b) => a.order - b.order);
+
+const groups = [
+  { id: 'projects', label: 'Current projects', items: projects.filter((p) => p.current) },
+  { id: 'past', label: 'Past projects', items: projects.filter((p) => !p.current) },
+].filter((g) => g.items.length);
 
 // Keep "@", "|" and "&" glued to the word before them so a wrapped line never starts with one.
 const glue = (s: string) => s.replace(/ ([@|&]) /g, ' $1 ');
@@ -41,30 +53,37 @@ const [hello, ...rest] = (hero?.data.positioning ?? []);
     <a class="venture" href={zarf.data.url} target="_blank" rel="noopener noreferrer">
       <span class="venture-logo" aria-hidden="true">Z</span>
       <span class="venture-text">
-        <span class="venture-name">{zarf.data.name} <span class="tag">{zarf.data.status}</span></span>
+        <span class="venture-head">
+          <span class="venture-name">{zarf.data.name}</span>
+          <span class="tag">{zarf.data.status}</span>
+          {zarf.data.when && <span class="when">{zarf.data.when}</span>}
+        </span>
         <span class="venture-line">{zarf.data.oneLiner}</span>
       </span>
       <span class="venture-arrow" aria-hidden="true">↗</span>
     </a>
   )}
 
-  <section id="projects">
-    <h2><LeafMark />Projects</h2>
-    <ul class="rows">
-      {projects.map((p) => (
-        <li>
-          <a class="row" href={`/work/${p.id}/`}>
-            <span class="year">{p.year}</span>
-            <span class="row-main">
-              <span class="row-title">{p.name}</span>
-              {p.label && <span class="tag">{p.label}</span>}
-            </span>
-            <span class="cue">View details</span>
-          </a>
-        </li>
-      ))}
-    </ul>
-  </section>
+  {groups.map((g) => (
+    <section id={g.id}>
+      <h2><LeafMark />{g.label}</h2>
+      <ul class="projects">
+        {g.items.map((p) => (
+          <li class="project">
+            <div class="project-head">
+              {p.href
+                ? <a class="project-title" href={p.href}>{p.name}</a>
+                : <span class="project-title project-title--plain">{p.name}</span>}
+              {p.when && <span class="when">{p.when}</span>}
+            </div>
+            {p.label && <div class="tag">{p.label}</div>}
+            <p class="project-line" set:html={inlineMd(p.line)} />
+            {p.href && <a class="cue" href={p.href} aria-label={`${p.name}, view details`}>View details</a>}
+          </li>
+        ))}
+      </ul>
+    </section>
+  ))}
 
   <section id="skills">
     <h2><LeafMark />Skills</h2>
@@ -92,6 +111,12 @@ const [hello, ...rest] = (hero?.data.positioning ?? []);
   }
   .intro { margin-top: 14px; max-width: 34em; color: var(--ink); text-wrap: pretty; }
 
+  .tag {
+    font-size: .68em; font-weight: 600; letter-spacing: .1em; text-transform: uppercase;
+    color: var(--gray); white-space: nowrap;
+  }
+  .when { color: var(--gray); font-size: .85em; white-space: nowrap; font-variant-numeric: lining-nums; }
+
   /* ---- Zarf Health: the one boxed thing on the page, the whole card is the link */
   .venture {
     display: flex; align-items: center; gap: 16px;
@@ -100,7 +125,7 @@ const [hello, ...rest] = (hero?.data.positioning ?? []);
     border-radius: 12px;
     background: color-mix(in srgb, var(--forest) 4%, var(--paper));
     color: var(--ink); text-decoration: none;
-    transition: border-color .15s ease, background-color .15s ease, transform .15s ease;
+    transition: border-color .15s ease, background-color .15s ease;
   }
   .venture:hover { border-color: var(--forest); background: color-mix(in srgb, var(--forest) 7%, var(--paper)); }
   .venture-logo {
@@ -108,45 +133,29 @@ const [hello, ...rest] = (hero?.data.positioning ?? []);
     background: var(--forest); color: var(--paper); font-style: italic; font-weight: 700; font-size: 1.5rem;
   }
   .venture-text { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+  .venture-head { display: flex; flex-wrap: wrap; align-items: baseline; column-gap: 10px; }
   .venture-name { font-weight: 700; }
+  .venture-head .when { margin-left: auto; }
   .venture-line { color: var(--gray); line-height: 1.45; }
   .venture-arrow { flex: none; color: var(--forest); font-size: 1.2rem; transition: transform .15s ease; }
   .venture:hover .venture-arrow { transform: translate(2px, -2px); }
-
-  .tag {
-    font-size: .68em; font-weight: 600; letter-spacing: .1em; text-transform: uppercase;
-    color: var(--gray); white-space: nowrap;
-  }
-  .venture-name .tag { margin-left: 6px; }
   @media (max-width: 520px) {
     .venture { align-items: flex-start; gap: 12px; padding: 14px; }
     .venture-logo { width: 40px; height: 40px; font-size: 1.25rem; }
-    .venture-name .tag { display: block; margin: 2px 0 4px; }
+    .venture-head .when { margin-left: 0; flex-basis: 100%; }
   }
 
-  /* ---- Projects: year, then title; the whole row is the link */
-  .rows { list-style: none; margin: 0; padding: 0; }
-  .rows li + li { margin-top: 6px; }
-  .row {
-    display: grid; grid-template-columns: 3.25rem 1fr auto; column-gap: 1rem; align-items: baseline;
-    padding: 8px 0; color: var(--ink); text-decoration: none;
-  }
-  .year { color: var(--gray); font-variant-numeric: tabular-nums lining-nums; }
-  .row-main { display: flex; flex-wrap: wrap; align-items: baseline; column-gap: 10px; }
-  .row-title {
-    color: var(--forest); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px;
-    text-decoration-color: color-mix(in srgb, var(--forest) 35%, transparent);
-  }
-  .row:hover .row-title { text-decoration-color: currentColor; }
-  .cue { color: var(--gray); font-size: .8em; white-space: nowrap; }
-  /* "View details" appears on hover where hover exists; always visible on phones. */
-  @media (hover: hover) and (pointer: fine) {
-    .cue { opacity: 0; transform: translateX(-4px); transition: opacity .15s ease, transform .15s ease; }
-    .row:hover .cue, .row:focus-visible .cue { opacity: 1; transform: none; }
-  }
+  /* ---- Projects: title and months, label, one or two lines */
+  .projects { list-style: none; margin: 0; padding: 0; }
+  .project + .project { margin-top: 30px; }
+  .project-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; column-gap: 16px; }
+  .project-title { font-weight: 700; }
+  .project-title--plain { color: var(--ink); }
+  .project .tag { margin-top: 2px; }
+  .project-line { margin-top: 6px; color: var(--ink); text-wrap: pretty; }
+  .cue { display: inline-block; margin-top: 4px; font-size: .85em; }
   @media (max-width: 520px) {
-    .row { grid-template-columns: 3rem 1fr; }
-    .cue { grid-column: 2; }
+    .project-head { flex-direction: column; }
   }
 
   /* ---- Skills: label, then the list */
