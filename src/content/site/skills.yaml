@@ -1,19 +1,11 @@
 groups:
-  - label: Embedded Systems
-    items:
-      - PCB Design (KiCad)
-      - Arduino
-      - Raspberry Pi
-      - Microcontrollers
-  - label: FPGA
-    items:
-      - VHDL
-      - SystemVerilog
-      - Vivado
-      - Vitis AI
+  - label: Embedded
+    items: [ATSAMD21, STM32, Arduino, Raspberry Pi, bare-metal and register-level C, UART, I²C, I²S, interrupts, timers, ADC, PWM]
+  - label: Hardware and bench
+    items: [KiCad, PCB schematic and layout, oscilloscope, logic analyzer, Analog Discovery 2, Joulescope, power and current measurement, soldering]
+  - label: Digital design
+    items: [VHDL, RTL design, FSM design, Intel Quartus]
   - label: Programming
-    items:
-      - Python
-      - C++
-      - C
-      - Agentic Development (Claude Code)
+    items: [C, C++, Python, MATLAB]
+  - label: Tools and workflow
+    items: [Git, MPLAB X, STM32CubeIDE, Qt, Claude Code, agentic development]

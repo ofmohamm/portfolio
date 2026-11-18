@@ -1,5 +1,6 @@
 firstName: Omar
 lastName: Mohammed
+# The intro paragraph, one entry per line as shown on the page.
 positioning:
-  - Electrical Engineering @ Syracuse University
-  - Digital Design | Firmware Engineering | Embedded Systems
+  - Hey, I'm Omar Mohammed. I'm a founder & hardware engineer.
+  - I believe that altruistic technology can be used to create meaningful long-term impact at scale.

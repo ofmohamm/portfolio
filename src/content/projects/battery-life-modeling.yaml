@@ -1,0 +1,22 @@
+name: Low-Power Systems Modeling and Optimization
+org: Flox Intelligence
+status: current
+subtitle: Low-Power Systems Modeling and Optimization · Flox Intelligence · Sept 2026
+oneLiner: >-
+  Modeling and improving the battery performance of Flox Edge, an AI sensor
+  that deters wildlife from critical infrastructure.
+order: 0
+when: Sep 2026 – Present
+# The write-up is short enough to live on the main page.
+page: false
+mediaType: image
+tech:
+  - Power measurement
+  - Battery modeling
+  - Edge AI
+  - Embedded firmware
+body:
+  - >-
+    I work in Dr. Qinru Qiu's lab alongside the engineering team at Flox
+    Intelligence to model and improve the battery performance of Flox Edge, an
+    AI sensor that deters wildlife from critical infrastructure.

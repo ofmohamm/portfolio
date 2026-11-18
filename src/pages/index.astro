@@ -1,1008 +1,159 @@
 ---
-import BaseLayout from '../layouts/BaseLayout.astro';
-import ParticleField from '../components/ParticleField.astro';
-import { Image, Picture } from 'astro:assets';
+import ForestLayout from '../layouts/ForestLayout.astro';
+import Statement from '../components/forest/Statement.astro';
+import LeafMark from '../components/forest/LeafMark.astro';
 import { getCollection, getEntry } from 'astro:content';
+import { inlineMd } from '../lib/inline-md';
 
-// Project cover images live in src/assets so Astro can convert and resize them.
-import watercamPcb from '../assets/projects/watercam-pcb.png';
-import privacyTracker from '../assets/projects/privacy-tracker.jpg';
-import heroLogo from '../assets/logo.png';
-
-const covers: Record<string, ImageMetadata> = {
-  'flood-detection-sensor-pcb': watercamPcb,
-  'privacy-based-tracker': privacyTracker,
-};
-
-// Content is YAML on disk, read at build time by Astro's content layer.
-const [heroEntry, featuredEntry, skillsEntry, seoEntry, projectEntries] = await Promise.all([
+// Content is YAML on disk (src/content), read at build time.
+const [hero, seo, skills, zarf, projectEntries] = await Promise.all([
   getEntry('site', 'hero'),
-  getEntry('site', 'featured'),
-  getEntry('site', 'skills'),
   getEntry('site', 'seo'),
+  getEntry('site', 'skills'),
+  getEntry('site', 'zarf'),
   getCollection('projects'),
 ]);
 
-// The hero signature is flat line art with alpha. A palette PNG encodes it far
-// smaller than lossy WebP (12kB vs 37kB), so the source is pre-quantized and
-// served as-is. One fixed asset also means the <head> preload and the <img>
-// request resolve to the same file, with no double download.
-const heroImg = heroLogo;
-
-const hero = heroEntry?.data;
-const featuredProject = featuredEntry?.data;
-const seo = seoEntry?.data;
-
+// One or two lines per project on this page. A project without its own page
+// (page: false) shows its whole write-up here instead of the one-liner.
 const projects = projectEntries
-  .map((entry) => ({
-    id: entry.id,
-    name: entry.data.name,
-    subtitle: entry.data.subtitle,
-    oneLiner: entry.data.oneLiner,
-    order: entry.data.order,
-    cover: covers[entry.id],
-    tech: entry.data.tech,
-    github: entry.data.github,
-    body: entry.data.body,
-    specs: entry.data.specs.map((sp) => [sp.key, sp.value] as const),
-  }))
-  .sort((a, b) => a.order - b.order);
+  .map((e) => {
+    const d = e.data;
+    const firstPara = d.body.find((b): b is string => typeof b === 'string') ?? '';
+    return {
+      id: e.id,
+      name: d.name,
+      // Ongoing work reads "Present" rather than a range.
+      when: d.status === 'current' ? 'Present' : (d.when ?? ''),
+      current: d.status === 'current',
+      label: d.org ?? '',
+      line: d.page ? (d.oneLiner ?? '') : firstPara,
+      href: d.page ? `/work/${e.id}/` : null,
+      order: d.order,
+    };
+  })
+  .sort((a, b) => Number(b.current) - Number(a.current) || a.order - b.order);   // current first
 
-const skills = (skillsEntry?.data.groups ?? []).map((g) => ({
-  label: g.label,
-  items: g.items,
-}));
+const groups = [{ id: 'projects', label: 'Projects', items: projects }];
 
-// Profiles as consistent thin line icons (matching the monoline logo).
-const socialIcons = [
-  {
-    href: 'https://github.com/ofmohamm',
-    label: 'GitHub',
-    svg: `<path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.4 5.4 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/><path d="M9 18c-4.51 2-5-2-7-2"/>`,
-  },
-  {
-    href: 'https://linkedin.com/in/ofmohammed',
-    label: 'LinkedIn',
-    svg: `<path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect width="4" height="12" x="2" y="9"/><circle cx="4" cy="4" r="2"/>`,
-  },
-  {
-    href: 'mailto:mail.omarmohammed@gmail.com',
-    label: 'Email',
-    svg: `<rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>`,
-  },
-];
-const RESUME_URL = 'https://drive.google.com/file/d/1-0OkidhFCiwY4Qzrx7l75aHpLJc4_KkF/view?usp=sharing';
-const RESUME_ICON = `<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/>`;
+// Keep "@", "|" and "&" glued to the word before them so a wrapped line never starts with one.
+const glue = (s: string) => s.replace(/ ([@|&]) /g, ' $1 ');
+const [hello = '', belief = ''] = hero?.data.positioning ?? [];
+// "Hey, I'm Omar Mohammed." in bold, then "I'm a founder & hardware engineer."
+const [greet, ...roleParts] = hello.split(/(?<=\.)\s+/);
+const role = roleParts.join(' ');
+// The belief line is the big statement; "altruistic technology" is set in forest green.
+// Hyphens are non-breaking so "long-term" never splits across lines.
+const nb = (t: string) => glue(t).replace(/(\w)-(\w)/g, '$1\u2011$2');
+const KEY = 'altruistic technology';
+const [beforeKey, afterKey] = belief.includes(KEY) ? belief.split(KEY) : [belief, null];
 ---
 
-<BaseLayout
-  preloadImage={heroImg.src}
-  title={seo?.title ?? 'Omar Mohammed — FPGA, embedded firmware, PCB design'}
-  description={seo?.description ?? 'Hardware design focused EE student at Syracuse. FPGA accelerators (Vivado, SystemVerilog, VHDL), embedded firmware (C/C++, LoRaWAN), and PCB design (KiCad).'}
->
-  <!-- ============ HERO ============ -->
-  <section id="hero" class="snap-section hero">
-    <ParticleField />
+<ForestLayout title={seo?.data.title ?? 'Omar Mohammed'} description={seo?.data.description}>
+  <div class="hero-art"><Statement layout="hero" /></div>
 
-    <div class="hero-inner">
-      <!--
-        The signature is the visual H1. The name is carried as real text for
-        crawlers and screen readers, and the image is marked decorative so the
-        name is not announced twice.
-      -->
-      <h1 class="hero-h1">
-        <span class="sr-only">{`${hero?.firstName ?? 'Omar'} ${hero?.lastName ?? 'Mohammed'}`}</span>
-      </h1>
-      <img
-        class="hero-signature"
-        src={heroImg.src}
-        alt=""
-        aria-hidden="true"
-        width={heroImg.width}
-        height={heroImg.height}
-        fetchpriority="high"
-        decoding="async"
-      />
+  <h1 class="greet"><strong>{greet}</strong> {glue(role)}</h1>
+  <p class="belief">
+    {afterKey === null ? nb(belief) : <>{nb(beforeKey)}<span class="belief-key">{KEY}</span>{nb(afterKey)}</>}
+  </p>
 
-      <p class="hero-positioning">
-        {(hero?.positioning ?? []).map((line) => <span>{line}</span>)}
-      </p>
-
-      <nav class="hero-links" aria-label="Profiles and resume">
-        {socialIcons.map((s) => (
-          <a class="hero-icon" href={s.href} target="_blank" rel="noopener noreferrer" aria-label={s.label}>
-            <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" set:html={s.svg} />
-          </a>
-        ))}
-        <a class="hero-resume" href={RESUME_URL} target="_blank" rel="noopener noreferrer">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" set:html={RESUME_ICON} />
-          Resume
-        </a>
-      </nav>
-    </div>
-
-    <a href="#projects" class="hero-scroll-cue" aria-label="Scroll to projects">
-      <svg class="scroll-cue-arrow" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <polyline points="6 9 12 15 18 9"></polyline>
-      </svg>
-    </a>
-  </section>
-
-  <!-- ============ PROJECTS ============ -->
-  <section id="projects" class="content-section content-section--wide reveal">
-    <div class="content-inner content-inner--wide">
-      <h2 class="section-heading">Projects</h2>
-
-      {featuredProject && (
-        <a
-          class="featured-card"
-          id="featured"
-          href="#modal-featured"
-          data-open="featured"
-          aria-label={`${featuredProject.name} — open details`}
-        >
-          {featuredProject.status && <span class="featured-tag">{featuredProject.status}</span>}
-          <h3 class="featured-title">{featuredProject.name}</h3>
-          <p class="featured-one-liner featured-one-liner--clamped">{featuredProject.oneLiner}</p>
-          <p class="project-tech">{featuredProject.tech?.join('  ·  ')}</p>
-          <span class="featured-cue" aria-hidden="true">View details</span>
-        </a>
-      )}
-
-      <div class="work-grid">
-        {projects.map((p) => (
-          <a class="project-card" id={p.id} href={`#modal-${p.id}`} data-open={p.id} aria-label={`${p.name} — open details`}>
-            <div class="card-media" data-media="image">
-              {p.cover && (
-                <Picture
-                  class="card-video"
-                  src={p.cover}
-                  alt={`${p.name} preview`}
-                  widths={[480, 800, 1200]}
-                  sizes="(max-width: 768px) 100vw, 540px"
-                  formats={['avif', 'webp']}
-                  fallbackFormat="webp"
-                  loading="lazy"
-                  decoding="async"
-                />
-              )}
-              <div class="card-overlay">
-                <h3 class="card-name">{p.name}</h3>
-                <span class="card-cue" aria-hidden="true">View details</span>
-              </div>
+  {groups.map((g) => (
+    <section id={g.id}>
+      <h2><LeafMark />{g.label}</h2>
+      <ul class="projects">
+        {zarf && (
+          <li class="project">
+            <div class="project-head">
+              <a class="project-title zarf-mark" href={zarf.data.url} target="_blank" rel="noopener noreferrer"
+                aria-label={`${zarf.data.name} (opens zarfhealth.com)`}>
+                <img src="/images/zarf-wordmark.svg" alt="" width="60" height="24" />
+              </a>
+              <span class="when">Present</span>
             </div>
-          </a>
-        ))}
-      </div>
-    </div>
-  </section>
-
-  <!-- ============ SKILLS ============ -->
-  <section id="skills" class="content-section content-section--wide reveal">
-    <div class="content-inner content-inner--wide">
-      <h2 class="section-heading">Skills</h2>
-
-      <div class="skills-list">
-        {skills.map((s) => (
-          <div class="skill-group">
-            <h3 class="skill-cat">{s.label}</h3>
-            <p class="skill-items">
-              {s.items.map((i, idx) => (
-                <>
-                  {idx > 0 && <span class="skill-sep" aria-hidden="true">,</span>}
-                  <span class="skill-item">{i}</span>
-                </>
-              ))}
-            </p>
-          </div>
-        ))}
-      </div>
-    </div>
-  </section>
-
-  <!-- ============ FEATURED PROJECT MODAL ============ -->
-  {featuredProject && (
-    <dialog class="project-modal" id="modal-featured" aria-labelledby="modal-featured-title">
-      <div class="modal-inner">
-        <div class="modal-head">
-          <div class="modal-head-text">
-            <h3 id="modal-featured-title" class="modal-title">{featuredProject.name}</h3>
-            {featuredProject.status && <p class="modal-subtitle">{featuredProject.status}</p>}
-          </div>
-          <a class="modal-close" href="#projects" data-close aria-label="Close (Esc)">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <line x1="18" y1="6" x2="6" y2="18"/>
-              <line x1="6" y1="6" x2="18" y2="18"/>
-            </svg>
-          </a>
-        </div>
-
-        <p class="modal-body">{featuredProject.oneLiner}</p>
-
-        {featuredProject.tech && (
-          <div class="modal-specs">
-            <div class="spec-row">
-              <span class="spec-key">Stack</span>
-              <span class="spec-val">{featuredProject.tech.join(', ')}</span>
+            <div class="tag">Co-founder</div>
+            <p class="project-line">{zarf.data.oneLiner}</p>
+          </li>
+        )}
+        {g.items.map((p) => (
+          <li class="project">
+            <div class="project-head">
+              {p.href
+                ? <a class="project-title" href={p.href}>{p.name}</a>
+                : <span class="project-title project-title--plain">{p.name}</span>}
+              {p.when && <span class="when">{p.when}</span>}
             </div>
-          </div>
-        )}
-
-        {featuredProject.note && <p class="modal-note">{featuredProject.note}</p>}
-      </div>
-    </dialog>
-  )}
-
-  <!-- ============ PROJECT MODALS ============ -->
-  {projects.map((p) => (
-    <dialog class="project-modal" id={`modal-${p.id}`} aria-labelledby={`modal-${p.id}-title`}>
-      <div class="modal-inner">
-        <div class="modal-head">
-          <div class="modal-head-text">
-            <h3 id={`modal-${p.id}-title`} class="modal-title">{p.name}</h3>
-            <p class="modal-subtitle">{p.subtitle}</p>
-          </div>
-          <a class="modal-close" href="#projects" data-close aria-label="Close (Esc)">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <line x1="18" y1="6" x2="6" y2="18"/>
-              <line x1="6" y1="6" x2="18" y2="18"/>
-            </svg>
-          </a>
-        </div>
-
-        {p.cover && (
-          <div class="modal-media">
-            <Picture
-              class="modal-video"
-              src={p.cover}
-              alt={`${p.name}`}
-              widths={[640, 1000, 1400]}
-              sizes="(max-width: 768px) 100vw, 900px"
-              formats={['avif', 'webp']}
-              fallbackFormat="webp"
-              loading="lazy"
-              decoding="async"
-            />
-          </div>
-        )}
-
-        {p.body.map((para) => <p class="modal-body">{para}</p>)}
-
-        <div class="modal-specs">
-          {p.specs.map(([k, v]) => (
-            <div class="spec-row">
-              <span class="spec-key">{k}</span>
-              <span class="spec-val">{v}</span>
-            </div>
-          ))}
-        </div>
-
-        {p.github && (
-          <div class="modal-foot">
-            <a class="cta-primary" href={p.github} target="_blank" rel="noopener noreferrer">
-              View on GitHub
-              <span class="cta-arrow" aria-hidden="true">↗</span>
-            </a>
-          </div>
-        )}
-      </div>
-    </dialog>
+            {p.label && <div class="tag">{p.label}</div>}
+            <p class="project-line" set:html={inlineMd(p.line)} />
+          </li>
+        ))}
+      </ul>
+    </section>
   ))}
-</BaseLayout>
+
+  <section id="skills">
+    <h2><LeafMark />Skills</h2>
+    <dl class="skills">
+      {(skills?.data.groups ?? []).map((g) => (
+        <>
+          <dt>{g.label}</dt>
+          <dd>{g.items.join(', ')}</dd>
+        </>
+      ))}
+    </dl>
+  </section>
+</ForestLayout>
 
 <style>
-  :root {
-    --content-max: 920px;
-    --content-wide: 1100px;
+  .hero-art { margin: -64px 0 20px; }
+  @media (max-width: 600px) { .hero-art { margin-top: -24px; } }
+
+  /* Greeting: body size, centered under the canopy. */
+  .greet { font-size: inherit; font-weight: 400; font-style: normal; text-align: center; text-wrap: balance; }
+  .greet strong { font-weight: 700; }
+  /* Belief line: the largest text on the page, centered, wider than the column. */
+  .belief {
+    --wide: min(980px, calc(100vw - 48px));
+    width: var(--wide); margin: 18px 0 0 calc((100% - var(--wide)) / 2);
+    text-align: center; font-size: clamp(2rem, 5vw, 3.3rem); line-height: 1.1;
+    font-style: italic; font-weight: 500; letter-spacing: -0.012em; text-wrap: balance;
+  }
+  .belief-key { color: var(--forest); }
+
+  .tag {
+    font-size: .68em; font-weight: 600; letter-spacing: .1em; text-transform: uppercase;
+    color: var(--gray); white-space: nowrap;
+  }
+  .when { color: var(--gray); font-size: .85em; white-space: nowrap; font-variant-numeric: lining-nums; }
+
+  /* ---- Projects: title and months, label, one or two lines */
+  .projects { list-style: none; margin: 0; padding: 0; }
+  .project + .project { margin-top: 30px; }
+  .project-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; column-gap: 16px; }
+  .project-title { font-weight: 700; }
+  /* Zarf's title is its wordmark. It gets the same forest underline as every
+     other clickable title, so it reads as a link without an icon. */
+  .zarf-mark {
+    display: inline-block; padding-bottom: 5px; text-decoration: none;
+    border-bottom: 1px solid color-mix(in srgb, var(--forest) 35%, transparent);
+    transition: border-color .15s ease, opacity .15s ease;
+  }
+  .zarf-mark img { display: block; height: 24px; width: auto; }
+  .project-head:has(.zarf-mark) { align-items: center; }
+  @media (max-width: 520px) { .project-head:has(.zarf-mark) { align-items: flex-start; } }
+  .zarf-mark:hover { border-bottom-color: var(--forest); opacity: .82; }
+  .project-title--plain { color: var(--ink); }
+  .project .tag { margin-top: 2px; }
+  .project-line { margin-top: 6px; color: var(--ink); text-wrap: pretty; }
+  @media (max-width: 520px) {
+    .project-head { flex-direction: column; }
   }
 
-  .content-section {
-    padding: 7rem var(--gutter) 0;
-    /* Skip layout and paint for these until they are near the viewport. The
-       contain-intrinsic-size keeps the scrollbar honest before they render. */
-    content-visibility: auto;
-    contain-intrinsic-size: auto 600px;
-  }
-
-  .content-inner {
-    max-width: var(--content-max);
-    margin: 0 auto;
-  }
-
-  .content-inner--wide {
-    max-width: var(--content-wide);
-  }
-
-  /* ============ SECTION HEADINGS (Fraunces, prominent) ============ */
-  .section-heading {
-    font-family: var(--font-display);
-    font-weight: 500;
-    font-size: clamp(2rem, 4vw, 2.75rem);
-    letter-spacing: -0.01em;
-    color: var(--color-text-primary);
-    margin: 0 0 2.25rem;
-    line-height: 1.05;
-  }
-
-  /* ============ HERO ============ */
-  .hero {
-    position: relative;
-    /* Cap the hero so it doesn't stretch on very tall / zoomed-out viewports,
-       which would leave a large empty band between the centered content and
-       the projects section below. */
-    min-height: min(100vh, 860px);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    overflow: hidden;
-    padding: 6rem var(--gutter) 6rem;
-  }
-
-  .hero-inner {
-    position: relative;
-    z-index: 2;
-    max-width: var(--content-max);
-    margin: 0 auto;
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-  }
-
-  .hero-h1 {
-    margin: 0;
-    padding: 0;
-    line-height: 0;
-  }
-
-  .hero-signature {
-    width: min(560px, 84vw);
-    height: auto;
-    display: block;
-    margin-bottom: 2rem;
-    clip-path: inset(0 100% 0 0);
-    animation: sign-draw 1.4s cubic-bezier(0.65, 0, 0.35, 1) 0.25s forwards;
-  }
-
-  @keyframes sign-draw {
-    to { clip-path: inset(0 0 0 0); }
-  }
-
-  .hero-positioning {
-    font-family: var(--font-sans);
-    font-size: clamp(1rem, 1.6vw, 1.15rem);
-    line-height: 1.55;
-    color: var(--color-text-secondary);
-    margin: 0;
-    opacity: 0;
-    animation: hero-fade 0.8s ease 1.1s forwards;
-  }
-
-  .hero-positioning span { display: block; }
-  .hero-positioning span + span { margin-top: 0.4rem; }
-
-  .hero-links {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: center;
-    gap: 1.5rem;
-    margin-top: 2rem;
-    opacity: 0;
-    animation: hero-fade 0.8s ease 1.3s forwards;
-  }
-
-  .hero-icon {
-    color: var(--color-text-primary);
-    display: inline-flex;
-    transition: color 0.15s ease, transform 0.15s ease;
-  }
-  .hero-icon:hover {
-    color: var(--color-green-primary);
-    transform: translateY(-2px);
-  }
-
-  .hero-resume {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.4rem;
-    font-family: var(--font-sans);
-    font-size: 0.8rem;
-    font-weight: 500;
-    color: var(--color-text-primary);
-    text-decoration: none;
-    border: 1px solid var(--color-border);
-    border-radius: 6px;
-    padding: 0.34rem 0.72rem;
-    line-height: 1;
-    transition: color 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
-  }
-  .hero-resume:hover {
-    color: var(--color-green-primary);
-    border-color: var(--color-green-primary);
-    transform: translateY(-2px);
-  }
-
-  @keyframes hero-fade {
-    from { opacity: 0; transform: translateY(6px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-
-  .hero-scroll-cue {
-    position: absolute;
-    bottom: 1.75rem;
-    left: 50%;
-    transform: translateX(-50%);
-    color: var(--color-text-muted);
-    z-index: 2;
-    transition: color 0.2s ease;
-  }
-  .hero-scroll-cue:hover { color: var(--color-green-primary); }
-  .scroll-cue-arrow { animation: scroll-bounce 1.8s ease-in-out infinite; display: block; }
-
-  @keyframes scroll-bounce {
-    0%, 100% { transform: translateY(0); opacity: 0.55; }
-    50% { transform: translateY(5px); opacity: 1; }
-  }
-
-  /* ============ FEATURED CARD ============ */
-  .featured-card {
-    position: relative;
-    display: block;
-    text-decoration: none;
-    color: inherit;
-    cursor: pointer;
-    transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-md);
-    background: var(--color-bg-card);
-    padding: 1.85rem 2rem 1.9rem;
-    margin-bottom: 1.5rem;
-    border-left: 3px solid var(--color-green-primary);
-  }
-
-  .featured-card:hover {
-    border-color: var(--color-text-muted);
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-md);
-  }
-
-  .featured-card:focus-visible {
-    outline: 2px solid var(--color-green-primary);
-    outline-offset: 2px;
-  }
-
-  /* Card shows a preview; the modal carries the full text. Nothing is rewritten,
-     it is only visually truncated here. */
-  .featured-one-liner--clamped {
-    display: -webkit-box;
-    -webkit-line-clamp: 3;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-  }
-
-  .featured-cue {
-    display: inline-block;
-    margin-top: 0.9rem;
-    font-family: var(--font-sans);
-    font-size: 0.82rem;
-    font-weight: 500;
-    color: var(--color-green-primary);
-  }
-
-  .featured-card:hover .featured-cue { text-decoration: underline; }
-
-  .modal-note {
-    margin: 1.1rem 0 0;
-    font-family: var(--font-sans);
-    font-size: 0.85rem;
-    color: var(--color-text-muted);
-    font-style: italic;
-  }
-
-  .featured-tag {
-    display: inline-block;
-    font-family: var(--font-sans);
-    font-size: 0.72rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.13em;
-    color: var(--color-green-primary);
-    margin-bottom: 0.6rem;
-  }
-
-  .featured-title {
-    font-family: var(--font-display);
-    font-weight: 500;
-    font-size: clamp(1.5rem, 2.6vw, 1.95rem);
-    color: var(--color-text-primary);
-    margin: 0 0 0.55rem;
-    line-height: 1.15;
-  }
-
-  .featured-one-liner {
-    font-family: var(--font-sans);
-    font-size: 1rem;
-    color: var(--color-text-secondary);
-    line-height: 1.6;
-    margin: 0 0 1rem;
-    max-width: 68ch;
-  }
-
-  .project-tech {
-    font-family: var(--font-sans);
-    font-size: 0.82rem;
-    font-weight: 500;
-    color: var(--color-text-muted);
-    margin: 0;
-    line-height: 1.5;
-    letter-spacing: 0.01em;
-  }
-
-  /* ============ PROJECT TILES ============ */
-  .work-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 1.5rem;
-  }
-
-  .project-card {
-    position: relative;
-    display: block;
-    width: 100%;
-    padding: 0;
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-md);
-    background: var(--color-bg-secondary);
-    overflow: hidden;
-    cursor: pointer;
-    font: inherit;
-    color: inherit;
-    text-align: left;
-    transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
-  }
-  .project-card:hover {
-    border-color: var(--color-text-muted);
-    transform: translateY(-3px);
-    box-shadow: var(--shadow-md);
-  }
-  .project-card:focus-visible {
-    outline: 2px solid var(--color-green-primary);
-    outline-offset: 2px;
-  }
-
-  .card-media {
-    position: relative;
-    width: 100%;
-    aspect-ratio: 4 / 3;
-    overflow: hidden;
-    background: var(--color-bg-secondary);
-  }
-
-  .card-video {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-  }
-
-  /* model-viewer fills the tile uniformly (same area as the video tiles) */
-  .card-media :global(.viewer-container),
-  .card-media :global(.pcb-viewer) {
-    width: 100%;
-    height: 100%;
-  }
-  .card-media :global(.pcb-viewer) {
-    border: none;
-    border-radius: 0;
-    background: var(--color-bg-secondary);
-  }
-
-  /* Name overlay + click affordance */
-  .card-overlay {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-end;
-    align-items: flex-start;
-    padding: 1.2rem 1.35rem;
-    background: linear-gradient(to top, rgba(20, 26, 27, 0.72) 0%, rgba(20, 26, 27, 0.25) 38%, transparent 65%);
-    pointer-events: none;
-  }
-
-  .card-name {
-    font-family: var(--font-display);
-    font-weight: 500;
-    font-size: clamp(1.3rem, 2.4vw, 1.7rem);
-    line-height: 1.12;
-    color: #FAF9F6;
-    margin: 0;
-    text-shadow: 0 1px 12px rgba(0, 0, 0, 0.25);
-  }
-
-  .card-cue {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.25rem;
-    margin-top: 0.55rem;
-    font-family: var(--font-sans);
-    font-size: 0.82rem;
-    font-weight: 500;
-    color: rgba(250, 249, 246, 0.9);
-    opacity: 0.85;
-    transform: translateY(2px);
-    transition: opacity 0.2s ease, transform 0.2s ease;
-  }
-  .cue-arrow { font-size: 0.9em; }
-  .project-card:hover .card-cue { opacity: 1; transform: translateY(0); }
-
-  /* ============ SKILLS (editorial big-type list) ============ */
-  .skills-list {
-    display: flex;
-    flex-direction: column;
-    gap: 2.25rem;
-  }
-
-  .skill-group {
-    display: grid;
-    grid-template-columns: minmax(180px, 0.7fr) 2fr;
-    gap: 1.5rem 2.5rem;
-    align-items: baseline;
-  }
-
-  .skill-cat {
-    font-family: var(--font-display);
-    font-weight: 500;
-    font-size: clamp(1.25rem, 2.2vw, 1.6rem);
-    line-height: 1.1;
-    color: var(--color-text-primary);
-    margin: 0;
-  }
-
-  .skill-items {
-    font-family: var(--font-sans);
-    font-size: clamp(1rem, 1.5vw, 1.1rem);
-    line-height: 1.85;
-    color: var(--color-text-secondary);
-    margin: 0;
-  }
-
-  .skill-sep { color: var(--color-text-muted); margin-right: 0.15rem; }
-
-  /* ============ REVEAL ON SCROLL ============ */
-  .reveal {
-    opacity: 0;
-    transform: translateY(16px);
-    transition: opacity 0.6s ease, transform 0.6s ease;
-  }
-  .reveal.is-visible { opacity: 1; transform: translateY(0); }
-
-  /* ============ MODAL ============ */
-  .project-modal {
-    border: none;
-    background: transparent;
-    padding: 0;
-    margin: auto;
-    inset: 0;
-    max-width: 760px;
-    width: calc(100vw - 2rem);
-    max-height: calc(100vh - 2rem);
-    border-radius: 10px;
-    color: var(--color-text-primary);
-  }
-  .project-modal::backdrop {
-    background: rgba(20, 22, 20, 0.38);
-    backdrop-filter: blur(2px);
-  }
-  .project-modal[open] { animation: modal-in 0.2s ease; }
-
-  @keyframes modal-in {
-    from { opacity: 0; transform: translateY(8px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-
-  .modal-inner {
-    position: relative;
-    background: var(--color-bg-primary);
-    border: 1px solid var(--color-border);
-    border-top: 4px solid var(--color-green-primary);
-    border-radius: 10px;
-    padding: 1.85rem;
-    max-height: calc(100vh - 2rem);
-    overflow-y: auto;
-  }
-
-  .modal-head {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 1rem;
-    margin-bottom: 1.25rem;
-  }
-  .modal-head-text { flex: 1 1 auto; min-width: 0; }
-
-  .modal-title {
-    font-family: var(--font-display);
-    font-weight: 500;
-    font-size: clamp(1.6rem, 3vw, 2rem);
-    margin: 0 0 0.25rem;
-    line-height: 1.12;
-    letter-spacing: -0.01em;
-  }
-
-  .modal-subtitle {
-    font-family: var(--font-sans);
-    font-size: 0.875rem;
-    color: var(--color-text-muted);
-    margin: 0;
-  }
-
-  .modal-close {
-    flex-shrink: 0;
-    width: 36px;
-    height: 36px;
-    border: 1px solid var(--color-border);
-    background: transparent;
-    border-radius: 8px;
-    color: var(--color-text-secondary);
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0;
-    transition: border-color 0.15s ease, color 0.15s ease;
-  }
-  .modal-close:hover {
-    color: var(--color-text-primary);
-    border-color: var(--color-text-primary);
-  }
-
-  .modal-media {
-    width: 100%;
-    background: var(--color-bg-secondary);
-    border-radius: var(--radius-md);
-    overflow: hidden;
-    margin-bottom: 1.25rem;
-  }
-
-  .modal-video {
-    width: 100%;
-    height: auto;
-    display: block;
-    /* No forced aspect ratio. These renders are 3:2 and 4:3; a fixed 16/9 box
-       with object-fit:cover was cropping 15% and 25% of their height in the one
-       view someone opens specifically to look at them. */
-    object-fit: contain;
-    max-height: 70vh;
-  }
-
-  .modal-body {
-    font-family: var(--font-sans);
-    font-size: 1rem;
-    color: var(--color-text-primary);
-    line-height: 1.7;
-    margin: 0 0 0.9rem;
-  }
-
-  .modal-specs {
-    margin-top: 1rem;
-    border-top: 1px solid var(--color-border);
-    padding-top: 1rem;
-  }
-
-  .spec-row {
-    display: grid;
-    grid-template-columns: 130px 1fr;
-    gap: 1rem;
-    padding: 0.45rem 0;
-    border-bottom: 1px solid var(--color-border);
-    font-family: var(--font-sans);
-    font-size: 0.875rem;
-  }
-  .spec-row:last-child { border-bottom: none; }
-  .spec-key { color: var(--color-text-muted); }
-  .spec-val { color: var(--color-text-primary); }
-
-  .modal-foot {
-    margin-top: 1.5rem;
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    flex-wrap: wrap;
-  }
-
-  .cta-primary {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.4rem;
-    font-family: var(--font-sans);
-    font-size: 0.9375rem;
-    font-weight: 500;
-    color: var(--color-green-primary);
-    background: transparent;
-    border: 1px solid var(--color-green-primary);
-    border-radius: var(--radius-md);
-    padding: 0.55rem 1rem;
-    text-decoration: none;
-    transition: background 0.15s ease, color 0.15s ease;
-  }
-  .cta-primary:hover {
-    background: var(--color-green-primary);
-    color: #FAF9F6;
-  }
-  .cta-arrow { font-size: 0.85em; }
-
-  /* ============ CURSOR RESTORE OVER MODAL ============ */
-
-  /* ============ TABLET / MOBILE ============ */
-  /* Keep the 2-up grid down through tablets; single column only on phones,
-     so portrait tablets don't get oversized full-width 4:3 tiles. */
-  @media (max-width: 640px) {
-    .work-grid { grid-template-columns: 1fr; }
-  }
-
-  @media (max-width: 640px) {
-    .content-section { padding-top: 5rem; }
-    .hero-signature { width: min(420px, 86vw); }
-    .hero-positioning { font-size: 1rem; }
-    .featured-card { padding: 1.4rem 1.4rem; }
-    .modal-inner { padding: 1.3rem; }
-    .spec-row { grid-template-columns: 1fr; gap: 0; }
-  }
-
+  /* ---- Skills: label, then the list */
+  .skills { display: grid; grid-template-columns: 11rem 1fr; gap: 12px 1rem; margin: 0; }
+  .skills dt { font-weight: 700; }
+  .skills dd { margin: 0; color: var(--gray); }
   @media (max-width: 560px) {
-    .skill-group { grid-template-columns: 1fr; gap: 0.5rem; }
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .project-modal[open] { animation: none; }
-    .scroll-cue-arrow { animation: none; }
-    .hero-signature { clip-path: none; animation: none; }
-    .hero-positioning, .hero-links { opacity: 1; animation: none; }
-    .reveal { opacity: 1; transform: none; transition: none; }
+    .skills { grid-template-columns: 1fr; gap: 0; }
+    .skills dd + dt { margin-top: 12px; }
   }
 </style>
-
-<script>
-  function wireModals() {
-    const modals = Array.from(
-      document.querySelectorAll<HTMLDialogElement>('.project-modal')
-    );
-    if (modals.length === 0) return;
-    let restoreFocus: HTMLElement | null = null;
-
-    // The URL hash is the single source of truth for which modal is open, so
-    // deep links, Escape, the close control and the back button all agree.
-    function targetFromHash(): HTMLDialogElement | null {
-      if (!location.hash.startsWith('#modal-')) return null;
-      const el = document.getElementById(location.hash.slice(1));
-      return el && el.classList.contains('project-modal')
-        ? (el as HTMLDialogElement)
-        : null;
-    }
-
-    function show(dlg: HTMLDialogElement) {
-      if (dlg.open) return;
-      restoreFocus = document.activeElement as HTMLElement | null;
-      if (typeof dlg.showModal === 'function') dlg.showModal();
-      else dlg.setAttribute('open', '');
-      document.body.classList.add('modal-open');
-    }
-
-    function hideAll(except: HTMLDialogElement | null) {
-      for (const d of modals) {
-        if (d === except || !d.open) continue;
-        if (typeof d.close === 'function') d.close();
-        else d.removeAttribute('open');
-      }
-      if (!except) {
-        document.body.classList.remove('modal-open');
-        if (restoreFocus && typeof restoreFocus.focus === 'function') {
-          restoreFocus.focus();
-        }
-        restoreFocus = null;
-      }
-    }
-
-    function sync() {
-      const t = targetFromHash();
-      if (t) {
-        hideAll(t);
-        show(t);
-      } else {
-        hideAll(null);
-      }
-    }
-
-    function dismiss() {
-      // If we pushed a history entry, step back so the close control and the
-      // back button leave the same trail. If we arrived by deep link there is
-      // nothing to step back to, so just strip the hash.
-      if (history.state && (history.state as { modal?: string }).modal) {
-        history.back();
-      } else {
-        history.replaceState(null, '', location.pathname + location.search);
-        sync();
-      }
-    }
-
-    document.querySelectorAll<HTMLAnchorElement>('[data-open]').forEach((trigger) => {
-      const id = trigger.getAttribute('data-open');
-      if (!id) return;
-      const dlg = document.getElementById(`modal-${id}`);
-      if (!dlg) return;
-
-      // Modal images are lazy, so the first open used to show an empty panel.
-      // Hover or keyboard focus is a strong enough intent signal to warm the
-      // cache, so by the time the click lands the image is already there.
-      let warmed = false;
-      const warm = () => {
-        if (warmed) return;
-        warmed = true;
-        dlg.querySelectorAll<HTMLImageElement>('img').forEach((img) => {
-          const pre = new Image();
-          if (img.sizes) pre.sizes = img.sizes;
-          if (img.srcset) pre.srcset = img.srcset;
-          if (img.src) pre.src = img.src;
-        });
-      };
-      trigger.addEventListener('pointerenter', warm, { once: true, passive: true });
-      trigger.addEventListener('focus', warm, { once: true });
-
-      trigger.addEventListener('click', (e) => {
-        e.preventDefault();
-        history.pushState({ modal: id }, '', `#modal-${id}`);
-        sync();
-      });
-    });
-
-    for (const dlg of modals) {
-      dlg.querySelectorAll<HTMLElement>('[data-close]').forEach((btn) => {
-        btn.addEventListener('click', (e) => {
-          e.preventDefault();
-          dismiss();
-        });
-      });
-      // Take over Escape so the hash stays in step with what is on screen.
-      dlg.addEventListener('cancel', (e) => {
-        e.preventDefault();
-        dismiss();
-      });
-      dlg.addEventListener('click', (e) => {
-        const inner = dlg.querySelector('.modal-inner');
-        if (inner && !inner.contains(e.target as Node)) dismiss();
-      });
-    }
-
-    window.addEventListener('popstate', sync);
-    sync(); // honour a deep link on first load
-  }
-
-  function wireReveal() {
-    if (!('IntersectionObserver' in window)) {
-      document.querySelectorAll('.reveal').forEach((el) => el.classList.add('is-visible'));
-      return;
-    }
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            entry.target.classList.add('is-visible');
-            observer.unobserve(entry.target);
-          }
-        });
-      },
-      { threshold: 0.12, rootMargin: '0px 0px -10% 0px' }
-    );
-    document.querySelectorAll('.reveal').forEach((el) => observer.observe(el));
-  }
-
-  wireModals();
-  wireReveal();
-  document.addEventListener('astro:page-load', () => {
-    wireModals();
-    wireReveal();
-  });
-</script>

@@ -8,15 +8,15 @@ import { getCollection, getEntry } from 'astro:content';
 const SITE = 'https://omarmohammed.co';
 
 export const GET: APIRoute = async () => {
-  const [hero, featured, skills, projects] = await Promise.all([
+  const [hero, skills, zarf, projects] = await Promise.all([
     getEntry('site', 'hero'),
-    getEntry('site', 'featured'),
     getEntry('site', 'skills'),
+    getEntry('site', 'zarf'),
     getCollection('projects'),
   ]);
 
   const name = `${hero?.data.firstName ?? 'Omar'} ${hero?.data.lastName ?? 'Mohammed'}`;
-  const positioning = (hero?.data.positioning ?? []).join('. ');
+  const positioning = (hero?.data.positioning ?? []).join(' ').replace(/\.$/, '');
   const ordered = [...projects].sort((a, b) => a.data.order - b.data.order);
 
   const oneLine = (s?: string) => (s ?? '').replace(/\s+/g, ' ').trim();
@@ -25,15 +25,14 @@ export const GET: APIRoute = async () => {
 
   lines.push(`# ${name}`, '');
   lines.push(
-    `> ${positioning}. Single-page portfolio. Each project has its own URL ` +
-      `fragment, and a plain-markdown copy of the whole page is available at ` +
-      `${SITE}/index.md.`,
+    `> ${positioning}. Each project has its own page under /work/, and a ` +
+      `plain-markdown copy of the whole site is available at ${SITE}/index.md.`,
     ''
   );
   lines.push(
-    'Project detail lives in dialogs that are addressable by fragment, so a link',
-    'like #modal-privacy-based-tracker opens that project directly. Source for',
-    'each shipped project is on GitHub. Contact is by email or LinkedIn.',
+    'Each project page has the full write-up and, where there is one, an interactive',
+    'figure. Source for each shipped project is on GitHub. Contact is by email or',
+    'LinkedIn.',
     ''
   );
 
@@ -51,22 +50,25 @@ export const GET: APIRoute = async () => {
     ''
   );
 
-  lines.push('## Projects', '');
-  if (featured) {
-    lines.push(
-      `- [${featured.data.name}](${SITE}/#modal-featured): ${oneLine(featured.data.oneLiner)}${
-        featured.data.status ? ` Status: ${featured.data.status}.` : ''
-      }`
-    );
+  const describe = (p: (typeof ordered)[number]) =>
+    `- [${p.data.name}](${p.data.page ? `${SITE}/work/${p.id}/` : `${SITE}/#projects`}): ${oneLine(p.data.oneLiner)}${
+      p.data.subtitle ? ` (${oneLine(p.data.subtitle)})` : ''
+    }`;
+
+  const current = ordered.filter((p) => p.data.status === 'current');
+  const past = ordered.filter((p) => p.data.status === 'past');
+
+  if (current.length || zarf) {
+    lines.push('## Current work', '');
+    if (zarf?.data.url) lines.push(`- [${zarf.data.name}](${zarf.data.url}): ${oneLine(zarf.data.oneLiner)}`);
+    for (const p of current) lines.push(describe(p));
+    lines.push('');
   }
-  for (const p of ordered) {
-    lines.push(
-      `- [${p.data.name}](${SITE}/#modal-${p.id}): ${oneLine(p.data.oneLiner)}${
-        p.data.subtitle ? ` (${oneLine(p.data.subtitle)})` : ''
-      }`
-    );
+  if (past.length) {
+    lines.push('## Previous projects', '');
+    for (const p of past) lines.push(describe(p));
+    lines.push('');
   }
-  lines.push('');
 
   lines.push('## Source code', '');
   for (const p of ordered) {

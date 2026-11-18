@@ -1,0 +1,227 @@
+---
+// Site layout: one narrow column, one typeface (Alegreya), four colours,
+// links always in reach in the top bar, bamboo at the foot of every page.
+import { Image } from 'astro:assets';
+import Bamboo from '../components/forest/Bamboo.astro';
+import moLogo from '../assets/mo-logo.png';
+
+interface Props {
+  title: string;
+  description?: string;
+  image?: string;
+}
+const {
+  title,
+  description = 'Electrical engineering student at Syracuse University working in firmware engineering and embedded systems. Edge AI, embedded ML, PCB design, C/C++.',
+  image = '/og-image.png',
+} = Astro.props;
+const canonicalURL = new URL(Astro.url.pathname, Astro.site || 'https://omarmohammed.co');
+
+const RESUME_URL = 'https://drive.google.com/file/d/1-0OkidhFCiwY4Qzrx7l75aHpLJc4_KkF/view?usp=sharing';
+const ICONS = {
+  github: `<path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.4 5.4 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/><path d="M9 18c-4.51 2-5-2-7-2"/>`,
+  linkedin: `<path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect width="4" height="12" x="2" y="9"/><circle cx="4" cy="4" r="2"/>`,
+  email: `<rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>`,
+  resume: `<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/>`,
+};
+const PROFILES = [
+  { label: 'GitHub', href: 'https://github.com/ofmohamm', icon: ICONS.github },
+  { label: 'LinkedIn', href: 'https://linkedin.com/in/ofmohammed', icon: ICONS.linkedin },
+  { label: 'Email', href: 'mailto:mail.omarmohammed@gmail.com', icon: ICONS.email },
+];
+const svg = (paths: string, size = 18) =>
+  `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths}</svg>`;
+const year = new Date().getFullYear();
+---
+<!doctype html>
+<html lang="en" class="no-js">
+<head>
+  <meta charset="utf-8" />
+  <script is:inline>document.documentElement.classList.remove('no-js')</script>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content={description} />
+  <meta name="generator" content={Astro.generator} />
+  <link rel="icon" href="/favicon.ico" sizes="16x16 32x32 48x48" />
+  <link rel="icon" type="image/png" href="/favicon.png" sizes="192x192" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+  <link rel="alternate" type="text/markdown" href="/index.md" />
+  <link rel="describedby" href="/llms.txt" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alegreya:ital,wght@0,400..800;1,400..800&display=swap" />
+
+  <meta property="og:title" content={title} />
+  <meta property="og:description" content={description} />
+  <meta property="og:image" content={image} />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content={canonicalURL} />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content={title} />
+  <meta name="twitter:description" content={description} />
+  <meta name="twitter:image" content={image} />
+  <link rel="canonical" href={canonicalURL} />
+  <title>{title}</title>
+
+  <script type="application/ld+json" set:html={JSON.stringify({
+    '@context': 'https://schema.org',
+    '@type': 'Person',
+    name: 'Omar Mohammed',
+    jobTitle: 'Founder and hardware engineer',
+    description: description,
+    knowsAbout: ['Firmware Development', 'Embedded Systems', 'Edge AI', 'Machine Learning', 'Power Measurement', 'Bare-Metal Firmware', 'STM32', 'ATSAMD21', 'VHDL', 'RTL Design', 'PCB Design', 'KiCad', 'C', 'C++', 'Python', 'MATLAB'],
+    affiliation: { '@type': 'CollegeOrUniversity', name: 'Syracuse University', sameAs: 'https://www.syracuse.edu' },
+    address: { '@type': 'PostalAddress', addressLocality: 'Syracuse', addressRegion: 'NY', addressCountry: 'US' },
+    url: 'https://omarmohammed.co',
+    sameAs: ['https://www.linkedin.com/in/ofmohammed', 'https://github.com/ofmohamm'],
+  })} />
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+
+  <header class="bar">
+    <div class="bar-in">
+      <a class="brand" href="/" aria-label="Omar Mohammed, home">
+        <Image class="brand-mark" src={moLogo} alt="" width={88} densities={[1, 2]} format="webp" loading="eager" />
+      </a>
+      <nav class="bar-links" aria-label="Site and profiles">
+        <a class="bar-text" href="/#projects">Projects</a>
+        <a class="bar-text" href="/#skills">Skills</a>
+        <a class="resume" href={RESUME_URL} target="_blank" rel="noopener noreferrer"><Fragment set:html={svg(ICONS.resume, 14)} />Resume</a>
+        {PROFILES.map((p) => (
+          <a class="ico" href={p.href} aria-label={p.label} target={p.href.startsWith('http') ? '_blank' : undefined} rel="noopener noreferrer" set:html={svg(p.icon, 19)} />
+        ))}
+      </nav>
+    </div>
+  </header>
+
+  <main id="main">
+    <slot />
+  </main>
+
+  <footer class="foot">
+    <div class="foot-in">
+      <p class="foot-line">Always looking to connect with builders, founders, and creators. If you are working on something cool, I would love to hear about it.</p>
+      <p class="gray small foot-copy">&copy; {year} Omar Mohammed</p>
+    </div>
+    <div class="bamboo"><Bamboo /></div>
+  </footer>
+</body>
+</html>
+
+<style is:global>
+  /* ---- Palette ---------------------------------------------------------
+     paper  #FBFAF5  warm paper with a trace of green
+     ink    #1B1F1A  forest-black text, 16.0:1
+     gray   #6C6F66  moss gray for dates and labels, 4.9:1
+     forest #2F5D46  links and line art, 7.2:1 */
+  :root {
+    --paper: #FBFAF5;
+    --ink: #1B1F1A;
+    --gray: #6C6F66;
+    --forest: #2F5D46;
+    --col: 640px;
+    --font: 'Alegreya', Georgia, serif;
+
+    /* Bridge to figure.css */
+    --color-bg-primary: var(--paper);
+    --color-text-muted: var(--gray);
+    --font-sans: var(--font);
+    --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  body { --c-teal: #1C6470; }
+
+  html {
+    background: var(--paper);
+    color: var(--ink);
+    font: 400 19.5px/1.6 var(--font);
+    -webkit-text-size-adjust: 100%;
+    font-kerning: normal;
+    scroll-padding-top: 80px;
+    scroll-behavior: smooth;
+  }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+  body { margin: 0; position: relative; overflow-x: clip; }
+
+  .skip { position: absolute; left: -999px; top: 8px; z-index: 100; background: var(--forest); color: var(--paper); padding: 6px 12px; border-radius: 6px; }
+  .skip:focus { left: 8px; }
+
+  /* ---- Top bar: name left; Projects, Skills, Resume and profiles top right */
+  .bar {
+    position: sticky; top: 0; z-index: 20;
+    background: color-mix(in srgb, var(--paper) 88%, transparent);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border-bottom: 1px solid color-mix(in srgb, var(--forest) 12%, transparent);
+  }
+  .bar-in {
+    max-width: 1100px; margin: 0 auto; padding: 0 24px; height: 60px;
+    display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  }
+  .brand { display: inline-flex; align-items: center; padding: 8px 4px; margin-left: -4px; transition: opacity .15s ease; }
+  .brand-mark { display: block; height: 24px; width: auto; }
+  .brand:hover { opacity: .7; }
+  .bar-links { display: flex; align-items: center; gap: 4px; }
+  .bar-links a { color: var(--ink); text-decoration: none; }
+  .bar-links a:hover { color: var(--forest); }
+  .bar-text { padding: 10px 8px; font-size: .9em; }
+  .resume {
+    display: inline-flex; align-items: center; gap: 6px; font-size: .85em; line-height: 1;
+    border: 1px solid color-mix(in srgb, var(--forest) 30%, transparent); border-radius: 999px;
+    padding: 7px 12px; margin: 0 6px; transition: border-color .15s ease, background-color .15s ease;
+  }
+  .resume:hover { border-color: var(--forest); background: color-mix(in srgb, var(--forest) 7%, transparent); }
+  .ico { display: inline-grid; place-items: center; width: 40px; height: 40px; border-radius: 999px; transition: background-color .15s ease; }
+  .ico:hover { background: color-mix(in srgb, var(--forest) 8%, transparent); }
+  @media (max-width: 620px) {
+    .bar-text { display: none; }
+    .brand-mark { height: 22px; }
+    .ico { width: 36px; height: 36px; }
+    .resume { padding: 6px 10px; margin: 0 2px; }
+  }
+  @media (max-width: 420px) {
+    .bar-in { padding: 0 14px; gap: 8px; }
+    .bar-links { gap: 0; }
+    .brand-mark { height: 20px; }
+    .resume svg { display: none; }
+    .ico { width: 34px; height: 34px; }
+  }
+
+  main { position: relative; z-index: 1; max-width: var(--col); margin: 0 auto; padding: 88px 24px 40px; }
+  @media (max-width: 600px) { main { padding-top: 48px; } }
+
+  h1, h2, h3 { font-size: inherit; line-height: inherit; font-weight: 700; margin: 0; }
+  p { margin: 0; }
+  p + p { margin-top: 1em; }
+  .gray { color: var(--gray); }
+  .small { font-size: .8em; }
+
+  a {
+    color: var(--forest);
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 3px;
+    text-decoration-color: color-mix(in srgb, var(--forest) 35%, transparent);
+  }
+  a:hover { text-decoration-color: currentColor; }
+  a:focus-visible { outline: 2px solid var(--forest); outline-offset: 3px; border-radius: 4px; }
+  ::selection { background: color-mix(in srgb, #8DB255 35%, transparent); }
+
+  section { margin-top: 64px; }
+  section > h2 { margin-bottom: 18px; display: flex; align-items: center; gap: 8px; }
+  .mark { color: var(--forest); flex: none; }
+  code { font: .86em var(--font-mono); }
+
+  /* ---- Footer: the note, then a stand of bamboo (Kabini) -------------------- */
+  .foot { margin-top: 120px; position: relative; }
+  .foot-in { position: relative; z-index: 1; max-width: var(--col); margin: 0 auto; padding: 0 24px; }
+  .foot-copy { margin-top: 12px; }
+  .bamboo { margin-top: 4px; height: 210px; overflow: hidden; pointer-events: none; }
+  .bamboo svg { display: block; width: 100%; height: 210px; }
+  @media (max-width: 600px) { .bamboo, .bamboo svg { height: 150px; } }
+
+  .culm { animation: culm 10s ease-in-out infinite alternate; }
+  .spray { animation: spray 6s ease-in-out infinite alternate; }
+  @keyframes culm { from { transform: rotate(-0.8deg); } to { transform: rotate(1deg); } }
+  @keyframes spray { from { transform: rotate(-4deg); } to { transform: rotate(3.5deg); } }
+  @media (prefers-reduced-motion: reduce) { .culm, .spray { animation: none; } }
+</style>

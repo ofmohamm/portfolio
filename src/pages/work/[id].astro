@@ -1,0 +1,127 @@
+---
+import ForestLayout from '../../layouts/ForestLayout.astro';
+import { Picture, getImage } from 'astro:assets';
+import { getCollection } from 'astro:content';
+import { inlineMd } from '../../lib/inline-md';
+import PowerTrace from '../../components/figures/PowerTrace.astro';
+import PirGrid from '../../components/figures/PirGrid.astro';
+import MicArray from '../../components/figures/MicArray.astro';
+import PdLoop from '../../components/figures/PdLoop.astro';
+
+import watercamPcb from '../../assets/projects/watercam-pcb.png';
+import privacyTracker from '../../assets/projects/privacy-tracker.jpg';
+import acousticDrone from '../../assets/projects/acoustic-drone-detection.jpg';
+import pcbPoster from '../../assets/projects/pcb-rotate-poster.jpg';
+
+// Interactive figures, referenced by name from a project's body in YAML.
+const FIGURES: Record<string, any> = {
+  'power-trace': PowerTrace,
+  'pir-grid': PirGrid,
+  'mic-array': MicArray,
+  'pd-loop': PdLoop,
+};
+
+const COVERS: Record<string, ImageMetadata> = {
+  'flood-detection-sensor-pcb': watercamPcb,
+  'privacy-based-tracker': privacyTracker,
+  'acoustic-drone-detection': acousticDrone,
+};
+
+export async function getStaticPaths() {
+  const projects = await getCollection('projects');
+  return projects.filter((e) => e.data.page).map((entry) => ({ params: { id: entry.id }, props: { entry } }));
+}
+
+const { entry } = Astro.props;
+const p = entry.data;
+const cover = COVERS[entry.id];
+const poster = p.coverVideo ? (await getImage({ src: pcbPoster, width: 1280, format: 'webp' })).src : undefined;
+const link = p.github ? { label: 'View on GitHub', url: p.github } : p.cta ? { label: p.cta.label, url: p.cta.url } : null;
+---
+
+<ForestLayout title={`${p.name} · Omar Mohammed`} description={p.oneLiner}>
+  <p class="back"><a href="/#projects">Projects</a></p>
+
+  <h1 class="title">{p.name}</h1>
+  {p.subtitle && (
+    <p class="sub">
+      {p.subtitle.split(' · ').map((part, i) => (<>{i > 0 && ' · '}<span class="nowrap">{part}</span></>))}
+    </p>
+  )}
+
+  {p.coverVideo ? (
+    <div class="media">
+      <video data-play-visible muted loop playsinline preload="none" poster={poster} width="1280" height="720"
+        aria-label={`${p.name}, rotating 3D render`}>
+        <source src={p.coverVideo.webm} type='video/webm; codecs="av01.0.05M.08"' />
+        <source src={p.coverVideo.mp4} type="video/mp4" />
+      </video>
+    </div>
+  ) : cover && (
+    <div class={p.status === 'current' ? 'media media--crop' : 'media'}>
+      <Picture src={cover} alt={p.name} widths={[640, 1000, 1400]} sizes="(max-width: 700px) 100vw, 640px"
+        formats={['avif', 'webp']} fallbackFormat="webp" loading="eager" decoding="async" />
+    </div>
+  )}
+
+  {link && <p class="out"><a class="button" href={link.url} target="_blank" rel="noopener noreferrer">{link.label} <span aria-hidden="true">↗</span></a></p>}
+
+  <div class="body">
+    {p.body.map((block) => {
+      if (typeof block === 'string') return <p set:html={inlineMd(block)} />;
+      const Figure = FIGURES[block.figure];
+      return Figure ? <Figure /> : null;
+    })}
+  </div>
+
+  {p.specs.length > 0 && (
+    <dl class="specs">
+      {p.specs.map((s) => (<><dt>{s.key}</dt><dd>{s.value}</dd></>))}
+    </dl>
+  )}
+
+  <p class="end"><a href="/#projects">All projects</a></p>
+</ForestLayout>
+
+<style>
+  .back { font-size: .85em; margin-bottom: 28px; }
+  .title { font-size: clamp(1.7rem, 4.5vw, 2.2rem); line-height: 1.15; font-style: italic; font-weight: 500; }
+  .sub { color: var(--gray); margin-top: 6px; }
+  .nowrap { white-space: nowrap; }
+
+  .media { margin: 28px 0 0; border-radius: 10px; overflow: hidden; background: color-mix(in srgb, var(--forest) 5%, var(--paper)); }
+  .media :global(img), .media video { display: block; width: 100%; height: auto; max-height: 70vh; object-fit: contain; }
+  /* Current-work photos are portrait or wide; crop to 5:4 so there are no bare bands beside them. */
+  .media--crop :global(img) { aspect-ratio: 5 / 4; object-fit: cover; max-height: none; }
+
+  .out { margin-top: 16px; }
+  .button {
+    display: inline-flex; align-items: center; gap: 6px; text-decoration: none;
+    border: 1px solid var(--forest); border-radius: 999px; padding: 6px 16px; font-size: .9em;
+    transition: background-color .15s ease, color .15s ease;
+  }
+  .button:hover { background: var(--forest); color: var(--paper); }
+
+  .body { margin-top: 32px; }
+  .body > p + p { margin-top: 1em; }
+  .body :global(strong) { font-weight: 700; }
+  .body :global(.fig) { margin: 2.25rem 0 2.5rem; }
+
+  .specs {
+    display: grid; grid-template-columns: 8.5rem 1fr; gap: 6px 1rem;
+    margin: 40px 0 0; padding-top: 24px;
+    border-top: 1px solid color-mix(in srgb, var(--gray) 25%, transparent);
+  }
+  .specs dt { color: var(--gray); }
+  .specs dd { margin: 0; }
+  .end { margin-top: 48px; }
+</style>
+
+<script>
+  // The board render plays only while on screen, and never under reduced motion.
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  document.querySelectorAll<HTMLVideoElement>('video[data-play-visible]').forEach((v) => {
+    if (reduce) { v.controls = true; return; }
+    new IntersectionObserver(([e]) => { if (e.isIntersecting) v.play().catch(() => {}); else v.pause(); }, { threshold: 0.25 }).observe(v);
+  });
+</script>
